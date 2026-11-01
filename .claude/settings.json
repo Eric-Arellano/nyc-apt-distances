@@ -1,0 +1,156 @@
+{
+  "permissions": {
+    "disableBypassPermissionsMode": "disable",
+
+    "deny": [
+      "Read(//**/.env)",
+      "Read(//**/.envrc)",
+      "Bash(npm publish:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(gh repo delete:*)",
+      "Bash(gh secret:*)",
+      "Bash(gh variable:*)",
+      "Bash(gh auth token:*)",
+      "Bash(gh auth logout:*)",
+      "Bash(gh auth login:*)",
+      "Bash(gh auth refresh:*)",
+      "Bash(gh auth switch:*)",
+
+      "Bash(gh pr merge:*)",
+      "Bash(gh api *pulls/*/merge*)",
+      "Bash(gh api *mergePullRequest*)",
+      "Bash(gh api *enablePullRequestAutoMerge*)",
+      "Bash(gh api *enqueuePullRequest*)",
+
+      "Bash(gh workflow run:*)",
+      "Bash(gh workflow enable:*)",
+      "Bash(gh workflow disable:*)",
+      "Bash(gh api *dispatches*)",
+
+      "Bash(gh repo edit:*)",
+      "Bash(gh repo archive:*)",
+      "Bash(gh repo rename:*)",
+      "Bash(gh repo transfer:*)",
+      "Bash(gh api *-X*PUT*)",
+      "Bash(gh api *-X*PATCH*)",
+      "Bash(gh api *-X*DELETE*)",
+      "Bash(gh api *--method*PUT*)",
+      "Bash(gh api *--method*PATCH*)",
+      "Bash(gh api *--method*DELETE*)"
+    ],
+
+    "ask": [
+      "Bash(rm -rf:*)",
+
+      "Bash(npx *-y*)",
+      "Bash(npm exec *-y*)",
+      "Bash(*npm_config_yes*)",
+
+      "Bash(npm install *)",
+      "Bash(npm i *)",
+      "Bash(npm add:*)",
+      "Bash(npm update:*)",
+      "Bash(npm up:*)",
+      "Bash(npm uninstall:*)"
+    ],
+
+    "allow": [
+      "Bash(npm ci)",
+      "Bash(npm install)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm view:*)",
+      "Bash(npm audit)",
+
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git rm *)",
+      "Bash(git mv *)",
+      "Bash(git blame *)",
+      "Bash(git branch)",
+      "Bash(git branch -a)",
+      "Bash(git branch -vv)",
+      "Bash(git branch --list *)",
+      "Bash(git check-ignore *)",
+      "Bash(git ls-files *)",
+      "Bash(git rev-parse *)",
+      "Bash(git merge-base *)",
+      "Bash(git diff-tree *)",
+      "Bash(git describe *)",
+      "Bash(git shortlog *)",
+      "Bash(git reflog *)",
+      "Bash(git stash list *)",
+      "Bash(git worktree list)",
+      "Bash(git remote -v)",
+
+      "Bash(gh pr view *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr diff *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh run list *)",
+      "Bash(gh run view *)",
+      "Bash(gh issue view *)",
+      "Bash(gh issue list *)",
+      "Bash(gh repo view *)",
+      "Bash(gh search *)",
+      "Bash(gh release list *)",
+
+      "Bash(cat *)",
+      "Bash(echo *)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(sd *)",
+      "Bash(sed *)",
+      "Bash(xargs cat)",
+      "Bash(ls *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(jq *)",
+      "Bash(fd *)",
+      "Bash(find *)",
+      "Bash(tree *)",
+      "Bash(file *)",
+      "Bash(stat *)",
+      "Bash(realpath *)",
+      "Bash(basename *)",
+      "Bash(dirname *)",
+      "Bash(sort *)",
+      "Bash(uniq *)",
+      "Bash(diff *)",
+      "Bash(which *)",
+      "Bash(command -v *)",
+      "Bash(node --version)",
+      "Bash(npm --version)",
+
+      "Read",
+
+      "WebSearch",
+
+      "mcp__svelte__list-sections",
+      "mcp__svelte__get-documentation",
+      "mcp__svelte__svelte-autofixer",
+
+      "WebFetch(domain:svelte.dev)",
+      "WebFetch(domain:vitest.dev)",
+      "WebFetch(domain:biomejs.dev)",
+      "WebFetch(domain:nodejs.org)",
+      "WebFetch(domain:testing-library.com)",
+      "WebFetch(domain:developers.google.com)",
+      "WebFetch(domain:docs.claude.com)",
+      "WebFetch(domain:code.claude.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)"
+    ]
+  },
+
+  "env": {
+    "npm_config_yes": "false"
+  },
+
+  "enabledMcpjsonServers": ["svelte"]
+}
