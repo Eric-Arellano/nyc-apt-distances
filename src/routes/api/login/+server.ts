@@ -1,8 +1,8 @@
 import type { RequestHandler } from '@sveltejs/kit';
 
-import { login } from '#lib/server/auth.ts';
+import { isSitePassword, startSession } from '#lib/server/auth.ts';
 
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ cookies, request }) => {
   let data: Record<string, unknown>;
   try {
     data = await request.json();
@@ -14,9 +14,9 @@ export const POST: RequestHandler = async ({ request }) => {
     return Response.json({ error: 'Password must be a non-empty string' }, { status: 400 });
   }
 
-  const result = login(data.password);
-  if (!result.success) {
+  if (!isSitePassword(data.password)) {
     return Response.json({ error: 'Invalid password' }, { status: 401 });
   }
-  return Response.json({ token: result.token });
+  startSession(cookies);
+  return new Response(null, { status: 204 });
 };

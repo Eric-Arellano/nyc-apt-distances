@@ -1,6 +1,4 @@
-import type { AuthState } from '#lib/types.ts';
-
-const authState: AuthState = $state({ isAuthenticated: false, token: null });
+import { invalidateAll } from '$app/navigation';
 
 export async function login(password: string): Promise<void> {
   const res = await fetch(`/api/login`, {
@@ -10,16 +8,10 @@ export async function login(password: string): Promise<void> {
     signal: AbortSignal.timeout(5_000),
   });
   if (!res.ok) {
-    authState.isAuthenticated = false;
-    authState.token = null;
     throw new Error(
       res.status === 401 ? 'Invalid password' : `Login failed: ${res.status} ${res.statusText}`,
     );
   }
 
-  const data = await res.json();
-  authState.token = data.token;
-  authState.isAuthenticated = true;
+  await invalidateAll();
 }
-
-export default authState;

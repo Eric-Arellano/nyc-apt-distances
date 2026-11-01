@@ -88,8 +88,6 @@ anki's strict flags except `erasableSyntaxOnly`, because `DayOfWeek` is an enum.
 Left alone on purpose:
 
 - **`closestDest.ts`**: tested and fine. Haversine remains only a pre-filter.
-- **Auth**: the token lives in memory, so a reload asks for the password despite the 30-day JWT.
-  That is a real wart, but it has nothing to do with this move.
 - **Shared `Button` and `TextInput`**: the classes appear in only two components.
 - **Zod and remote functions**: `foodservice-insights` rejected remote functions for now, and a
   typed parser with explicit checks is enough here.
@@ -201,8 +199,7 @@ Every PR: `npm run lint && npm run check && npm test` and `npm run build`, then 
 to check the page by hand or with `/run`. The Playwright MCP server failed to connect in this
 session, so browser automation needs it back.
 
-`.nvmrc` pins Node 24, which CI uses. `npm run build` fails on Node 26, because
-`buffer-equal-constant-time` (under `jsonwebtoken`) reads a removed `SlowBuffer`, so build on 24.
+`.nvmrc` pins Node 24, which CI uses.
 
 Beyond that:
 

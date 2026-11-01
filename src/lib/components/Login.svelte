@@ -1,10 +1,10 @@
 <script lang="ts">
-import { login } from '#lib/state/auth.svelte.ts';
+import { login } from '#lib/login.ts';
 import Loading from './Loading.svelte';
 import Error from './Error.svelte';
 
-let password = '';
-let loginPromise: Promise<void> | null = null;
+let password = $state('');
+let loginPromise: Promise<void> | null = $state(null);
 
 function handleLoginError(error: Error): void {
   setTimeout(() => {
