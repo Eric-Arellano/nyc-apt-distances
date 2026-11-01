@@ -22,12 +22,12 @@ What makes that change expensive today:
 
 White Plains also breaks two assumptions that NYC never tested:
 
-- **"No route" is normal there.** A transit request with no result throws at `gmapsRouting.ts:78`,
+- **"No route" is normal there.** A transit request with no result throws at `gmapsRouting.ts:79`,
   which fails the whole page rather than one card.
 - **Trains may be labelled as walking.** `gmapsRouting.ts:91` reads only `nameShort`, and an empty
   summary means "walking". If Metro-North lines have only a `name`, a train trip would show as
   "🚇 40 minutes by walking". The proto describes `nameShort` as "normally a line number". This is
-  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 7
+  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 6
   starts by capturing real responses.
 
 Facts from Google's docs and the SDK's protos that shape the design:
@@ -80,10 +80,10 @@ two REST calls. This matches your "first-party when it is simple to write" rule,
 
 **White Plains replaces NYC.** There is no region switch, and git keeps the NYC version.
 
-**Tooling comes first and copies `anki-hebrew-card-creation`.** Everything is 18 months old, and
-SvelteKit 3 renames `$lib`, so refactoring first would mean writing the new code in idioms that are
-about to change. Formatting and linting are already Biome, configured as in anki, so the upgrade
-no longer has to work around `eslint.config.js` importing `svelte.config.js`.
+**Tooling copies `anki-hebrew-card-creation`.** The app is on SvelteKit 3, so new code imports
+`#lib/….ts` with the extension and returns `Response.json()`. There is one Vitest config, and a
+component test opts into jsdom with a `@vitest-environment jsdom` comment. `tsconfig.json` takes
+anki's strict flags except `erasableSyntaxOnly`, because `DayOfWeek` is an enum.
 
 Left alone on purpose:
 
@@ -94,21 +94,7 @@ Left alone on purpose:
 - **Zod and remote functions**: `foodservice-insights` rejected remote functions for now, and a
   typed parser with explicit checks is enough here.
 
-## PR 1: Upgrade to SvelteKit 3
-
-- Bump to the latest 2.x first for its deprecation warnings, as the migration guide recommends,
-  then run `npx sv migrate sveltekit-3`.
-- Target anki's versions: Node 24 (`.nvmrc`, `engines`), TypeScript 6 (not 7), Vite 8, Vitest 5,
-  Svelte 5.57, `@sveltejs/vite-plugin-svelte` 7, the latest `adapter-auto`.
-- Replace `tests.yml` with anki's `ci.yml`. CI's Node 20 is below SvelteKit 3's 22.17 minimum.
-- Move the adapter and CSP config into `vite.config.ts` and delete `svelte.config.js`.
-- `$lib` becomes `#lib/….ts`, `json()` becomes `Response.json()`, and tsconfig extends
-  `$app/tsconfig` with anki's strict flags, except `erasableSyntaxOnly`, because `DayOfWeek` is an
-  enum.
-- Use anki's single Vitest config, where a component test opts into jsdom per file. Delete
-  `vitest-setup-client.ts` and `@testing-library/jest-dom`.
-
-## PR 2: Fix small bugs and pin what the page shows
+## PR 1: Fix small bugs and pin what the page shows
 
 - Fix the `TravelTimes` import and the `'parkSlope]'` typo in `destinations.ts`, plus any type
   errors that surfaces.
@@ -119,12 +105,13 @@ Left alone on purpose:
   `foodservice-insights` does. Today importing a server module without secrets throws, and `MOCK=1`
   still needs a Google token.
 - Add `Success.svelte.test.ts`: render the mock data and assert every card's title, goal, route
-  lines and status. Add a `data-status` attribute so the test does not pin colour classes.
+  lines and status. Add a `data-status` attribute so the test does not pin colour classes. It is
+  the first component test, and `@testing-library/jest-dom` is gone, so assert with plain matchers.
 
-**That expected table is the safety net for PRs 5 to 7.** They may change the test's input, but
+**That expected table is the safety net for PRs 4 to 6.** They may change the test's input, but
 must not change the expected output.
 
-## PR 3: Svelte cleanups
+## PR 2: Svelte cleanups
 
 - `Login.svelte` is the one component in legacy mode: move it to `$state` and `async`/`await`.
 - Rename `Error.svelte` to `ErrorMessage.svelte`. The import shadows the global, so
@@ -137,7 +124,7 @@ must not change the expected output.
 - Delete the three `index.ts` barrels.
 - Move `AuthState` and `TravelTimesRequest` from `types.ts` into their state modules.
 
-## PR 4: Call Google with `fetch`
+## PR 3: Call Google with `fetch`
 
 Same exported signatures, so the diff stays in `gmapsRouting.ts`, `gmapsGeocoding.ts`, their tests
 and `package.json`.
@@ -147,11 +134,14 @@ and `package.json`.
 - `GET` the Geocoding endpoint. The key sits in the query string, so never log that URL.
 - Extract pure parsers and test them against real responses for walk, bike and transit, captured
   once into `tests/fixtures/google/` using public addresses only.
-- Copy anki's `tests/setup.ts`, which fails any unmocked `fetch`.
+- Copy anki's `tests/setup.ts`, which fails any unmocked `fetch`. Wire it up as anki does:
+  `setupFiles` and `unstubGlobals` in `vite.config.ts`, the `#tests/*` import, and `tests` in the
+  Vitest and `tsconfig.json` includes.
 - Remove `@googlemaps/routing` and `@googlemaps/google-maps-services-js`, and the
-  `noNonNullAssertion` override for `gmapsRouting.ts` in `biome.json`.
+  `noNonNullAssertion` override for `gmapsRouting.ts` in `biome.json`. `tsconfig.json` lists `node`
+  types with no direct `@types/node`; `@types/jsonwebtoken` keeps it installed after the SDKs go.
 
-## PR 5: One route type
+## PR 4: One route type
 
 - `Route` replaces `ActiveTransportRoute` and `TransitRoute`.
 - `computeRoute(trip)` replaces both compute functions, driven by a per-mode table of Google travel
@@ -159,7 +149,7 @@ and `package.json`.
 - `formatRoute(route, place?)` replaces the three formatters, with byte-identical output.
 - The `TravelTimes` keys stay for now, so `places/*` get one-line edits.
 
-## PR 6: Destinations as data
+## PR 5: Destinations as data
 
 The payoff PR.
 
@@ -177,7 +167,7 @@ The payoff PR.
 - Delete `src/lib/components/travelTimes/places/` (11 files).
 - Add tests for `computeTravelTimes` against the fake and for the route handler.
 
-## PR 7: Handle sparse transit
+## PR 6: Handle sparse transit
 
 Capture real responses first: White Plains to Grand Central, a Bee-Line bus trip, and a trip with
 no route. Those settle the two unknowns in Context and may change this section.
@@ -212,15 +202,15 @@ Every PR: `npm run lint && npm run check && npm test` and `npm run build`, then 
 to check the page by hand or with `/run`. The Playwright MCP server failed to connect in this
 session, so browser automation needs it back.
 
-`npm run build` fails today on Node 26, because `buffer-equal-constant-time` (under `jsonwebtoken`)
-reads a removed `SlowBuffer`. PR 1 pins Node 24; until then build on an older Node.
+`.nvmrc` pins Node 24, which CI uses. `npm run build` fails on Node 26, because
+`buffer-equal-constant-time` (under `jsonwebtoken`) reads a removed `SlowBuffer`, so build on 24.
 
 Beyond that:
 
-- **PRs 1 and 4**: one real address on the Vercel preview, since both change what runs in
-  production and neither is covered by the mock.
-- **PR 6**: run one real NYC address on `main` and on the branch, and compare the cards.
-- **PR 7**: real White Plains addresses, including a destination with no transit route.
-- **PRs 2 to 7**: the expected table from PR 2 stays untouched.
+- **PR 3**: one real address on the Vercel preview, since it changes what runs in production and
+  is not covered by the mock.
+- **PR 5**: run one real NYC address on `main` and on the branch, and compare the cards.
+- **PR 6**: real White Plains addresses, including a destination with no transit route.
+- **PRs 2 to 6**: the expected table from PR 1 stays untouched.
 
-PRs 1, 4, 6 and 7 make real Google calls with your key, about 15 requests per address.
+PRs 3, 5 and 6 make real Google calls with your key, about 15 requests per address.

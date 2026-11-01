@@ -1,6 +1,6 @@
 import { RoutesClient } from '@googlemaps/routing';
 
-import type { ActiveTransportRoute, TransitRoute } from '$lib/types';
+import type { ActiveTransportRoute, TransitRoute } from '#lib/types.ts';
 import { getNextDateTime, type TargetDate } from './departureTime';
 import { GMAPS_TOKEN } from './env';
 
@@ -36,10 +36,10 @@ export async function computeActiveTransportRoute(options: {
     },
   );
   const routes = response[0].routes;
-  if (routes?.length !== 1) {
+  const route = routes?.[0];
+  if (!route || routes?.length !== 1) {
     throw new Error(`Unexpected routes in response: ${routes}`);
   }
-  const route = routes[0];
   const timeMinutes = secondsStringToMinutes(route.duration!.seconds as string);
 
   // Add some buffer time to set up bike.
@@ -75,15 +75,15 @@ export async function computeTransitRoute(options: {
     },
   );
   const routes = response[0].routes;
-  if (routes?.length !== 1) {
+  const route = routes?.[0];
+  if (!route || routes?.length !== 1) {
     throw new Error(`Unexpected routes in response: ${routes}`);
   }
-  const route = routes[0];
 
-  if (route.legs?.length !== 1) {
+  const leg = route.legs?.[0];
+  if (!leg || route.legs?.length !== 1) {
     throw new Error(`Unexpected legs in route: ${route.legs}`);
   }
-  const leg = route.legs[0];
 
   const timeMinutes = secondsStringToMinutes(route.duration!.seconds as string);
   const summary = leg

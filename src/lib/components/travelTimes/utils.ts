@@ -1,4 +1,4 @@
-import type { ActiveTransportRoute, GoalStatus, TransitRoute } from '$lib/types';
+import type { ActiveTransportRoute, GoalStatus, TransitRoute } from '#lib/types.ts';
 
 export function goalStatus(
   routes: Array<{ timeMinutes: number }>,

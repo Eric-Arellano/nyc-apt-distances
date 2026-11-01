@@ -1,4 +1,4 @@
-import type TravelTimes from '$lib/components/travelTimes';
+import type TravelTimes from '#lib/components/travelTimes/index.ts';
 import { FARMERS_MARKETS, PARKS, SUBWAY_STOPS } from './candidateLocations';
 import { type CoordinatePoint, findClosest } from './closestDest';
 import { DayOfWeek } from './departureTime';

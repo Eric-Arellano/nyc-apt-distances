@@ -3,7 +3,7 @@ import Card from '../Card.svelte';
 import Loading from '../Loading.svelte';
 import Error from '../Error.svelte';
 import Success from './Success.svelte';
-import travelTimesRequest from '$lib/state/travelTimes.svelte';
+import travelTimesRequest from '#lib/state/travelTimes.svelte.ts';
 </script>
 
 {#if travelTimesRequest.task}

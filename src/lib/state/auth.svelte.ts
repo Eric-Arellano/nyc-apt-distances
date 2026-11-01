@@ -1,4 +1,4 @@
-import type { AuthState } from '$lib/types';
+import type { AuthState } from '#lib/types.ts';
 
 const authState: AuthState = $state({ isAuthenticated: false, token: null });
 

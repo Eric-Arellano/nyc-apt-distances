@@ -1,5 +1,5 @@
 <script lang="ts">
-import { login } from '$lib/state/auth.svelte';
+import { login } from '#lib/state/auth.svelte.ts';
 import Loading from './Loading.svelte';
 import Error from './Error.svelte';
 

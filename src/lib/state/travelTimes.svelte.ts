@@ -1,4 +1,4 @@
-import type { TravelTimes, TravelTimesRequest } from '$lib/types';
+import type { TravelTimes, TravelTimesRequest } from '#lib/types.ts';
 import authState from './auth.svelte';
 
 const travelTimesRequest: TravelTimesRequest = $state({ task: null });

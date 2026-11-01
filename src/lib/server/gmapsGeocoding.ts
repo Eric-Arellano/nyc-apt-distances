@@ -9,10 +9,10 @@ export async function geocode(address: string): Promise<{ latitude: number; long
     params: { key: GMAPS_TOKEN, address: address },
   });
   const results = resp.data.results;
-  if (results.length !== 1) {
+  const result = results[0];
+  if (!result || results.length !== 1) {
     throw new Error(`Unexpected number of results: ${results}`);
   }
-  const result = results[0];
   const { lat, lng } = result.geometry.location;
   return {
     latitude: lat,

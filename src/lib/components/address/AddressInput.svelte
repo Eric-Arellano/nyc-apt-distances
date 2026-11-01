@@ -1,5 +1,5 @@
 <script lang="ts">
-import travelTimesRequest, { getTravelTimes } from '$lib/state/travelTimes.svelte';
+import travelTimesRequest, { getTravelTimes } from '#lib/state/travelTimes.svelte.ts';
 import { isValidAddress } from './addressUtils.js';
 
 let address = $state('');
