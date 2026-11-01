@@ -27,7 +27,7 @@ White Plains also breaks two assumptions that NYC never tested:
 - **Trains may be labelled as walking.** `gmapsRouting.ts:91` reads only `nameShort`, and an empty
   summary means "walking". If Metro-North lines have only a `name`, a train trip would show as
   "🚇 40 minutes by walking". The proto describes `nameShort` as "normally a line number". This is
-  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 9
+  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 7
   starts by capturing real responses.
 
 Facts from Google's docs and the SDK's protos that shape the design:
@@ -82,8 +82,8 @@ two REST calls. This matches your "first-party when it is simple to write" rule,
 
 **Tooling comes first and copies `anki-hebrew-card-creation`.** Everything is 18 months old, and
 SvelteKit 3 renames `$lib`, so refactoring first would mean writing the new code in idioms that are
-about to change. Biome goes before the upgrade because `eslint.config.js` imports
-`svelte.config.js`, which SvelteKit 3 removes.
+about to change. Formatting and linting are already Biome, configured as in anki, so the upgrade
+no longer has to work around `eslint.config.js` importing `svelte.config.js`.
 
 Left alone on purpose:
 
@@ -94,27 +94,7 @@ Left alone on purpose:
 - **Zod and remote functions**: `foodservice-insights` rejected remote functions for now, and a
   typed parser with explicit checks is enough here.
 
-## PR 1: Agent guide and this plan
-
-Docs and config only.
-
-- Add `AGENTS.md`, adapted from `anki-hebrew-card-creation` (principles, comments, docs, testing,
-  PR sizing). Hard rules for this repo: no test reaches Google, no API keys in code or fixtures,
-  and the repo is public, so nothing personal goes in beyond what is meant to be published.
-- Add `CLAUDE.md` (`@AGENTS.md`), `.mcp.json`, `.claude/settings.json` without the Anki hook, the
-  `svelte-core-bestpractices`, `plan-adopt` and `plan-advance` skills, and dependabot.
-- Adopt this plan as `.claude/plans/multimodal-prefactor.md`.
-
-## PR 2: Switch to Biome
-
-Formatting only, and worth reviewing by skimming.
-
-- Copy `biome.json`, the `lint` and `format` scripts, and the `format-file.sh` hook from
-  `anki-hebrew-card-creation`.
-- Remove Prettier, ESLint, their plugins and their config. Tailwind class sorting goes with them.
-- Reformat the repo (tabs to two spaces), before the refactors so their diffs stay readable.
-
-## PR 3: Upgrade to SvelteKit 3
+## PR 1: Upgrade to SvelteKit 3
 
 - Bump to the latest 2.x first for its deprecation warnings, as the migration guide recommends,
   then run `npx sv migrate sveltekit-3`.
@@ -128,7 +108,7 @@ Formatting only, and worth reviewing by skimming.
 - Use anki's single Vitest config, where a component test opts into jsdom per file. Delete
   `vitest-setup-client.ts` and `@testing-library/jest-dom`.
 
-## PR 4: Fix small bugs and pin what the page shows
+## PR 2: Fix small bugs and pin what the page shows
 
 - Fix the `TravelTimes` import and the `'parkSlope]'` typo in `destinations.ts`, plus any type
   errors that surfaces.
@@ -141,14 +121,15 @@ Formatting only, and worth reviewing by skimming.
 - Add `Success.svelte.test.ts`: render the mock data and assert every card's title, goal, route
   lines and status. Add a `data-status` attribute so the test does not pin colour classes.
 
-**That expected table is the safety net for PRs 7 to 9.** They may change the test's input, but
+**That expected table is the safety net for PRs 5 to 7.** They may change the test's input, but
 must not change the expected output.
 
-## PR 5: Svelte cleanups
+## PR 3: Svelte cleanups
 
 - `Login.svelte` is the one component in legacy mode: move it to `$state` and `async`/`await`.
 - Rename `Error.svelte` to `ErrorMessage.svelte`. The import shadows the global, so
-  `handleLoginError(error: Error)` is typed as a component.
+  `handleLoginError(error: Error)` is typed as a component. Then remove the `noShadowRestrictedNames`
+  override for `Login.svelte` and `TravelTimes.svelte` in `biome.json`.
 - Add `lang="ts"` to `Neighborhoods.svelte` and `OtherCriteria.svelte`. Loop over tiers in
   `Neighborhoods.svelte` instead of the two copied lists.
 - Drop the `marginBottom` prop for spacing on the parent, `children?.()` on required snippets, and
@@ -156,7 +137,7 @@ must not change the expected output.
 - Delete the three `index.ts` barrels.
 - Move `AuthState` and `TravelTimesRequest` from `types.ts` into their state modules.
 
-## PR 6: Call Google with `fetch`
+## PR 4: Call Google with `fetch`
 
 Same exported signatures, so the diff stays in `gmapsRouting.ts`, `gmapsGeocoding.ts`, their tests
 and `package.json`.
@@ -167,9 +148,10 @@ and `package.json`.
 - Extract pure parsers and test them against real responses for walk, bike and transit, captured
   once into `tests/fixtures/google/` using public addresses only.
 - Copy anki's `tests/setup.ts`, which fails any unmocked `fetch`.
-- Remove `@googlemaps/routing` and `@googlemaps/google-maps-services-js`.
+- Remove `@googlemaps/routing` and `@googlemaps/google-maps-services-js`, and the
+  `noNonNullAssertion` override for `gmapsRouting.ts` in `biome.json`.
 
-## PR 7: One route type
+## PR 5: One route type
 
 - `Route` replaces `ActiveTransportRoute` and `TransitRoute`.
 - `computeRoute(trip)` replaces both compute functions, driven by a per-mode table of Google travel
@@ -177,7 +159,7 @@ and `package.json`.
 - `formatRoute(route, place?)` replaces the three formatters, with byte-identical output.
 - The `TravelTimes` keys stay for now, so `places/*` get one-line edits.
 
-## PR 8: Destinations as data
+## PR 6: Destinations as data
 
 The payoff PR.
 
@@ -195,7 +177,7 @@ The payoff PR.
 - Delete `src/lib/components/travelTimes/places/` (11 files).
 - Add tests for `computeTravelTimes` against the fake and for the route handler.
 
-## PR 9: Handle sparse transit
+## PR 7: Handle sparse transit
 
 Capture real responses first: White Plains to Grand Central, a Bee-Line bus trip, and a trip with
 no route. Those settle the two unknowns in Context and may change this section.
@@ -230,12 +212,15 @@ Every PR: `npm run lint && npm run check && npm test` and `npm run build`, then 
 to check the page by hand or with `/run`. The Playwright MCP server failed to connect in this
 session, so browser automation needs it back.
 
+`npm run build` fails today on Node 26, because `buffer-equal-constant-time` (under `jsonwebtoken`)
+reads a removed `SlowBuffer`. PR 1 pins Node 24; until then build on an older Node.
+
 Beyond that:
 
-- **PRs 3 and 6**: one real address on the Vercel preview, since both change what runs in
+- **PRs 1 and 4**: one real address on the Vercel preview, since both change what runs in
   production and neither is covered by the mock.
-- **PR 8**: run one real NYC address on `main` and on the branch, and compare the cards.
-- **PR 9**: real White Plains addresses, including a destination with no transit route.
-- **PRs 4 to 9**: the expected table from PR 4 stays untouched.
+- **PR 6**: run one real NYC address on `main` and on the branch, and compare the cards.
+- **PR 7**: real White Plains addresses, including a destination with no transit route.
+- **PRs 2 to 7**: the expected table from PR 2 stays untouched.
 
-PRs 3, 6, 8 and 9 make real Google calls with your key, about 15 requests per address.
+PRs 1, 4, 6 and 7 make real Google calls with your key, about 15 requests per address.

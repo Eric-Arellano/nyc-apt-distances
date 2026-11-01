@@ -1,14 +1,14 @@
 <script lang="ts">
-	import Card from '../Card.svelte';
-	import AddressInput from './AddressInput.svelte';
-	import authState from '$lib/state/auth.svelte';
-	import Login from '../Login.svelte';
+import Card from '../Card.svelte';
+import AddressInput from './AddressInput.svelte';
+import authState from '$lib/state/auth.svelte';
+import Login from '../Login.svelte';
 </script>
 
 <Card title="Street address">
-	{#if authState.isAuthenticated}
-		<AddressInput />
-	{:else}
-		<Login />
-	{/if}
+  {#if authState.isAuthenticated}
+    <AddressInput />
+  {:else}
+    <Login />
+  {/if}
 </Card>

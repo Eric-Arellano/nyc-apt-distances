@@ -1,5 +1,5 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 body > div:first-child {
-	display: contents;
+  display: contents;
 }
