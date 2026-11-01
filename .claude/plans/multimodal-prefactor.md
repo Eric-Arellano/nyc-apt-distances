@@ -88,8 +88,6 @@ no longer has to work around `eslint.config.js` importing `svelte.config.js`.
 Left alone on purpose:
 
 - **`closestDest.ts`**: tested and fine. Haversine remains only a pre-filter.
-- **Auth**: the token lives in memory, so a reload asks for the password despite the 30-day JWT.
-  That is a real wart, but it has nothing to do with this move.
 - **Shared `Button` and `TextInput`**: the classes appear in only two components.
 - **Zod and remote functions**: `foodservice-insights` rejected remote functions for now, and a
   typed parser with explicit checks is enough here.
@@ -211,9 +209,6 @@ Decide once there are real suburban results.
 Every PR: `npm run lint && npm run check && npm test` and `npm run build`, then `MOCK=1 npm run dev`
 to check the page by hand or with `/run`. The Playwright MCP server failed to connect in this
 session, so browser automation needs it back.
-
-`npm run build` fails today on Node 26, because `buffer-equal-constant-time` (under `jsonwebtoken`)
-reads a removed `SlowBuffer`. PR 1 pins Node 24; until then build on an older Node.
 
 Beyond that:
 
