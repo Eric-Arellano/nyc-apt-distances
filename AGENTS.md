@@ -16,9 +16,9 @@ one of those two facts.
   times without calling Google.
 - **Keep `/api/` behind the site password.** Every route there except `/api/login` must stay
   behind the check in `src/hooks.server.ts`, because each request spends the Google key.
-- **No secrets, and no absolute home paths**, in code, config or fixtures. The Google key, site
-  password and JWT secret live in `.envrc`, which is never read or committed. Google's Geocoding
-  API takes its key in the query string, so never log those URLs.
+- **No secrets, and no absolute home paths**, in code, config or fixtures. The Google key and site
+  password live in `.envrc`, which is never read or committed. Google's Geocoding API takes its
+  key in the query string, so never log those URLs.
 - **Only publish addresses meant to be published.** Destinations are fine. An apartment I am
   considering is not, so it never goes in a fixture, test, commit or PR.
 - **Ask before adding a dependency**, including a dev dependency. Prefer the standard library,

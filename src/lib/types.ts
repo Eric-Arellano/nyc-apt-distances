@@ -67,8 +67,3 @@ export interface TravelTimesRequest {
 }
 
 export type GoalStatus = 'met' | 'partial' | 'unmet';
-
-export interface AuthState {
-  isAuthenticated: boolean;
-  token: string | null;
-}
