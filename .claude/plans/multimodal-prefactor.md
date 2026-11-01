@@ -138,8 +138,7 @@ and `package.json`.
   `setupFiles` and `unstubGlobals` in `vite.config.ts`, the `#tests/*` import, and `tests` in the
   Vitest and `tsconfig.json` includes.
 - Remove `@googlemaps/routing` and `@googlemaps/google-maps-services-js`, and the
-  `noNonNullAssertion` override for `gmapsRouting.ts` in `biome.json`. `tsconfig.json` lists `node`
-  types with no direct `@types/node`; `@types/jsonwebtoken` keeps it installed after the SDKs go.
+  `noNonNullAssertion` override for `gmapsRouting.ts` in `biome.json`.
 
 ## PR 4: One route type
 
