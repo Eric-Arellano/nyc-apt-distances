@@ -19,7 +19,7 @@ Then, run `npm install`
 ### Commands
 
 - `npm run dev`
-- `npm run fmt`
+- `npm run format`
 - `npm run test`
 - `npm run check`
 - `npm run lint`

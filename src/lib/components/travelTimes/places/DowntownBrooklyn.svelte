@@ -1,17 +1,17 @@
 <script lang="ts">
-	import DestinationCard from '../DestinationCard.svelte';
-	import type { TravelTimes } from '$lib/types';
-	import { goalStatus, transitRoute } from '../utils';
+import DestinationCard from '../DestinationCard.svelte';
+import type { TravelTimes } from '$lib/types';
+import { goalStatus, transitRoute } from '../utils';
 
-	let { transit }: TravelTimes['downtownBrooklyn'] = $props();
+let { transit }: TravelTimes['downtownBrooklyn'] = $props();
 
-	const idealMinutes = 30;
-	const maxMinutes = 45;
+const idealMinutes = 30;
+const maxMinutes = 45;
 </script>
 
 <DestinationCard
-	title="Downtown Brooklyn"
-	goal="Should be within {maxMinutes} minutes; ideally within {idealMinutes} minutes"
-	routes={[transitRoute(transit)]}
-	goalStatus={goalStatus([transit], { idealMinutes, maxMinutes })}
+  title="Downtown Brooklyn"
+  goal="Should be within {maxMinutes} minutes; ideally within {idealMinutes} minutes"
+  routes={[transitRoute(transit)]}
+  goalStatus={goalStatus([transit], { idealMinutes, maxMinutes })}
 />
