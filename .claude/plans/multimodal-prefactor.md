@@ -27,7 +27,7 @@ White Plains also breaks two assumptions that NYC never tested:
 - **Trains may be labelled as walking.** `gmapsRouting.ts:91` reads only `nameShort`, and an empty
   summary means "walking". If Metro-North lines have only a `name`, a train trip would show as
   "🚇 40 minutes by walking". The proto describes `nameShort` as "normally a line number". This is
-  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 9
+  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 7
   starts by capturing real responses.
 
 Facts from Google's docs and the SDK's protos that shape the design:
