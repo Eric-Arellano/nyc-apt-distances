@@ -1,5 +1,5 @@
-import { type Handle, json } from '@sveltejs/kit';
-import { hasSession } from '$lib/server/auth';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { hasSession } from '#lib/server/auth.ts';
 
 export const handle: Handle = async ({ event, resolve }) => {
   if (!event.url.pathname.startsWith('/api/') || event.url.pathname.startsWith('/api/login')) {
@@ -7,7 +7,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
 
   if (!hasSession(event.cookies)) {
-    return json(
+    return Response.json(
       { error: 'Unauthorized' },
       {
         status: 401,

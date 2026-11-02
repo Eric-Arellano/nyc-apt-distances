@@ -1,8 +1,8 @@
 <script lang="ts">
-import AddressCard from '$lib/components/address';
-import TravelTimes from '$lib/components/travelTimes/index.js';
-import Neighborhoods from '$lib/components/Neighborhoods.svelte';
-import OtherCriteria from '$lib/components/criteria';
+import AddressCard from '#lib/components/address/index.ts';
+import TravelTimes from '#lib/components/travelTimes/index.ts';
+import Neighborhoods from '#lib/components/Neighborhoods.svelte';
+import OtherCriteria from '#lib/components/criteria/index.ts';
 import type { PageProps } from './$types';
 
 let { data }: PageProps = $props();

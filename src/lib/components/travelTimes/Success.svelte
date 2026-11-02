@@ -10,7 +10,7 @@ import FarmersMarket from './places/FarmersMarket.svelte';
 import Park from './places/Park.svelte';
 import SubwayStop from './places/SubwayStop.svelte';
 import Work from './places/Work.svelte';
-import type { TravelTimes } from '$lib/types.js';
+import type { TravelTimes } from '#lib/types.ts';
 
 const travelTimes: TravelTimes = $props();
 </script>

@@ -1,9 +1,9 @@
 import type { Cookies, RequestEvent } from '@sveltejs/kit';
 import { describe, expect, test, vi } from 'vitest';
-import { SESSION_COOKIE_NAME } from '$lib/server/auth';
+import { SESSION_COOKIE_NAME } from '#lib/server/auth.ts';
 import { POST } from './+server';
 
-vi.mock('$lib/server/env', () => ({ SITE_PASSWORD: 'correct-horse-battery' }));
+vi.mock('#lib/server/env.ts', () => ({ SITE_PASSWORD: 'correct-horse-battery' }));
 
 async function postLogin(body: string) {
   const cookies = { set: vi.fn() };

@@ -1,5 +1,5 @@
+import type { TravelTimes, TravelTimesRequest } from '#lib/types.ts';
 import { invalidateAll } from '$app/navigation';
-import type { TravelTimes, TravelTimesRequest } from '$lib/types';
 
 const travelTimesRequest: TravelTimesRequest = $state({ task: null });
 

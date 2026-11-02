@@ -1,6 +1,6 @@
 <script lang="ts">
 import DestinationCard from '../DestinationCard.svelte';
-import type { TravelTimes } from '$lib/types';
+import type { TravelTimes } from '#lib/types.ts';
 import { goalStatus, walkRoute } from '../utils';
 
 let { closest, walk }: TravelTimes['park'] = $props();

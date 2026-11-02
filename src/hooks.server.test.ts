@@ -1,11 +1,11 @@
 import type { Cookies, RequestEvent } from '@sveltejs/kit';
 import { describe, expect, test, vi } from 'vitest';
-import { signSession } from '$lib/server/auth';
+import { signSession } from '#lib/server/auth.ts';
 import { handle } from './hooks.server';
 
 const PASSWORD = 'correct-horse-battery';
 
-vi.mock('$lib/server/env', () => ({ SITE_PASSWORD: 'correct-horse-battery' }));
+vi.mock('#lib/server/env.ts', () => ({ SITE_PASSWORD: 'correct-horse-battery' }));
 
 async function request(path: string, session?: string) {
   const resolve = vi.fn(async () => new Response('resolved'));

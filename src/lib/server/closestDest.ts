@@ -33,25 +33,14 @@ export function computeClosestPoint<T extends CoordinatePoint>(
   origin: CoordinatePoint,
   candidates: Array<T>,
 ): T | null {
-  if (candidates.length === 0) {
-    return null;
-  }
+  const [first, ...rest] = candidates;
+  if (!first) return null;
 
-  if (candidates.length === 1) {
-    return candidates[0];
-  }
-
-  let closestPoint = candidates[0];
-  let minDistance = haversineDistance(origin, closestPoint);
-  for (let i = 1; i < candidates.length; i++) {
-    const currentPoint = candidates[i];
-    const distance = haversineDistance(origin, currentPoint);
-    if (distance < minDistance) {
-      minDistance = distance;
-      closestPoint = currentPoint;
-    }
-  }
-  return closestPoint;
+  return rest.reduce(
+    (closest, point) =>
+      haversineDistance(origin, point) < haversineDistance(origin, closest) ? point : closest,
+    first,
+  );
 }
 
 export function findClosest<T extends CoordinatePoint>(

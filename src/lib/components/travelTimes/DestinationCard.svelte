@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { GoalStatus } from '$lib/types';
+import type { GoalStatus } from '#lib/types.ts';
 
 interface Props {
   title: string;

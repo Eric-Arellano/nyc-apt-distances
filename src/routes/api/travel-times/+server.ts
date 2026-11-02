@@ -1,5 +1,5 @@
-import { error, json, type RequestHandler } from '@sveltejs/kit';
-import { MOCK_DATA } from '$lib/mockData';
+import { error, type RequestHandler } from '@sveltejs/kit';
+import { MOCK_DATA } from '#lib/mockData.ts';
 import {
   computeAstoria,
   computeDowntownBrooklyn,
@@ -12,14 +12,14 @@ import {
   computeSubwayStop,
   computeWilliamsburg,
   computeWork,
-} from '$lib/server/destinations';
-import { USE_MOCK_DATA } from '$lib/server/env';
-import { geocode } from '$lib/server/gmapsGeocoding';
-import type { TravelTimes } from '$lib/types';
+} from '#lib/server/destinations.ts';
+import { USE_MOCK_DATA } from '#lib/server/env.ts';
+import { geocode } from '#lib/server/gmapsGeocoding.ts';
+import type { TravelTimes } from '#lib/types.ts';
 
 export const GET: RequestHandler = async ({ url }) => {
   if (USE_MOCK_DATA) {
-    return json(MOCK_DATA);
+    return Response.json(MOCK_DATA);
   }
 
   const address = url.searchParams.get('street-address');
@@ -42,5 +42,5 @@ export const GET: RequestHandler = async ({ url }) => {
     jerseyCity: await computeJerseyCity(originAddr),
     mottHaven: await computeMottHaven(originAddr),
   };
-  return json(result);
+  return Response.json(result);
 };
