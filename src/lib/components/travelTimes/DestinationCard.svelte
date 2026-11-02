@@ -12,6 +12,7 @@ const { title, goal, routes, goalStatus }: Props = $props();
 </script>
 
 <div
+  data-status={goalStatus}
   class="rounded-lg border-2 bg-gray-50 p-4 {goalStatus === 'met'
     ? 'border-green-500 bg-green-50'
     : goalStatus === 'partial'

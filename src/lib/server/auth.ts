@@ -7,7 +7,7 @@
 
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import type { Cookies } from '@sveltejs/kit';
-import { SITE_PASSWORD } from './env';
+import { SITE_PASSWORD } from '$app/env/private';
 
 export const SESSION_COOKIE_NAME = 'site-session';
 export const SESSION_LIFETIME_SECONDS = 30 * 24 * 60 * 60;

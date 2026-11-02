@@ -67,6 +67,18 @@ describe('getNextDateTime', () => {
     expect(result.toISODate()).toBe('2023-04-18');
   });
 
+  it('zeroes the seconds and milliseconds of the current time', () => {
+    vi.spyOn(DateTime, 'now').mockImplementation(
+      () =>
+        DateTime.fromISO('2023-04-11T10:30:45.678', {
+          zone: 'America/New_York',
+        }) as DateTime<true>,
+    );
+    const result = getNextDateTime({ day: DayOfWeek.Wednesday, hour: 15, minute: 30 });
+    expect(result.second).toBe(0);
+    expect(result.millisecond).toBe(0);
+  });
+
   it('handles DST boundaries correctly', () => {
     // March 10, 2024 (just before DST begins in the US)
     const beforeDST = DateTime.fromISO('2024-03-10T01:30:00', {

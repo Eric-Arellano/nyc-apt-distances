@@ -13,7 +13,7 @@ import {
 const PASSWORD = 'correct-horse-battery';
 const NOW = 1_800_000_000;
 
-vi.mock('./env', () => ({ SITE_PASSWORD: 'correct-horse-battery' }));
+vi.mock('$app/env/private', () => ({ SITE_PASSWORD: 'correct-horse-battery' }));
 
 beforeEach(() => {
   vi.useFakeTimers({ now: NOW * 1000 });

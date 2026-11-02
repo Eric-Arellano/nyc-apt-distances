@@ -3,7 +3,7 @@ import { describe, expect, test, vi } from 'vitest';
 import { SESSION_COOKIE_NAME } from '#lib/server/auth.ts';
 import { POST } from './+server';
 
-vi.mock('#lib/server/env.ts', () => ({ SITE_PASSWORD: 'correct-horse-battery' }));
+vi.mock('$app/env/private', () => ({ SITE_PASSWORD: 'correct-horse-battery' }));
 
 async function postLogin(body: string) {
   const cookies = { set: vi.fn() };

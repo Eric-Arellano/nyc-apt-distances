@@ -2,9 +2,14 @@ import { RoutesClient } from '@googlemaps/routing';
 
 import type { ActiveTransportRoute, TransitRoute } from '#lib/types.ts';
 import { getNextDateTime, type TargetDate } from './departureTime';
-import { GMAPS_TOKEN } from './env';
+import { requireGmapsToken } from './gmapsToken';
 
-const ROUTES_CLIENT = new RoutesClient({ apiKey: GMAPS_TOKEN });
+let routesClient: RoutesClient | undefined;
+
+function getRoutesClient(): RoutesClient {
+  routesClient ??= new RoutesClient({ apiKey: requireGmapsToken() });
+  return routesClient;
+}
 
 function secondsStringToMinutes(seconds: string): number {
   return Math.round(Number(seconds) / 60);
@@ -20,7 +25,7 @@ export async function computeActiveTransportRoute(options: {
   mode: 'WALK' | 'BICYCLE';
 }): Promise<ActiveTransportRoute> {
   const { origin, dest, mode } = options;
-  const response = await ROUTES_CLIENT.computeRoutes(
+  const response = await getRoutesClient().computeRoutes(
     {
       origin: { address: origin },
       destination: { address: dest },
@@ -57,7 +62,7 @@ export async function computeTransitRoute(options: {
 }): Promise<TransitRoute> {
   const { origin, dest, targetDeparture } = options;
   const actualDeparture = getNextDateTime(targetDeparture);
-  const response = await ROUTES_CLIENT.computeRoutes(
+  const response = await getRoutesClient().computeRoutes(
     {
       origin: { address: origin },
       destination: { address: dest },

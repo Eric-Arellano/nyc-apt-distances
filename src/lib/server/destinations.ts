@@ -1,4 +1,4 @@
-import type TravelTimes from '#lib/components/travelTimes/index.ts';
+import type { TravelTimes } from '#lib/types.ts';
 import { FARMERS_MARKETS, PARKS, SUBWAY_STOPS } from './candidateLocations';
 import { type CoordinatePoint, findClosest } from './closestDest';
 import { DayOfWeek } from './departureTime';
@@ -56,7 +56,7 @@ export async function computeSubwayStop(
   return { walk, closest: { name: closest.name, lines: closest.lines } };
 }
 
-export async function computeParkSlope(origin: string): Promise<TravelTimes['parkSlope]']> {
+export async function computeParkSlope(origin: string): Promise<TravelTimes['parkSlope']> {
   const transit = await computeTransitRoute({
     origin,
     dest: 'Grand Army Plz, Brooklyn, NY 11238',
