@@ -1,64 +1,52 @@
-export interface ActiveTransportRoute {
-  timeMinutes: number;
-  distanceMiles: number;
-}
-
-export type TransitRoute =
-  | {
-      timeMinutes: number;
-      type: 'walking';
-    }
-  | {
-      timeMinutes: number;
-      type: 'transit';
-      summary: string;
-    };
+export type Route =
+  | { mode: 'walk' | 'bike'; timeMinutes: number; distanceMiles: number }
+  | { mode: 'transit'; timeMinutes: number; summary: string | null }; // null: all walking
 
 export interface TravelTimes {
   work: {
-    walk: ActiveTransportRoute;
-    bike: ActiveTransportRoute;
-    transit: TransitRoute;
+    walk: Route;
+    bike: Route;
+    transit: Route;
   };
   subwayStop: {
     closest: {
       name: string;
       lines: string[];
     };
-    walk: ActiveTransportRoute;
+    walk: Route;
   };
   park: {
     closest: {
       name: string;
     };
-    walk: ActiveTransportRoute;
+    walk: Route;
   };
   farmersMarket: {
     closest: {
       name: string;
     };
-    walk: ActiveTransportRoute;
+    walk: Route;
   };
   parkSlope: {
-    transit: TransitRoute;
+    transit: Route;
   };
   williamsburg: {
-    transit: TransitRoute;
+    transit: Route;
   };
   downtownBrooklyn: {
-    transit: TransitRoute;
+    transit: Route;
   };
   jacksonHeights: {
-    transit: TransitRoute;
+    transit: Route;
   };
   astoria: {
-    transit: TransitRoute;
+    transit: Route;
   };
   jerseyCity: {
-    transit: TransitRoute;
+    transit: Route;
   };
   mottHaven: {
-    transit: TransitRoute;
+    transit: Route;
   };
 }
 

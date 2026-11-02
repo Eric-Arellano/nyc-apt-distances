@@ -1,7 +1,7 @@
 <script lang="ts">
 import DestinationCard from '../DestinationCard.svelte';
 import type { TravelTimes } from '#lib/types.ts';
-import { goalStatus, walkRoute } from '../utils';
+import { formatRoute, goalStatus } from '../utils';
 
 let { closest, walk }: TravelTimes['subwayStop'] = $props();
 
@@ -13,7 +13,7 @@ const maxMinutes = 12;
   title="Subway stop 🚇"
   goal="Must be within a {maxMinutes}-minute walk; ideally within {idealMinutes} minutes"
   routes={[
-    walkRoute(walk, { name: closest.name, additionalInfo: `with ${closest.lines.join(', ')}` }),
+    formatRoute(walk, { name: closest.name, additionalInfo: `with ${closest.lines.join(', ')}` }),
   ]}
   goalStatus={goalStatus([walk], { idealMinutes, maxMinutes })}
 />

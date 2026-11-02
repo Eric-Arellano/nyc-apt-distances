@@ -1,7 +1,7 @@
 <script lang="ts">
 import DestinationCard from '../DestinationCard.svelte';
 import type { TravelTimes } from '#lib/types.ts';
-import { goalStatus, transitRoute } from '../utils';
+import { formatRoute, goalStatus } from '../utils';
 
 let { transit }: TravelTimes['astoria'] = $props();
 
@@ -12,6 +12,6 @@ const maxMinutes = 55;
 <DestinationCard
   title="Astoria (low priority)"
   goal="Should be within {maxMinutes} minutes; ideally within {idealMinutes} minutes"
-  routes={[transitRoute(transit)]}
+  routes={[formatRoute(transit)]}
   goalStatus={goalStatus([transit], { idealMinutes, maxMinutes })}
 />

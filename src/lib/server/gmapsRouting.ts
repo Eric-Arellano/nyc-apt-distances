@@ -1,4 +1,4 @@
-import type { ActiveTransportRoute, TransitRoute } from '#lib/types.ts';
+import type { Route } from '#lib/types.ts';
 import { getNextDateTime, type TargetDate } from './departureTime';
 import { fetchGoogle } from './gmapsFetch';
 import { requireGmapsToken } from './gmapsToken';
@@ -57,69 +57,81 @@ function metersToMi(meters: number): number {
   return Math.round(meters * 0.0006213712 * 10) / 10;
 }
 
-export function parseActiveTransportRoute(response: ComputeRoutesResponse): ActiveTransportRoute {
+export function parseActiveTransportRoute(
+  response: ComputeRoutesResponse,
+  mode: 'walk' | 'bike',
+): Route {
   const route = onlyRoute(response);
   return {
+    mode,
     timeMinutes: durationToMinutes(route.duration),
     distanceMiles: metersToMi(route.distanceMeters ?? 0),
   };
 }
 
-export function parseTransitRoute(response: ComputeRoutesResponse): TransitRoute {
+export function parseTransitRoute(response: ComputeRoutesResponse): Route {
   const route = onlyRoute(response);
   const leg = route.legs?.[0];
   if (!leg || route.legs?.length !== 1) {
     throw new Error(`Unexpected number of legs: ${route.legs?.length ?? 0}`);
   }
 
-  const timeMinutes = durationToMinutes(route.duration);
   const summary = (leg.steps ?? [])
     .map((step) =>
       step.transitDetails?.transitLine?.nameShort?.replace(' Line', '').replace(' Train', ''),
     )
     .filter((name) => name !== undefined)
     .join(' -> ');
-  if (!summary) return { timeMinutes, type: 'walking' };
   return {
-    timeMinutes,
-    type: 'transit',
-    summary,
+    mode: 'transit',
+    timeMinutes: durationToMinutes(route.duration),
+    summary: summary || null,
   };
 }
 
-export async function computeActiveTransportRoute(options: {
-  origin: string;
-  dest: string;
-  mode: 'WALK' | 'BICYCLE';
-}): Promise<ActiveTransportRoute> {
-  const { origin, dest, mode } = options;
-  const route = parseActiveTransportRoute(
-    await computeRoutes(
-      { origin: { address: origin }, destination: { address: dest }, travelMode: mode },
-      'routes.duration,routes.distanceMeters',
-    ),
-  );
+export type Trip = { mode: 'walk' | 'bike' } | { mode: 'transit'; departure: TargetDate };
 
-  // Add some buffer time to set up bike.
-  const bufferTimeMinutes = mode === 'BICYCLE' ? 2 : 0;
-  return { ...route, timeMinutes: route.timeMinutes + bufferTimeMinutes };
-}
-
-export async function computeTransitRoute(options: {
-  origin: string;
-  dest: string;
-  targetDeparture: TargetDate;
-}): Promise<TransitRoute> {
-  const { origin, dest, targetDeparture } = options;
-  return parseTransitRoute(
-    await computeRoutes(
-      {
-        origin: { address: origin },
-        destination: { address: dest },
-        travelMode: 'TRANSIT',
-        departureTime: getNextDateTime(targetDeparture).toUTC().toISO(),
-      },
+const MODES = {
+  walk: {
+    travelMode: 'WALK',
+    fieldMask: 'routes.duration,routes.distanceMeters',
+    bufferMinutes: 0,
+  },
+  // The buffer is time to get the bike out and locked up.
+  bike: {
+    travelMode: 'BICYCLE',
+    fieldMask: 'routes.duration,routes.distanceMeters',
+    bufferMinutes: 2,
+  },
+  transit: {
+    travelMode: 'TRANSIT',
+    fieldMask:
       'routes.duration,routes.description,routes.legs.steps.transitDetails.transitLine.nameShort',
-    ),
+    bufferMinutes: 0,
+  },
+} as const;
+
+export async function computeRoute(options: {
+  origin: string;
+  dest: string;
+  trip: Trip;
+}): Promise<Route> {
+  const { origin, dest, trip } = options;
+  const { travelMode, fieldMask, bufferMinutes } = MODES[trip.mode];
+  const response = await computeRoutes(
+    {
+      origin: { address: origin },
+      destination: { address: dest },
+      travelMode,
+      ...(trip.mode === 'transit' && {
+        departureTime: getNextDateTime(trip.departure).toUTC().toISO(),
+      }),
+    },
+    fieldMask,
   );
+  const route =
+    trip.mode === 'transit'
+      ? parseTransitRoute(response)
+      : parseActiveTransportRoute(response, trip.mode);
+  return { ...route, timeMinutes: route.timeMinutes + bufferMinutes };
 }
