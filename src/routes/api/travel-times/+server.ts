@@ -13,12 +13,12 @@ import {
   computeWilliamsburg,
   computeWork,
 } from '#lib/server/destinations.ts';
-import { USE_MOCK_DATA } from '#lib/server/env.ts';
 import { geocode } from '#lib/server/gmapsGeocoding.ts';
 import type { TravelTimes } from '#lib/types.ts';
+import { MOCK } from '$app/env/private';
 
 export const GET: RequestHandler = async ({ url }) => {
-  if (USE_MOCK_DATA) {
+  if (MOCK) {
     return Response.json(MOCK_DATA);
   }
 

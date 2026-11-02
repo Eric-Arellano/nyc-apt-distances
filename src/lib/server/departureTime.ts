@@ -31,5 +31,10 @@ export function getNextDateTime(
   if (daysToAdd <= 0) {
     daysToAdd += 7;
   }
-  return fromDate.plus({ days: daysToAdd }).set({ hour: target.hour, minute: target.minute });
+  return fromDate.plus({ days: daysToAdd }).set({
+    hour: target.hour,
+    minute: target.minute,
+    second: 0,
+    millisecond: 0,
+  });
 }

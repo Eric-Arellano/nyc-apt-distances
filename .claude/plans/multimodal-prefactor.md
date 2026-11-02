@@ -14,20 +14,17 @@ What makes that change expensive today:
   address on the server. Adding seven destinations in #44 touched 12 files and added 262 lines.
 - **Each mode has its own path**: `computeActiveTransportRoute` and `computeTransitRoute`, two
   route types, and `walkRoute`, `bikeRoute` and `transitRoute`. Drive would be a third of each.
-- **`destinations.ts` is not really typechecked.** Line 1 imports the Svelte component rather than
-  the `TravelTimes` interface, which is how `TravelTimes['parkSlope]']` on line 59 passes
-  `svelte-check`.
-- **Nothing covers the risky parts.** The 16 tests pass, as do lint and typecheck, but no test
-  touches the Google layer, the API route or any component.
+- **Little covers the risky parts.** `Success.svelte.test.ts` pins every card's text and status,
+  but no test touches the Google layer or the API route.
 
 White Plains also breaks two assumptions that NYC never tested:
 
-- **"No route" is normal there.** A transit request with no result throws at `gmapsRouting.ts:79`,
-  which fails the whole page rather than one card.
-- **Trains may be labelled as walking.** `gmapsRouting.ts:91` reads only `nameShort`, and an empty
+- **"No route" is normal there.** A transit request with no result throws in
+  `computeTransitRoute`, which fails the whole page rather than one card.
+- **Trains may be labelled as walking.** `computeTransitRoute` reads only `nameShort`, and an empty
   summary means "walking". If Metro-North lines have only a `name`, a train trip would show as
   "🚇 40 minutes by walking". The proto describes `nameShort` as "normally a line number". This is
-  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 6
+  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 5
   starts by capturing real responses.
 
 Facts from Google's docs and the SDK's protos that shape the design:
@@ -85,6 +82,14 @@ two REST calls. This matches your "first-party when it is simple to write" rule,
 component test opts into jsdom with a `@vitest-environment jsdom` comment. `tsconfig.json` takes
 anki's strict flags except `erasableSyntaxOnly`, because `DayOfWeek` is an enum.
 
+**Env vars live in `src/env.ts`** and are read from `$app/env/private`. `GOOGLE_MAPS_TOKEN` is
+optional there so `MOCK=1` runs without it; `requireGmapsToken` in `gmapsToken.ts` throws where
+Google is actually called. Tests mock `$app/env/private`.
+
+**`Success.svelte.test.ts` is the safety net for the rest.** It renders the mock data (with two
+cards overridden to be `partial` and `unmet`) and asserts each card's title, goal, route lines and
+`data-status`. PRs 1 to 5 may change the test's input, but must not change the expected output.
+
 Left alone on purpose:
 
 - **`closestDest.ts`**: tested and fine. Haversine remains only a pre-filter.
@@ -92,24 +97,7 @@ Left alone on purpose:
 - **Zod and remote functions**: `foodservice-insights` rejected remote functions for now, and a
   typed parser with explicit checks is enough here.
 
-## PR 1: Fix small bugs and pin what the page shows
-
-- Fix the `TravelTimes` import and the `'parkSlope]'` typo in `destinations.ts`, plus any type
-  errors that surfaces.
-- Fix the `500 Grand Concourse` address.
-- Zero seconds and milliseconds in `getNextDateTime`. Today the departure keeps the seconds of
-  "now", and `gmapsRouting.ts:65` sends a fractional timestamp.
-- Move env reads to `src/env.ts` and `$app/env/private`, read at call time as
-  `foodservice-insights` does. Today importing a server module without secrets throws, and `MOCK=1`
-  still needs a Google token.
-- Add `Success.svelte.test.ts`: render the mock data and assert every card's title, goal, route
-  lines and status. Add a `data-status` attribute so the test does not pin colour classes. It is
-  the first component test, and `@testing-library/jest-dom` is gone, so assert with plain matchers.
-
-**That expected table is the safety net for PRs 4 to 6.** They may change the test's input, but
-must not change the expected output.
-
-## PR 2: Svelte cleanups
+## PR 1: Svelte cleanups
 
 - `Login.svelte` is the one component in legacy mode: move it to `$state` and `async`/`await`.
 - Rename `Error.svelte` to `ErrorMessage.svelte`. The import shadows the global, so
@@ -122,10 +110,10 @@ must not change the expected output.
 - Delete the three `index.ts` barrels.
 - Move `AuthState` and `TravelTimesRequest` from `types.ts` into their state modules.
 
-## PR 3: Call Google with `fetch`
+## PR 2: Call Google with `fetch`
 
 Same exported signatures, so the diff stays in `gmapsRouting.ts`, `gmapsGeocoding.ts`, their tests
-and `package.json`.
+and `package.json`. Both take the key from `requireGmapsToken()` at call time.
 
 - `POST https://routes.googleapis.com/directions/v2:computeRoutes` with `X-Goog-Api-Key` and
   `X-Goog-FieldMask`. `duration` arrives as `"165s"`, and `departureTime` goes out as RFC 3339.
@@ -138,7 +126,7 @@ and `package.json`.
 - Remove `@googlemaps/routing` and `@googlemaps/google-maps-services-js`, and the
   `noNonNullAssertion` override for `gmapsRouting.ts` in `biome.json`.
 
-## PR 4: One route type
+## PR 3: One route type
 
 - `Route` replaces `ActiveTransportRoute` and `TransitRoute`.
 - `computeRoute(trip)` replaces both compute functions, driven by a per-mode table of Google travel
@@ -146,7 +134,7 @@ and `package.json`.
 - `formatRoute(route, place?)` replaces the three formatters, with byte-identical output.
 - The `TravelTimes` keys stay for now, so `places/*` get one-line edits.
 
-## PR 5: Destinations as data
+## PR 4: Destinations as data
 
 The payoff PR.
 
@@ -154,7 +142,7 @@ The payoff PR.
   moved out of the API route.
 - `computeTravelTimes(originAddr, maps)` in a new `src/lib/server/travelTimes.ts`. It uses
   `Promise.all`, replacing today's 13 sequential Google calls.
-- The API route shrinks to validating the parameter and choosing real or fake `Maps`.
+- The API route shrinks to validating the parameter and choosing real or fake `Maps` by `MOCK`.
 - `src/lib/server/fakeMaps.ts` replaces `mockData.ts`.
 - `DestinationResult[]` replaces the `TravelTimes` interface. `Success.svelte` becomes an `{#each}`,
   and `DestinationCard` works out its own text and status.
@@ -164,7 +152,7 @@ The payoff PR.
 - Delete `src/lib/components/travelTimes/places/` (11 files).
 - Add tests for `computeTravelTimes` against the fake and for the route handler.
 
-## PR 6: Handle sparse transit
+## PR 5: Handle sparse transit
 
 Capture real responses first: White Plains to Grand Central, a Bee-Line bus trip, and a trip with
 no route. Those settle the two unknowns in Context and may change this section.
@@ -187,6 +175,10 @@ The feature work, for scale. It is not part of this plan.
 - **White Plains**: replace `DESTINATIONS`, `candidateLocations.ts`, the origin suffix, the page
   title, `Neighborhoods.svelte` and `OtherCriteria.svelte`.
 
+**Open:** the `500 Grand Concourse` address for Mott Haven in `destinations.ts` was meant to be
+fixed but the right address was never settled. It disappears with NYC, so fix it only if NYC stays
+live for a while.
+
 **Open:** if you also look in nearby towns such as Scarsdale or Harrison, a fixed origin suffix
 stops working and the input should take a full address.
 
@@ -203,10 +195,10 @@ session, so browser automation needs it back.
 
 Beyond that:
 
-- **PR 3**: one real address on the Vercel preview, since it changes what runs in production and
+- **PR 2**: one real address on the Vercel preview, since it changes what runs in production and
   is not covered by the mock.
-- **PR 5**: run one real NYC address on `main` and on the branch, and compare the cards.
-- **PR 6**: real White Plains addresses, including a destination with no transit route.
-- **PRs 2 to 6**: the expected table from PR 1 stays untouched.
+- **PR 4**: run one real NYC address on `main` and on the branch, and compare the cards.
+- **PR 5**: real White Plains addresses, including a destination with no transit route.
+- **PRs 1 to 5**: the expected table in `Success.svelte.test.ts` stays untouched.
 
-PRs 3, 5 and 6 make real Google calls with your key, about 15 requests per address.
+PRs 2, 4 and 5 make real Google calls with your key, about 15 requests per address.
