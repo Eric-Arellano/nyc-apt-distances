@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest';
-import { formatRoute, goalStatus } from './utils.js';
+import { formatRoute, goalStatus, goalText } from './utils.js';
 
 test('goalStatus', () => {
-  const targets = { idealMinutes: 5, maxMinutes: 10 };
+  const targets = { strictness: 'must', idealMinutes: 5, maxMinutes: 10 } as const;
   expect(goalStatus([{ timeMinutes: 4 }], targets)).toEqual('met');
   expect(goalStatus([{ timeMinutes: 5 }], targets)).toEqual('met');
   expect(goalStatus([{ timeMinutes: 6 }], targets)).toEqual('partial');
@@ -10,6 +10,23 @@ test('goalStatus', () => {
   expect(goalStatus([{ timeMinutes: 11 }], targets)).toEqual('unmet');
   expect(goalStatus([{ timeMinutes: 8 }, { timeMinutes: 44 }], targets)).toEqual('partial');
   expect(goalStatus([{ timeMinutes: 20 }, { timeMinutes: 44 }], targets)).toEqual('unmet');
+});
+
+describe('goalText', () => {
+  const walk = { mode: 'walk', timeMinutes: 4, distanceMiles: 2.1 } as const;
+  const transit = { mode: 'transit', timeMinutes: 4, summary: null } as const;
+
+  test('names a walk when every route walks', () => {
+    expect(goalText({ strictness: 'must', idealMinutes: 7, maxMinutes: 12 }, [walk])).toEqual(
+      'Must be within a 12-minute walk; ideally within 7 minutes',
+    );
+  });
+
+  test('gives only minutes when any route is not a walk', () => {
+    expect(
+      goalText({ strictness: 'should', idealMinutes: 40, maxMinutes: 55 }, [transit, walk]),
+    ).toEqual('Should be within 55 minutes; ideally within 40 minutes');
+  });
 });
 
 describe('formatRoute', () => {

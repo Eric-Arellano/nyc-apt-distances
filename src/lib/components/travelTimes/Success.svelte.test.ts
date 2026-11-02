@@ -1,16 +1,76 @@
 // @vitest-environment jsdom
 import { render } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
-import { MOCK_DATA } from '#lib/mockData.ts';
-import type { TravelTimes } from '#lib/types.ts';
+import type { DestinationResult, Goal, Route } from '#lib/types.ts';
 import Success from './Success.svelte';
 
+const TWO_TRAIN: Route = { mode: 'transit', timeMinutes: 18, summary: '2' };
+const SHOULD_GOAL: Goal = { strictness: 'should', idealMinutes: 40, maxMinutes: 55 };
+
+function transitCard(title: string, goal: Goal, route = TWO_TRAIN): DestinationResult {
+  return { id: title, title, goal, closest: null, routes: [route] };
+}
+
+function walkCard(
+  title: string,
+  strictness: Goal['strictness'],
+  [idealMinutes, maxMinutes]: [number, number],
+  closest: DestinationResult['closest'],
+  [timeMinutes, distanceMiles]: [number, number],
+): DestinationResult {
+  return {
+    id: title,
+    title,
+    goal: { strictness, idealMinutes, maxMinutes },
+    closest,
+    routes: [{ mode: 'walk', timeMinutes, distanceMiles }],
+  };
+}
+
 // Park is slower than ideal but within the max; Astoria is beyond the max.
-const TRAVEL_TIMES: TravelTimes = {
-  ...MOCK_DATA,
-  park: { ...MOCK_DATA.park, walk: { mode: 'walk', timeMinutes: 13, distanceMiles: 0.7 } },
-  astoria: { transit: { mode: 'transit', timeMinutes: 60, summary: null } },
-};
+const DESTINATIONS: DestinationResult[] = [
+  {
+    id: 'work',
+    title: 'Work 👨🏼‍💻',
+    goal: { strictness: 'must', idealMinutes: 15, maxMinutes: 25 },
+    closest: null,
+    routes: [
+      { mode: 'transit', timeMinutes: 7, summary: 'N' },
+      { mode: 'bike', timeMinutes: 4, distanceMiles: 1.5 },
+      { mode: 'walk', timeMinutes: 18, distanceMiles: 1.5 },
+    ],
+  },
+  walkCard(
+    'Subway stop 🚇',
+    'must',
+    [7, 12],
+    { name: '14th St', additionalInfo: 'with E, Q, R' },
+    [6, 0.3],
+  ),
+  walkCard('Park 🌳', 'must', [10, 15], { name: 'Union Square' }, [13, 0.7]),
+  walkCard(
+    'Farmers market 🍉 (low priority)',
+    'should',
+    [15, 20],
+    { name: 'Union Square' },
+    [12, 0.8],
+  ),
+  transitCard('Downtown Brooklyn', { strictness: 'should', idealMinutes: 30, maxMinutes: 45 }),
+  transitCard('Park Slope', SHOULD_GOAL),
+  transitCard('Williamsburg', { strictness: 'should', idealMinutes: 35, maxMinutes: 50 }),
+  transitCard('Astoria (low priority)', SHOULD_GOAL, {
+    mode: 'transit',
+    timeMinutes: 60,
+    summary: null,
+  }),
+  transitCard('Jackson Heights (low priority)', SHOULD_GOAL),
+  transitCard('Mott Haven (low priority)', SHOULD_GOAL),
+  transitCard('Jersey City (low priority)', {
+    strictness: 'should',
+    idealMinutes: 45,
+    maxMinutes: 60,
+  }),
+];
 
 const SHOULD_40_55 = 'Should be within 55 minutes; ideally within 40 minutes';
 
@@ -86,7 +146,7 @@ const EXPECTED_CARDS = [
 
 describe('Success', () => {
   it('renders every destination card', () => {
-    const { container } = render(Success, TRAVEL_TIMES);
+    const { container } = render(Success, { destinations: DESTINATIONS });
 
     const cards = [...container.querySelectorAll<HTMLElement>('[data-status]')].map((card) => ({
       title: card.querySelector('h3')?.textContent,
