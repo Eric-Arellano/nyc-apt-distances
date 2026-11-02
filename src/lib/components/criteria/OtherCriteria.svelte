@@ -1,12 +1,12 @@
-<script>
+<script lang="ts">
 import Card from '../Card.svelte';
 import CriteriaSection from './CriteriaSection.svelte';
 </script>
 
 <Card title="Other criteria">
   <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-    <div>
-      <CriteriaSection title="Important" marginBottom={true}>
+    <div class="space-y-6">
+      <CriteriaSection title="Important">
         <li>
           Large enough for these things:
           <ul class="mt-1 list-disc space-y-1 pl-5">
@@ -22,7 +22,7 @@ import CriteriaSection from './CriteriaSection.svelte';
         <li>The fridge is bigger than a mini fridge</li>
         <li>No basement unit</li>
       </CriteriaSection>
-      <CriteriaSection title="Nice to have" marginBottom={false}>
+      <CriteriaSection title="Nice to have">
         <li>Can fit office in the bedroom (vs living room)</li>
         <li>Feels spacious</li>
         <li>Good natural light</li>
@@ -34,8 +34,8 @@ import CriteriaSection from './CriteriaSection.svelte';
       </CriteriaSection>
     </div>
 
-    <div>
-      <CriteriaSection title="Not worth the money" marginBottom={true}>
+    <div class="space-y-6">
+      <CriteriaSection title="Not worth the money">
         <li>Lots of closet space</li>
         <li>2 bedrooms</li>
         <li>Central HVAC</li>
@@ -46,7 +46,7 @@ import CriteriaSection from './CriteriaSection.svelte';
         <li>Fancy kitchen appliances, since I use my own like a stove replacement</li>
         <li>Trendy neighborhood</li>
       </CriteriaSection>
-      <CriteriaSection title="Actively dislike" marginBottom={false}>
+      <CriteriaSection title="Actively dislike">
         <li>Noisy neighborhood / lots of nightlife</li>
       </CriteriaSection>
     </div>

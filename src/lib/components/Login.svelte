@@ -1,27 +1,34 @@
 <script lang="ts">
 import { login } from '#lib/login.ts';
+import ErrorMessage from './ErrorMessage.svelte';
 import Loading from './Loading.svelte';
-import Error from './Error.svelte';
+
+type Attempt = { status: 'idle' } | { status: 'pending' } | { status: 'failed'; message: string };
 
 let password = $state('');
-let loginPromise: Promise<void> | null = $state(null);
+let attempt: Attempt = $state({ status: 'idle' });
 
-function handleLoginError(error: Error): void {
-  setTimeout(() => {
-    loginPromise = null;
-    password = '';
-  }, 2_000);
-  throw error;
+async function submit(): Promise<void> {
+  attempt = { status: 'pending' };
+  try {
+    await login(password);
+  } catch (error) {
+    attempt = { status: 'failed', message: error instanceof Error ? error.message : String(error) };
+    setTimeout(() => {
+      attempt = { status: 'idle' };
+      password = '';
+    }, 2_000);
+  }
 }
 </script>
 
 <div class="flex flex-col space-y-3 rounded-md border border-blue-200 bg-blue-50 p-4">
   <p>🔒 Enter the site's password</p>
-  {#if !loginPromise}
+  {#if attempt.status === 'idle'}
     <form
       onsubmit={(event) => {
         event.preventDefault();
-        loginPromise = login(password).catch(handleLoginError);
+        void submit();
       }}
       class="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3"
     >
@@ -44,11 +51,9 @@ function handleLoginError(error: Error): void {
         </button>
       </div>
     </form>
+  {:else if attempt.status === 'pending'}
+    <Loading message="Logging in..." />
   {:else}
-    {#await loginPromise}
-      <Loading message="Logging in..." />
-    {:catch error}
-      <Error error={`${error.message}. Try again.`} />
-    {/await}
+    <ErrorMessage error={`${attempt.message}. Try again.`} />
   {/if}
 </div>
