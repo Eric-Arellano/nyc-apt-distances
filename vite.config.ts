@@ -31,6 +31,9 @@ export default defineConfig({
     silent: 'passed-only',
     // Component tests opt into jsdom with a `@vitest-environment jsdom` comment.
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    setupFiles: ['./tests/setup.ts'],
+    // Undoes every `vi.stubGlobal` after each test, so one test's `fetch` mock can't leak.
+    unstubGlobals: true,
+    include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
   },
 });
