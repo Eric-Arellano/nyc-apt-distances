@@ -24,7 +24,7 @@ White Plains also breaks two assumptions that NYC never tested:
 - **Trains may be labelled as walking.** `computeTransitRoute` reads only `nameShort`, and an empty
   summary means "walking". If Metro-North lines have only a `name`, a train trip would show as
   "🚇 40 minutes by walking". The proto describes `nameShort` as "normally a line number". This is
-  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 5
+  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 4
   starts by capturing real responses.
 
 Facts from Google's docs and the SDK's protos that shape the design:
@@ -88,7 +88,7 @@ Google is actually called. Tests mock `$app/env/private`.
 
 **`Success.svelte.test.ts` is the safety net for the rest.** It renders the mock data (with two
 cards overridden to be `partial` and `unmet`) and asserts each card's title, goal, route lines and
-`data-status`. PRs 1 to 5 may change the test's input, but must not change the expected output.
+`data-status`. PRs 1 to 4 may change the test's input, but must not change the expected output.
 
 Left alone on purpose:
 
@@ -97,20 +97,7 @@ Left alone on purpose:
 - **Zod and remote functions**: `foodservice-insights` rejected remote functions for now, and a
   typed parser with explicit checks is enough here.
 
-## PR 1: Svelte cleanups
-
-- `Login.svelte` is the one component in legacy mode: move it to `$state` and `async`/`await`.
-- Rename `Error.svelte` to `ErrorMessage.svelte`. The import shadows the global, so
-  `handleLoginError(error: Error)` is typed as a component. Then remove the `noShadowRestrictedNames`
-  override for `Login.svelte` and `TravelTimes.svelte` in `biome.json`.
-- Add `lang="ts"` to `Neighborhoods.svelte` and `OtherCriteria.svelte`. Loop over tiers in
-  `Neighborhoods.svelte` instead of the two copied lists.
-- Drop the `marginBottom` prop for spacing on the parent, `children?.()` on required snippets, and
-  the conflicting `font-medium font-semibold` in `Card.svelte`.
-- Delete the three `index.ts` barrels.
-- Move `AuthState` and `TravelTimesRequest` from `types.ts` into their state modules.
-
-## PR 2: Call Google with `fetch`
+## PR 1: Call Google with `fetch`
 
 Same exported signatures, so the diff stays in `gmapsRouting.ts`, `gmapsGeocoding.ts`, their tests
 and `package.json`. Both take the key from `requireGmapsToken()` at call time.
@@ -126,7 +113,7 @@ and `package.json`. Both take the key from `requireGmapsToken()` at call time.
 - Remove `@googlemaps/routing` and `@googlemaps/google-maps-services-js`, and the
   `noNonNullAssertion` override for `gmapsRouting.ts` in `biome.json`.
 
-## PR 3: One route type
+## PR 2: One route type
 
 - `Route` replaces `ActiveTransportRoute` and `TransitRoute`.
 - `computeRoute(trip)` replaces both compute functions, driven by a per-mode table of Google travel
@@ -134,7 +121,7 @@ and `package.json`. Both take the key from `requireGmapsToken()` at call time.
 - `formatRoute(route, place?)` replaces the three formatters, with byte-identical output.
 - The `TravelTimes` keys stay for now, so `places/*` get one-line edits.
 
-## PR 4: Destinations as data
+## PR 3: Destinations as data
 
 The payoff PR.
 
@@ -152,7 +139,7 @@ The payoff PR.
 - Delete `src/lib/components/travelTimes/places/` (11 files).
 - Add tests for `computeTravelTimes` against the fake and for the route handler.
 
-## PR 5: Handle sparse transit
+## PR 4: Handle sparse transit
 
 Capture real responses first: White Plains to Grand Central, a Bee-Line bus trip, and a trip with
 no route. Those settle the two unknowns in Context and may change this section.
@@ -195,10 +182,10 @@ session, so browser automation needs it back.
 
 Beyond that:
 
-- **PR 2**: one real address on the Vercel preview, since it changes what runs in production and
+- **PR 1**: one real address on the Vercel preview, since it changes what runs in production and
   is not covered by the mock.
-- **PR 4**: run one real NYC address on `main` and on the branch, and compare the cards.
-- **PR 5**: real White Plains addresses, including a destination with no transit route.
-- **PRs 1 to 5**: the expected table in `Success.svelte.test.ts` stays untouched.
+- **PR 3**: run one real NYC address on `main` and on the branch, and compare the cards.
+- **PR 4**: real White Plains addresses, including a destination with no transit route.
+- **PRs 1 to 4**: the expected table in `Success.svelte.test.ts` stays untouched.
 
-PRs 2, 4 and 5 make real Google calls with your key, about 15 requests per address.
+PRs 1, 3 and 4 make real Google calls with your key, about 15 requests per address.

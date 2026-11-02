@@ -1,5 +1,9 @@
-import type { TravelTimes, TravelTimesRequest } from '#lib/types.ts';
+import type { TravelTimes } from '#lib/types.ts';
 import { invalidateAll } from '$app/navigation';
+
+interface TravelTimesRequest {
+  task: Promise<TravelTimes> | null;
+}
 
 const travelTimesRequest: TravelTimesRequest = $state({ task: null });
 

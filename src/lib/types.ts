@@ -62,8 +62,4 @@ export interface TravelTimes {
   };
 }
 
-export interface TravelTimesRequest {
-  task: Promise<TravelTimes> | null;
-}
-
 export type GoalStatus = 'met' | 'partial' | 'unmet';
