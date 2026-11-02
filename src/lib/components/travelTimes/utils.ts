@@ -1,4 +1,4 @@
-import type { ActiveTransportRoute, GoalStatus, TransitRoute } from '#lib/types.ts';
+import type { GoalStatus, Route } from '#lib/types.ts';
 
 export function goalStatus(
   routes: Array<{ timeMinutes: number }>,
@@ -14,31 +14,20 @@ export function goalStatus(
   return 'unmet';
 }
 
-export function transitRoute(route: TransitRoute): string {
-  const mode = route.type === 'walking' ? 'by walking' : `on the ${route.summary}`;
-  return `🚇 ${route.timeMinutes} minutes ${mode}`;
-}
-
-export function bikeRoute(route: ActiveTransportRoute): string {
-  return `🚴 ${route.timeMinutes} minutes (${route.distanceMiles} miles)`;
-}
-
-export function walkRoute(
-  route: ActiveTransportRoute,
-  destination?: {
-    name: string;
-    additionalInfo?: string;
-  },
+export function formatRoute(
+  route: Route,
+  place?: { name: string; additionalInfo?: string },
 ): string {
-  let result = `🚶 ${route.timeMinutes} minutes`;
-
-  if (destination) {
-    result += ` to ${destination.name}`;
-    if (destination.additionalInfo) {
-      result += ` ${destination.additionalInfo}`;
+  switch (route.mode) {
+    case 'transit':
+      return `🚇 ${route.timeMinutes} minutes ${route.summary === null ? 'by walking' : `on the ${route.summary}`}`;
+    case 'bike':
+      return `🚴 ${route.timeMinutes} minutes (${route.distanceMiles} miles)`;
+    case 'walk': {
+      const to = place
+        ? ` to ${place.name}${place.additionalInfo ? ` ${place.additionalInfo}` : ''}`
+        : '';
+      return `🚶 ${route.timeMinutes} minutes${to} (${route.distanceMiles} miles)`;
     }
   }
-
-  result += ` (${route.distanceMiles} miles)`;
-  return result;
 }

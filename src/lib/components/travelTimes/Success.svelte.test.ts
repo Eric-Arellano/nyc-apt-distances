@@ -8,8 +8,8 @@ import Success from './Success.svelte';
 // Park is slower than ideal but within the max; Astoria is beyond the max.
 const TRAVEL_TIMES: TravelTimes = {
   ...MOCK_DATA,
-  park: { ...MOCK_DATA.park, walk: { timeMinutes: 13, distanceMiles: 0.7 } },
-  astoria: { transit: { timeMinutes: 60, type: 'walking' } },
+  park: { ...MOCK_DATA.park, walk: { mode: 'walk', timeMinutes: 13, distanceMiles: 0.7 } },
+  astoria: { transit: { mode: 'transit', timeMinutes: 60, summary: null } },
 };
 
 const SHOULD_40_55 = 'Should be within 55 minutes; ideally within 40 minutes';
