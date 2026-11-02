@@ -7,23 +7,14 @@ Plains means driving to some places, walking to others, and biking or taking a b
 This plan prepares the code for that without adding it: no PR here adds a mode or changes the NYC
 page, apart from the fixes each PR names.
 
-What makes that change expensive today (the per-mode code paths are already one `Route` type and one
-`computeRoute`, in `gmapsRouting.ts`):
-
-- **A destination lives in six places**: `destinations.ts`, `types.ts`, `mockData.ts`, the API
-  route, a `places/*.svelte` component and `Success.svelte`. Its goal lives on the client and its
-  address on the server. Adding seven destinations in #44 touched 12 files and added 262 lines.
-- **The API route has no test.** `Success.svelte.test.ts` pins every card's text and status, and
-  the Google layer has parser and request tests, but nothing covers the route that joins them.
-
-White Plains also breaks two assumptions that NYC never tested:
+White Plains breaks two assumptions that NYC never tested:
 
 - **"No route" is normal there.** A transit request with no result throws in `parseTransitRoute`,
   which fails the whole page rather than one card.
 - **Trains may be labelled as walking.** `parseTransitRoute` reads only `nameShort`, and an empty
   summary means "walking". If Metro-North lines have only a `name`, a train trip would show as
   "🚇 40 minutes by walking". The proto describes `nameShort` as "normally a line number". This is
-  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 2
+  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 1
   starts by capturing real responses.
 
 Facts from Google's docs and the SDK's protos that shape the design:
@@ -41,25 +32,14 @@ places, walk to others". Each destination lists its trips, and each trip yields 
 *Rejected for now: bike-to-train chains, because Google cannot route them in one request. If you
 want one later, it can be two trips added together.*
 
-**One list of destinations, owned by the server.** The API returns everything a card needs, so the
-client has no per-destination code. Adding a destination becomes one entry in one file.
-
-```ts
-// src/lib/server/destinations.ts; `Trip` is exported from gmapsRouting.ts
-type Trip = { mode: 'walk' | 'bike' } | { mode: 'transit'; departure: TargetDate };
-
-interface Destination {
-  id: string;
-  title: string;
-  goal: { strictness: 'must' | 'should'; idealMinutes: number; maxMinutes: number };
-  place: { address: string } | { closestOf: readonly Candidate[] };
-  trips: readonly Trip[]; // Display order.
-}
-```
+**One list of destinations, owned by the server.** The API returns everything a card needs as a
+`DestinationResult[]`, so the client has no per-destination code. Adding a destination is one entry
+in `DESTINATIONS` in `src/lib/server/destinations.ts`, whose `Destination` type lists its trips in
+display order. `Trip` is exported from `gmapsRouting.ts`.
 
 **One `Route` union keyed by mode**, shared by server and client (`src/lib/types.ts`).
 `computeRoute({ origin, dest, trip })` looks the trip's mode up in a table of Google travel mode,
-field mask and buffer minutes, and `formatRoute(route, place?)` renders it. Adding drive adds a
+field mask and buffer minutes, and `formatRoute(route, place)` renders it. Adding drive adds a
 member and a table row, not a parallel code path.
 
 ```ts
@@ -68,9 +48,9 @@ export type Route =
   | { mode: 'transit'; timeMinutes: number; summary: string | null }; // null: all walking
 ```
 
-**One seam to Google**: `Maps = { geocode, computeRoute }`, passed into `computeTravelTimes`. Tests
-and `MOCK=1` share a fake, so mock mode covers new destinations for free and `mockData.ts` goes
-away.
+**One seam to Google**: `Maps = { geocode, computeRoute }` in `src/lib/server/travelTimes.ts`, passed
+into `computeTravelTimes`. Tests and `MOCK=1` share `fakeMaps.ts`, so mock mode covers new
+destinations for free. The API route only validates its parameter and chooses real or fake `Maps`.
 
 **Google is called with `fetch`, not its SDKs.** Per-mode request bodies are plain objects, and each
 response goes through a pure parser. The REST JSON omits zero values and empty lists, which the SDK
@@ -88,9 +68,9 @@ anki's strict flags except `erasableSyntaxOnly`, because `DayOfWeek` is an enum.
 optional there so `MOCK=1` runs without it; `requireGmapsToken` in `gmapsToken.ts` throws where
 Google is actually called. Tests mock `$app/env/private`.
 
-**`Success.svelte.test.ts` is the safety net for the rest.** It renders the mock data (with two
-cards overridden to be `partial` and `unmet`) and asserts each card's title, goal, route lines and
-`data-status`. PRs 1 and 2 may change the test's input, but must not change the expected output.
+**`Success.svelte.test.ts` is the safety net.** It renders a hand-written `DestinationResult[]` and
+asserts each card's title, goal, route lines and `data-status`. PR 1 may change the test's input,
+but must not change the expected output.
 
 Left alone on purpose:
 
@@ -99,31 +79,14 @@ Left alone on purpose:
 - **Zod and remote functions**: `foodservice-insights` rejected remote functions for now, and a
   typed parser with explicit checks is enough here.
 
-## PR 1: Destinations as data
-
-The payoff PR.
-
-- `DESTINATIONS` in `src/lib/server/destinations.ts`, in today's card order, with the origin suffix
-  moved out of the API route.
-- `computeTravelTimes(originAddr, maps)` in a new `src/lib/server/travelTimes.ts`. It uses
-  `Promise.all`, replacing today's 13 sequential Google calls.
-- The API route shrinks to validating the parameter and choosing real or fake `Maps` by `MOCK`.
-- `src/lib/server/fakeMaps.ts` replaces `mockData.ts`.
-- `DestinationResult[]` replaces the `TravelTimes` interface. `Success.svelte` becomes an `{#each}`,
-  and `DestinationCard` works out its own text and status.
-- Add `goalText(goal, routes)`, which keeps today's wording: "a 15-minute walk" for walk-only
-  destinations, "40 minutes" otherwise.
-- Stop keying `{#each routes}` on the rendered text, which throws if two routes render the same.
-- Delete `src/lib/components/travelTimes/places/` (11 files).
-- Add tests for `computeTravelTimes` against the fake and for the route handler.
-
-## PR 2: Handle sparse transit
+## PR 1: Handle sparse transit
 
 Capture real responses first: White Plains to Grand Central, a Bee-Line bus trip, and a trip with
 no route. Those settle the two unknowns in Context and may change this section.
 
 - Add an unavailable `Route` member and render it on the card. `goalStatus` ignores it, and a
-  destination with no routes at all is `unmet`.
+  destination with no routes at all is `unmet`. `goalText` picks its wording from the routes' modes,
+  so it must ignore the new member too, or a walk that comes back unavailable changes the goal text.
 - Detect transit from `transitDetails`, not from a name being present. Request `transitLine.name`
   and use `nameShort ?? name`.
 - In `parseGeocodeResponse`, `ZERO_RESULTS` becomes a 400 with a readable message, and several
@@ -155,7 +118,7 @@ Decide once there are real suburban results.
 
 ## Verification
 
-Every PR: `npm run lint && npm run check && npm test` and `npm run build`, then `MOCK=1 npm run dev`
+`npm run lint && npm run check && npm test` and `npm run build`, then `MOCK=1 npm run dev`
 to check the page by hand or with `/run`. The Playwright MCP server failed to connect in this
 session, so browser automation needs it back.
 
@@ -163,8 +126,6 @@ session, so browser automation needs it back.
 
 Beyond that:
 
-- **PR 1**: run one real NYC address on `main` and on the branch, and compare the cards.
-- **PR 2**: real White Plains addresses, including a destination with no transit route.
-- **PRs 1 and 2**: the expected table in `Success.svelte.test.ts` stays untouched.
-
-Both PRs make real Google calls with your key, about 15 requests per address.
+- Real White Plains addresses, including a destination with no transit route. This makes real
+  Google calls with your key, about 15 requests per address.
+- The expected table in `Success.svelte.test.ts` stays untouched.

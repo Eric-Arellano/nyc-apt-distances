@@ -11,7 +11,7 @@ import travelTimesRequest from '#lib/state/travelTimes.svelte.ts';
     {#await travelTimesRequest.task}
       <Loading message="Calculating travel times..." />
     {:then result}
-      <Success {...result} />
+      <Success destinations={result} />
     {:catch error}
       <ErrorMessage error={error.message} />
     {/await}
