@@ -1,0 +1,13 @@
+{
+  "routes": [
+    {
+      "legs": [
+        {
+          "steps": [{}]
+        }
+      ],
+      "duration": "45s",
+      "description": "Madison Ave"
+    }
+  ]
+}

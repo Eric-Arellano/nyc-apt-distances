@@ -59,10 +59,6 @@
   },
   "overrides": [
     {
-      "includes": ["src/lib/server/gmapsRouting.ts"],
-      "linter": { "rules": { "style": { "noNonNullAssertion": "off" } } }
-    },
-    {
       "includes": ["**/*.svelte"],
       "assist": {
         "actions": {

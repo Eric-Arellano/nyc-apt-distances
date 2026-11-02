@@ -14,17 +14,17 @@ What makes that change expensive today:
   address on the server. Adding seven destinations in #44 touched 12 files and added 262 lines.
 - **Each mode has its own path**: `computeActiveTransportRoute` and `computeTransitRoute`, two
   route types, and `walkRoute`, `bikeRoute` and `transitRoute`. Drive would be a third of each.
-- **Little covers the risky parts.** `Success.svelte.test.ts` pins every card's text and status,
-  but no test touches the Google layer or the API route.
+- **The API route has no test.** `Success.svelte.test.ts` pins every card's text and status, and
+  the Google layer has parser and request tests, but nothing covers the route that joins them.
 
 White Plains also breaks two assumptions that NYC never tested:
 
-- **"No route" is normal there.** A transit request with no result throws in
-  `computeTransitRoute`, which fails the whole page rather than one card.
-- **Trains may be labelled as walking.** `computeTransitRoute` reads only `nameShort`, and an empty
+- **"No route" is normal there.** A transit request with no result throws in `parseTransitRoute`,
+  which fails the whole page rather than one card.
+- **Trains may be labelled as walking.** `parseTransitRoute` reads only `nameShort`, and an empty
   summary means "walking". If Metro-North lines have only a `name`, a train trip would show as
   "🚇 40 minutes by walking". The proto describes `nameShort` as "normally a line number". This is
-  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 4
+  unverified, and so is the shape of a no-route response: Google's docs state neither, so PR 3
   starts by capturing real responses.
 
 Facts from Google's docs and the SDK's protos that shape the design:
@@ -71,9 +71,10 @@ export type Route =
 and `MOCK=1` share a fake, so mock mode covers new destinations for free and `mockData.ts` goes
 away.
 
-**Replace both Google SDKs with `fetch`.** They account for 116 of the 132 production packages, for
-two REST calls. This matches your "first-party when it is simple to write" rule, removes the
-`duration!.seconds as string` casts, and makes per-mode request bodies plain objects.
+**Google is called with `fetch`, not its SDKs.** Per-mode request bodies are plain objects, and each
+response goes through a pure parser. The REST JSON omits zero values and empty lists, which the SDK
+used to fill in, so the parsers must treat a missing `distanceMeters` or `steps` as empty, not as an
+error.
 
 **White Plains replaces NYC.** There is no region switch, and git keeps the NYC version.
 
@@ -88,7 +89,7 @@ Google is actually called. Tests mock `$app/env/private`.
 
 **`Success.svelte.test.ts` is the safety net for the rest.** It renders the mock data (with two
 cards overridden to be `partial` and `unmet`) and asserts each card's title, goal, route lines and
-`data-status`. PRs 1 to 4 may change the test's input, but must not change the expected output.
+`data-status`. PRs 1 to 3 may change the test's input, but must not change the expected output.
 
 Left alone on purpose:
 
@@ -97,31 +98,17 @@ Left alone on purpose:
 - **Zod and remote functions**: `foodservice-insights` rejected remote functions for now, and a
   typed parser with explicit checks is enough here.
 
-## PR 1: Call Google with `fetch`
-
-Same exported signatures, so the diff stays in `gmapsRouting.ts`, `gmapsGeocoding.ts`, their tests
-and `package.json`. Both take the key from `requireGmapsToken()` at call time.
-
-- `POST https://routes.googleapis.com/directions/v2:computeRoutes` with `X-Goog-Api-Key` and
-  `X-Goog-FieldMask`. `duration` arrives as `"165s"`, and `departureTime` goes out as RFC 3339.
-- `GET` the Geocoding endpoint. The key sits in the query string, so never log that URL.
-- Extract pure parsers and test them against real responses for walk, bike and transit, captured
-  once into `tests/fixtures/google/` using public addresses only.
-- Copy anki's `tests/setup.ts`, which fails any unmocked `fetch`. Wire it up as anki does:
-  `setupFiles` and `unstubGlobals` in `vite.config.ts`, the `#tests/*` import, and `tests` in the
-  Vitest and `tsconfig.json` includes.
-- Remove `@googlemaps/routing` and `@googlemaps/google-maps-services-js`, and the
-  `noNonNullAssertion` override for `gmapsRouting.ts` in `biome.json`.
-
-## PR 2: One route type
+## PR 1: One route type
 
 - `Route` replaces `ActiveTransportRoute` and `TransitRoute`.
 - `computeRoute(trip)` replaces both compute functions, driven by a per-mode table of Google travel
   mode, field mask and buffer minutes. The bike buffer moves into that table.
+  `parseActiveTransportRoute` and `parseTransitRoute` stay the pure step underneath, returning
+  `Route`.
 - `formatRoute(route, place?)` replaces the three formatters, with byte-identical output.
 - The `TravelTimes` keys stay for now, so `places/*` get one-line edits.
 
-## PR 3: Destinations as data
+## PR 2: Destinations as data
 
 The payoff PR.
 
@@ -139,7 +126,7 @@ The payoff PR.
 - Delete `src/lib/components/travelTimes/places/` (11 files).
 - Add tests for `computeTravelTimes` against the fake and for the route handler.
 
-## PR 4: Handle sparse transit
+## PR 3: Handle sparse transit
 
 Capture real responses first: White Plains to Grand Central, a Bee-Line bus trip, and a trip with
 no route. Those settle the two unknowns in Context and may change this section.
@@ -148,8 +135,8 @@ no route. Those settle the two unknowns in Context and may change this section.
   destination with no routes at all is `unmet`.
 - Detect transit from `transitDetails`, not from a name being present. Request `transitLine.name`
   and use `nameShort ?? name`.
-- In `geocode`, `ZERO_RESULTS` becomes a 400 with a readable message, and several results take the
-  first. Today both end in a 500.
+- In `parseGeocodeResponse`, `ZERO_RESULTS` becomes a 400 with a readable message, and several
+  results take the first. Today both end in a 500.
 
 ## After this plan
 
@@ -161,6 +148,9 @@ The feature work, for scale. It is not part of this plan.
   `transitLine.vehicle.type`.
 - **White Plains**: replace `DESTINATIONS`, `candidateLocations.ts`, the origin suffix, the page
   title, `Neighborhoods.svelte` and `OtherCriteria.svelte`.
+
+**Open:** the `fetch` rewrite has run against real Google locally, but not in production's runtime.
+Before it merges, try one real address on the Vercel preview.
 
 **Open:** the `500 Grand Concourse` address for Mott Haven in `destinations.ts` was meant to be
 fixed but the right address was never settled. It disappears with NYC, so fix it only if NYC stays
@@ -182,10 +172,8 @@ session, so browser automation needs it back.
 
 Beyond that:
 
-- **PR 1**: one real address on the Vercel preview, since it changes what runs in production and
-  is not covered by the mock.
-- **PR 3**: run one real NYC address on `main` and on the branch, and compare the cards.
-- **PR 4**: real White Plains addresses, including a destination with no transit route.
-- **PRs 1 to 4**: the expected table in `Success.svelte.test.ts` stays untouched.
+- **PR 2**: run one real NYC address on `main` and on the branch, and compare the cards.
+- **PR 3**: real White Plains addresses, including a destination with no transit route.
+- **PRs 1 to 3**: the expected table in `Success.svelte.test.ts` stays untouched.
 
-PRs 1, 3 and 4 make real Google calls with your key, about 15 requests per address.
+PRs 2 and 3 make real Google calls with your key, about 15 requests per address.

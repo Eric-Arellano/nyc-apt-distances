@@ -1,0 +1,33 @@
+{
+  "routes": [
+    {
+      "legs": [
+        {
+          "steps": [
+            {},
+            {},
+            {},
+            {
+              "transitDetails": {
+                "transitLine": {
+                  "nameShort": "4"
+                }
+              }
+            },
+            {
+              "transitDetails": {
+                "transitLine": {
+                  "nameShort": "6X"
+                }
+              }
+            },
+            {},
+            {},
+            {}
+          ]
+        }
+      ],
+      "duration": "1667s"
+    }
+  ]
+}
