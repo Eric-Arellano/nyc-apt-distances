@@ -10,8 +10,6 @@ import walk from '#tests/fixtures/google/walk.json';
 import { computeRoute, parseDistanceRoute, parseTransitRoute } from './gmapsRouting';
 import { DayOfWeek } from './weeklyTime';
 
-vi.mock('$app/env/private', () => ({ GOOGLE_MAPS_TOKEN: 'test-key' }));
-
 // The target the transit fixtures were captured with.
 const MONDAY_9_30 = DateTime.fromISO('2026-11-09T09:30', { zone: 'America/New_York' });
 
@@ -31,9 +29,9 @@ describe('computeRoute', () => {
   test('throws with the status and body when Google rejects the request', async () => {
     stubFetch(new Response('field mask required', { status: 400 }));
 
-    await expect(computeRoute({ origin: 'A', dest: 'B', trip: { mode: 'walk' } })).rejects.toThrow(
-      'computeRoutes returned 400: field mask required',
-    );
+    await expect(
+      computeRoute('test-key', { origin: 'A', dest: 'B', trip: { mode: 'walk' } }),
+    ).rejects.toThrow('computeRoutes returned 400: field mask required');
   });
 
   describe('for a bike trip', () => {
@@ -41,7 +39,7 @@ describe('computeRoute', () => {
       const fetchMock = stubFetch();
 
       await expect(
-        computeRoute({ origin: 'A', dest: 'B', trip: { mode: 'bike' } }),
+        computeRoute('test-key', { origin: 'A', dest: 'B', trip: { mode: 'bike' } }),
       ).resolves.toEqual({
         mode: 'unavailable',
         tripMode: 'bike',
@@ -66,7 +64,7 @@ describe('computeRoute', () => {
       stubFetch(Response.json(bike));
 
       await expect(
-        computeRoute({ origin: 'A', dest: 'B', trip: { mode: 'bike' } }),
+        computeRoute('test-key', { origin: 'A', dest: 'B', trip: { mode: 'bike' } }),
       ).resolves.toEqual({
         mode: 'bike',
         timeMinutes: 29,
@@ -88,7 +86,7 @@ describe('computeRoute', () => {
       const fetchMock = stubFetch();
 
       await expect(
-        computeRoute({
+        computeRoute('test-key', {
           origin: 'A',
           dest: 'B',
           trip: { mode: 'transit', arriveBy: { day: DayOfWeek.Monday, hour: 8, minute: 45 } },
@@ -107,7 +105,7 @@ describe('computeRoute', () => {
       stubFetch(Response.json(transitBus));
 
       await expect(
-        computeRoute({
+        computeRoute('test-key', {
           origin: 'A',
           dest: 'B',
           trip: { mode: 'transit', arriveBy: { day: DayOfWeek.Monday, hour: 9, minute: 30 } },
@@ -133,7 +131,7 @@ describe('computeRoute', () => {
       const fetchMock = stubFetch();
 
       await expect(
-        computeRoute({
+        computeRoute('test-key', {
           origin: 'A',
           dest: 'B',
           trip: { mode: 'drive', departAt: { day: DayOfWeek.Sunday, hour: 11, minute: 0 } },
@@ -153,7 +151,7 @@ describe('computeRoute', () => {
       stubFetch(Response.json(drive));
 
       await expect(
-        computeRoute({
+        computeRoute('test-key', {
           origin: 'A',
           dest: 'B',
           trip: { mode: 'drive', departAt: { day: DayOfWeek.Sunday, hour: 11, minute: 0 } },

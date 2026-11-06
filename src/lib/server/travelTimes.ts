@@ -1,12 +1,19 @@
-import type { DestinationResult, Place } from '#lib/types.ts';
+import type { DestinationResult, Place, Route } from '#lib/types.ts';
 import { type Coordinates, closest } from './closest';
 import { type Destination, ORIGIN_COUNTY } from './destinations';
-import type { geocode } from './gmapsGeocoding';
-import type { computeRoute } from './gmapsRouting';
+import { geocode } from './gmapsGeocoding';
+import { computeRoute, type RouteOptions } from './gmapsRouting';
 
 export interface Maps {
-  geocode: typeof geocode;
-  computeRoute: typeof computeRoute;
+  geocode(address: string, expectedCounty: string): Promise<Coordinates>;
+  computeRoute(options: RouteOptions): Promise<Route>;
+}
+
+export function googleMaps(key: string): Maps {
+  return {
+    geocode: (address, expectedCounty) => geocode(key, address, expectedCounty),
+    computeRoute: (options) => computeRoute(key, options),
+  };
 }
 
 function resolvePlace(
