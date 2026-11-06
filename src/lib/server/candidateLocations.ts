@@ -1,5 +1,9 @@
 // Coordinates come from OpenStreetMap, so they only pick the closest candidate. Google routes to
 // the `address`.
+//
+// The closest is by straight line, which highways and reservoirs can fool. The search area is
+// within walking distance of the Hebrew Institute, inside White Plains, where streets follow the
+// straight line closely enough. *Rejected: routing to every candidate, because each is billed.*
 
 export const STATIONS = [
   {

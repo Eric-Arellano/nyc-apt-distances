@@ -92,9 +92,9 @@ function metersToMi(meters: number): number {
   return Math.round(meters * 0.0006213712 * 10) / 10;
 }
 
-export function parseActiveTransportRoute(
+export function parseDistanceRoute(
   response: ComputeRoutesResponse,
-  mode: 'walk' | 'bike',
+  mode: 'walk' | 'bike' | 'drive',
 ): Route {
   const route = onlyRoute(response);
   if (!route) return { mode: 'unavailable', tripMode: mode };
@@ -128,7 +128,12 @@ export function parseTransitRoute(response: ComputeRoutesResponse, arriveBy: Dat
   return { mode: 'transit', timeMinutes: Math.round(seconds / 60), rides };
 }
 
-export type Trip = { mode: 'walk' | 'bike' } | { mode: 'transit'; arriveBy: TargetDate };
+// Google takes `arrivalTime` only for transit, and never with `departureTime`, so a drive departs
+// at a time rather than arriving by one.
+export type Trip =
+  | { mode: 'walk' | 'bike' }
+  | { mode: 'transit'; arriveBy: TargetDate }
+  | { mode: 'drive'; departAt: TargetDate };
 
 async function requestRoute({
   origin,
@@ -139,17 +144,21 @@ async function requestRoute({
   dest: string;
   trip: Trip;
 }): Promise<Route> {
-  const { travelMode, fieldMask } = MODES[trip.mode];
-  const body = { origin: { address: origin }, destination: { address: dest }, travelMode };
-  if (trip.mode !== 'transit') {
-    return parseActiveTransportRoute(await computeRoutes(body, fieldMask), trip.mode);
+  const { fieldMask, bufferMinutes: _, ...modeFields } = MODES[trip.mode];
+  const body = { origin: { address: origin }, destination: { address: dest }, ...modeFields };
+  if (trip.mode === 'transit') {
+    const arriveBy = getNextDateTime(trip.arriveBy);
+    const response = await computeRoutes(
+      { ...body, arrivalTime: arriveBy.toUTC().toISO() },
+      fieldMask,
+    );
+    return parseTransitRoute(response, arriveBy);
   }
-  const arriveBy = getNextDateTime(trip.arriveBy);
-  const response = await computeRoutes(
-    { ...body, arrivalTime: arriveBy.toUTC().toISO() },
-    fieldMask,
-  );
-  return parseTransitRoute(response, arriveBy);
+  if (trip.mode === 'drive') {
+    const departureTime = getNextDateTime(trip.departAt).toUTC().toISO();
+    return parseDistanceRoute(await computeRoutes({ ...body, departureTime }, fieldMask), 'drive');
+  }
+  return parseDistanceRoute(await computeRoutes(body, fieldMask), trip.mode);
 }
 
 export async function computeRoute(options: {

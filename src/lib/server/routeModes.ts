@@ -12,6 +12,15 @@ export const MODES = {
     fieldMask: 'routes.duration,routes.distanceMeters',
     bufferMinutes: 2,
   },
+  // `routingPreference` is valid only for driving and two-wheeler trips; on other modes Google
+  // rejects the request. Only `TRAFFIC_AWARE` reads `departureTime`, and it bills at a higher rate.
+  // The buffer is time to park.
+  drive: {
+    travelMode: 'DRIVE',
+    fieldMask: 'routes.duration,routes.distanceMeters',
+    routingPreference: 'TRAFFIC_AWARE',
+    bufferMinutes: 5,
+  },
   // A step's `travelMode` is always present, unlike `transitDetails`, which a field mask can leave
   // empty. Metro-North lines have a `name` but no `nameShort`. Bee-Line buses report `BUS`. The
   // last ride's arrival and the walks after it give when the trip arrives, to count the wait.

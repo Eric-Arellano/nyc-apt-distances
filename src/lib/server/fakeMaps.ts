@@ -5,6 +5,7 @@ import type { Maps } from './travelTimes';
 const ROUTES: Record<Trip['mode'], Route> = {
   walk: { mode: 'walk', timeMinutes: 12, distanceMiles: 0.8 },
   bike: { mode: 'bike', timeMinutes: 4, distanceMiles: 1.5 },
+  drive: { mode: 'drive', timeMinutes: 9, distanceMiles: 3.2 },
   transit: { mode: 'transit', timeMinutes: 18, rides: [{ line: 'Harlem', vehicle: 'train' }] },
 };
 

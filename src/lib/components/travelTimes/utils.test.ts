@@ -64,6 +64,12 @@ describe('formatRoute', () => {
     );
   });
 
+  test('drive', () => {
+    expect(formatRoute({ mode: 'drive', timeMinutes: 9, distanceMiles: 3.2 })).toEqual(
+      '🚗 9 minutes (3.2 miles)',
+    );
+  });
+
   test('walk', () => {
     expect(formatRoute({ mode: 'walk', timeMinutes: 4, distanceMiles: 2.1 })).toEqual(
       '🚶 4 minutes (2.1 miles)',
@@ -113,5 +119,6 @@ describe('formatRoute', () => {
     expect(formatRoute({ mode: 'unavailable', tripMode: 'transit' })).toEqual(
       '🚆 No transit route',
     );
+    expect(formatRoute({ mode: 'unavailable', tripMode: 'drive' })).toEqual('🚗 No driving route');
   });
 });
