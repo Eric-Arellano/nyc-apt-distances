@@ -4,7 +4,9 @@ import type { CoordinatePoint } from './closestDest';
 import { DayOfWeek } from './departureTime';
 import type { Trip } from './gmapsRouting';
 
-export const ORIGIN_SUFFIX = ', New York, NY';
+// Without a fixed suffix, an address missing its town lands wherever Google guesses, so geocoding
+// rejects a match outside this county.
+export const ORIGIN_COUNTY = 'New York County';
 
 export interface Candidate extends CoordinatePoint {
   name: string;

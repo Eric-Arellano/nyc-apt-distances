@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { DESTINATIONS } from './destinations';
+import { DESTINATIONS, ORIGIN_COUNTY } from './destinations';
 import { fakeMaps } from './fakeMaps';
 import { computeTravelTimes, type Maps } from './travelTimes';
 
@@ -14,13 +14,13 @@ describe('computeTravelTimes', () => {
     expect(results.map((result) => result.id)).toEqual(DESTINATIONS.map(({ id }) => id));
   });
 
-  test('routes each trip from the geocoded origin, with the suffix added once', async () => {
+  test('geocodes within the origin county and routes each trip from the address as typed', async () => {
     const maps = spyMaps();
+    const origin = '1 Main St, New York';
 
-    await computeTravelTimes('1 Main St', maps);
+    await computeTravelTimes(origin, maps);
 
-    const origin = '1 Main St, New York, NY';
-    expect(maps.geocode).toHaveBeenCalledExactlyOnceWith(origin);
+    expect(maps.geocode).toHaveBeenCalledExactlyOnceWith(origin, ORIGIN_COUNTY);
     expect(maps.computeRoute).toHaveBeenCalledTimes(
       DESTINATIONS.flatMap(({ trips }) => trips).length,
     );
@@ -68,7 +68,7 @@ describe('computeTravelTimes', () => {
         name: 'Union Square Park',
       });
       expect(maps.computeRoute).toHaveBeenCalledWith({
-        origin: '1 Main St, New York, NY',
+        origin: '1 Main St',
         dest: '201 Park Ave S, New York, NY 10003',
         trip: { mode: 'walk' },
       });

@@ -6,7 +6,7 @@ import Login from '../Login.svelte';
 let { isAuthenticated }: { isAuthenticated: boolean } = $props();
 </script>
 
-<Card title="Street address">
+<Card title="Street address and town">
   {#if isAuthenticated}
     <AddressInput />
   {:else}
