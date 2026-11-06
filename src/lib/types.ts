@@ -16,7 +16,6 @@ export interface Goal {
 
 export interface Place {
   name: string;
-  additionalInfo?: string;
 }
 
 export interface DestinationResult {

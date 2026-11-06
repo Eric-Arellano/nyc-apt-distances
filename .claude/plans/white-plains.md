@@ -2,8 +2,9 @@
 
 ## Context
 
-The destinations move from NYC to White Plains, and NYC goes entirely: there is no region switch,
-and git keeps the NYC version. The White Plains page needs two things NYC never did:
+The page covers White Plains on foot and by bike: a Metro-North station, the Hebrew Institute, a
+park or trail and a grocery store. NYC is gone, with no region switch, and git keeps it. What is
+left needs two things NYC never did:
 
 - **Driving**, to Florham Park, NJ, and as one way to reach Bet Am Shalom and the grocery store.
 - **Transit that arrives by a time** rather than departing at one: Bet Am Shalom by 6:15 pm Friday
@@ -51,10 +52,6 @@ all.*
 the card's colour says little. Its walk line is what tells you whether a store is in walking
 distance.
 
-**Candidate coordinates come from OpenStreetMap** (Nominatim), so filling `candidateLocations.ts`
-needs no billed call. Coordinates only pick the closest candidate, and Google routes to the
-`address` string, so the real-address runs in Verification are what confirm each address.
-
 **Goals are first guesses**, to be tuned in review.
 
 *Rejected for now: bike-to-train chains, because Google cannot route them in one request. If you
@@ -63,44 +60,13 @@ want one later, it can be two trips added together.*
 *Rejected: `allowedTravelModes: ['BUS']` on transit trips. It is only a preference, and no
 destination needs to force a bus.*
 
-## PR 1: White Plains, on foot and by bike
-
-Replace `DESTINATIONS` and every list in `candidateLocations.ts`, set `ORIGIN_COUNTY` to
-`'Westchester County'`, and update the page title, the address placeholder in
-`AddressInput.svelte` (to something like "100 Martine Ave, White Plains") and the README's NYC
-prose. The route test in `src/routes/api/travel-times/travelTimes.test.ts` mocks `ORIGIN_COUNTY` to
-Westchester only because `geocode.json` is in White Plains; drop that mock. This PR adds only
-the destinations whose trips all exist already:
-
-| id | Title | Place | Trips | Goal |
-| --- | --- | --- | --- | --- |
-| `metro-north` | Metro-North station 🚆 | closest station | walk, bike | must, 10 / 20 |
-| `hebrew-institute` | Hebrew Institute of White Plains | 20 Greenridge Ave, White Plains, NY 10605 | walk | must, 15 / 25 |
-| `park` | Park or trail 🌳 | closest park or trailhead | walk | should, 10 / 20 |
-| `grocery` | Grocery store 🛒 | closest supermarket | walk (PR 3 adds drive) | should, 10 / 20 |
-
-Check each candidate before it goes in: is it still open, and is it at that address?
-
-- **Stations:** White Plains, North White Plains, Hartsdale and Scarsdale on the Harlem Line, and
-  Harrison on the New Haven Line.
-- **Parks and trailheads**, leaving out pocket parks and plazas: the Bronx River Pathway at the
-  County Center and at North White Plains, Kensico Dam Plaza, Cranberry Lake Preserve, Saxon Woods
-  Park, Silver Lake Preserve, Delfino Park, Gillie Park, Gardella Park and Turnure Park.
-- **Supermarkets:** ShopRite (City Place), Stop & Shop (Westchester Ave), Whole Foods (Bloomingdale
-  Rd), Wegmans (Corporate Park Dr, West Harrison), ACME (Knollwood Rd), C-Town (S Lexington Ave)
-  and Trader Joe's (Hartsdale).
-
-Remove `Candidate.lines` and `Place.additionalInfo`, which only subway stops used. `fakeMaps`
-geocodes to a public White Plains point so that `MOCK=1` picks White Plains candidates.
-`travelTimes.test.ts` and `Success.svelte.test.ts` switch to White Plains cards and still cover
-every status and route shape. Transit has no destination until PR 2, but its own tests still cover
-it.
-
-## PR 2: Transit that arrives by a time
+## PR 1: Transit that arrives by a time
 
 - Transit trips take `arriveBy` and send `arrivalTime`. `capture-fixtures.ts` does the same, and
   its transit fixtures are re-captured.
 - The README's "Consistent departure time" section covers arrival times too.
+- `Success.svelte.test.ts` tests transit routes apart from `EXPECTED_CARDS`, because no
+  destination had a transit trip. Fold them into the Bet Am Shalom cards there.
 - New destinations:
 
 | id | Title | Place | Trips | Goal |
@@ -113,7 +79,7 @@ it.
 getting there and the target. A sparse Saturday bus that arrives 40 minutes early would then look
 fast. Read the re-captured fixtures, and decide whether the card should show when the trip arrives.
 
-## PR 3: Drive
+## PR 2: Drive
 
 - Add `'drive'` to the distance member of `Route` and to `tripMode` on the unavailable member.
   Add a `MODES` row with `DRIVE`, the distance field mask, `routingPreference: 'TRAFFIC_AWARE'` and
@@ -138,7 +104,7 @@ For each PR, run `npm run lint && npm run check && npm test` and `npm run build`
 page with `MOCK=1 npm run dev`, by hand or with `/run`. Run `svelte-autofixer` on each Svelte file
 touched until it reports nothing.
 
-Fixture re-captures in PRs 2 and 3 are billed, at about ten requests each, so say so in the PR.
+Fixture re-captures in PRs 1 and 2 are billed, at about ten requests each, so say so in the PR.
 
 Before each PR merges, try one real White Plains address and one real West Harrison address.
 Check that each closest candidate is plausible, and that an address in another county gets the
