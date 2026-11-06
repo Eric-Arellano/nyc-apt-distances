@@ -10,29 +10,18 @@ and stopping soon is a real option.
 
 **Overall assessment:** the codebase is in good shape. Google sits behind the `Maps` seam
 (`src/lib/server/travelTimes.ts`), `Route` is a proper union, fixtures are real, and AGENTS.md is
-thorough. What's left is a handful of small PRs, stacked in order. PRs 1–2 are worth doing. 3–5
-are nice to have, and it's fine to stop after any one of them.
+thorough. What's left is a handful of small PRs, stacked in order. PR 1 is worth doing. 2–4 are
+nice to have, and it's fine to stop after any one of them.
 
 The auth hook in `src/hooks.server.ts` now exempts exactly `/api/login`, and gates only `/api/`.
 A page that loads stored addresses must call `hasSession` itself; the hook's comment says so.
+`computeTravelTimes(origin, destinations, maps)` takes the destinations as an argument, so its
+tests use their own and a goal edit in `destinations.ts` stays config-only.
 
-## PR 1: Keep goal edits config-only
-Today, changing a goal or a park in `destinations.ts` breaks
-`src/lib/server/travelTimes.test.ts`, which hard-codes the Hebrew Institute's goal and the closest
-park's name. Since goal tweaks are the change you'll most likely make, a config edit shouldn't
-break a test.
-- Change `computeTravelTimes(origin, maps)` to take the destinations too:
-  `computeTravelTimes(origin, DESTINATIONS, maps)`. `src/routes/api/travel-times/+server.ts`
-  passes `DESTINATIONS`.
-- The server test defines two of its own destinations (one fixed address, one `closestOf` with two
-  candidates) and uses them in place of the real config. The route test
-  (`src/routes/api/travel-times/travelTimes.test.ts`) only compares ids against `DESTINATIONS`, so
-  it already survives config edits. Leave it as is.
-
-## PR 2: Bring the two oldest server modules up to convention (two small PRs)
+## PR 1: Bring the two oldest server modules up to convention (two small PRs)
 These predate AGENTS.md: old names, branches that exist only for tests, and "should…" test names.
 
-### 2a. `closestDest.ts` → `closest.ts`
+### 1a. `closestDest.ts` → `closest.ts`
 - Merge `computeClosestPoint` (returns null, used only by tests) and `findClosest` (throws) into a
   single `closest(origin, candidates: readonly [T, ...T[]])`. A non-empty tuple type means an
   empty list can't be written, so the throw is no longer needed. Type `closestOf` in
@@ -42,7 +31,7 @@ These predate AGENTS.md: old names, branches that exist only for tests, and "sho
 - Rewrite `closestDest.test.ts` to follow the conventions: points at White Plains scale, no
   "should", and no comment restating the test name.
 
-### 2b. `departureTime.ts` → `weeklyTime.ts`
+### 1b. `departureTime.ts` → `weeklyTime.ts`
 The module now serves both `arriveBy` and `departAt`, so "departure" is wrong.
 - `TargetDate` → `WeeklyTime`, `getNextDateTime` → `nextOccurrence`.
 - Drop the `fromDate` parameter and its timezone throw, which exist only for tests. Tests use
@@ -52,7 +41,7 @@ The module now serves both `arriveBy` and `departAt`, so "departure" is wrong.
 
 Update the imports in `gmapsRouting.ts`, `destinations.ts` and their tests.
 
-## PR 3: Make the page test survive a restyle (Svelte, optional)
+## PR 2: Make the page test survive a restyle (Svelte, optional)
 `Success.svelte.test.ts` finds routes with `.space-y-2 > div`, a Tailwind class, so restyling the
 page breaks the test.
 - Render the cards and routes in `Success.svelte` / `DestinationCard.svelte` as `<ul>`/`<li>`
@@ -64,14 +53,14 @@ page breaks the test.
   test out of the bike group. Turn `addressUtils.test.ts` into a `test.each`.
 - Run `svelte-autofixer` on each Svelte file touched, until it reports nothing.
 
-## PR 4: README refresh (small)
+## PR 3: README refresh (small)
 - Add `MOCK=1 npm run dev`. AGENTS.md mentions it but the README doesn't.
 - One line naming `src/lib/server/destinations.ts` as where destinations and goals live.
 - "with `envrc`" → direnv. The arrival-time section covers transit only; drives depart at a time.
   Drop the mechanism ("uses Luxon", the step list); `candidateLocations.ts` already holds the
   rejected alternative.
 
-## PR 5: Pass the Google key in, so the fixture script reuses production's requests (optional, largest)
+## PR 4: Pass the Google key in, so the fixture script reuses production's requests (optional, largest)
 `scripts/capture-fixtures.ts` duplicates the computeRoutes call and has its own `nextTime`,
 because the gmaps modules import `$app/env/private`, which plain Node can't load. That's also why
 `routeModes.ts` carries its "no imports" rule.
@@ -114,10 +103,9 @@ modest, so it's fine to skip.
 ## Verification (each PR)
 
 - `npm run lint && npm run check && npm test`. Report any flake by name.
-- PRs 1, 3: confirm the tests fail on the old code / pass on the new. For PR 1, changing a goal in
-  `destinations.ts` locally should leave the suite green.
-- PR 3: `MOCK=1 npm run dev` and eyeball the page to confirm it looks the same.
-- PR 5: `npm run check` covers the script's types. Capturing bills the key, so run at most a
+- PR 2: confirm the tests fail on the old code / pass on the new.
+- PR 2: `MOCK=1 npm run dev` and eyeball the page to confirm it looks the same.
+- PR 4: `npm run check` covers the script's types. Capturing bills the key, so run at most a
   single capture (`direnv exec . node scripts/capture-fixtures.ts walk`), only with Eric's OK, and
   say that it ran. The re-captured `walk.json` should come back unchanged apart from Google's own
   drift.

@@ -1,4 +1,5 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
+import { DESTINATIONS } from '#lib/server/destinations.ts';
 import { fakeMaps } from '#lib/server/fakeMaps.ts';
 import { geocode } from '#lib/server/gmapsGeocoding.ts';
 import { computeRoute } from '#lib/server/gmapsRouting.ts';
@@ -11,6 +12,6 @@ export const GET: RequestHandler = async ({ url }) => {
     throw error(400, '`street-address` parameter is required');
   }
   return Response.json(
-    await computeTravelTimes(address, MOCK ? fakeMaps : { geocode, computeRoute }),
+    await computeTravelTimes(address, DESTINATIONS, MOCK ? fakeMaps : { geocode, computeRoute }),
   );
 };

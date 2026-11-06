@@ -1,6 +1,6 @@
 import type { DestinationResult, Place } from '#lib/types.ts';
 import { type CoordinatePoint, findClosest } from './closestDest';
-import { DESTINATIONS, type Destination, ORIGIN_COUNTY } from './destinations';
+import { type Destination, ORIGIN_COUNTY } from './destinations';
 import type { geocode } from './gmapsGeocoding';
 import type { computeRoute } from './gmapsRouting';
 
@@ -20,11 +20,15 @@ function resolvePlace(
   return { address, closest: { name } };
 }
 
-export async function computeTravelTimes(origin: string, maps: Maps): Promise<DestinationResult[]> {
+export async function computeTravelTimes(
+  origin: string,
+  destinations: readonly Destination[],
+  maps: Maps,
+): Promise<DestinationResult[]> {
   const originPoint = await maps.geocode(origin, ORIGIN_COUNTY);
 
   return await Promise.all(
-    DESTINATIONS.map(async ({ id, title, goal, place, trips }) => {
+    destinations.map(async ({ id, title, goal, place, trips }) => {
       const { address, closest } = resolvePlace(place, originPoint);
       const routes = await Promise.all(
         trips.map((trip) => maps.computeRoute({ origin, dest: address, trip })),
