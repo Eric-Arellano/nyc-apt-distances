@@ -10,19 +10,13 @@ and stopping soon is a real option.
 
 **Overall assessment:** the codebase is in good shape. Google sits behind the `Maps` seam
 (`src/lib/server/travelTimes.ts`), `Route` is a proper union, fixtures are real, and AGENTS.md is
-thorough. What's left is a handful of small, separate PRs. PRs 1–3 are worth doing. 4–6 are nice
-to have, and it's fine to stop after any one of them. Each PR branches from `main`.
+thorough. What's left is a handful of small PRs, stacked in order. PRs 1–2 are worth doing. 3–5
+are nice to have, and it's fine to stop after any one of them.
 
-## PR 1: Exempt only the login route from the auth hook (tiny, security)
-`src/hooks.server.ts` uses `startsWith('/api/login')`, so a future `/api/login-history` or
-`/api/logins` would skip the password. Compare the path for exact equality with `/api/login`. Add
-`/api/logins` to `src/hooks.server.test.ts` as a path that is refused.
+The auth hook in `src/hooks.server.ts` now exempts exactly `/api/login`, and gates only `/api/`.
+A page that loads stored addresses must call `hasSession` itself; the hook's comment says so.
 
-Also add a comment on the hook stating the gap a database would expose: **only `/api/` is gated**,
-so a page whose `+page.server.ts` loads stored apartment addresses has to call `hasSession` itself.
-The file that would need to change is the hook, so that's where the comment goes.
-
-## PR 2: Keep goal edits config-only
+## PR 1: Keep goal edits config-only
 Today, changing a goal or a park in `destinations.ts` breaks
 `src/lib/server/travelTimes.test.ts`, which hard-codes the Hebrew Institute's goal and the closest
 park's name. Since goal tweaks are the change you'll most likely make, a config edit shouldn't
@@ -35,10 +29,10 @@ break a test.
   (`src/routes/api/travel-times/travelTimes.test.ts`) only compares ids against `DESTINATIONS`, so
   it already survives config edits. Leave it as is.
 
-## PR 3: Bring the two oldest server modules up to convention (two small PRs)
+## PR 2: Bring the two oldest server modules up to convention (two small PRs)
 These predate AGENTS.md: old names, branches that exist only for tests, and "should…" test names.
 
-### 3a. `closestDest.ts` → `closest.ts`
+### 2a. `closestDest.ts` → `closest.ts`
 - Merge `computeClosestPoint` (returns null, used only by tests) and `findClosest` (throws) into a
   single `closest(origin, candidates: readonly [T, ...T[]])`. A non-empty tuple type means an
   empty list can't be written, so the throw is no longer needed. Type `closestOf` in
@@ -48,7 +42,7 @@ These predate AGENTS.md: old names, branches that exist only for tests, and "sho
 - Rewrite `closestDest.test.ts` to follow the conventions: points at White Plains scale, no
   "should", and no comment restating the test name.
 
-### 3b. `departureTime.ts` → `weeklyTime.ts`
+### 2b. `departureTime.ts` → `weeklyTime.ts`
 The module now serves both `arriveBy` and `departAt`, so "departure" is wrong.
 - `TargetDate` → `WeeklyTime`, `getNextDateTime` → `nextOccurrence`.
 - Drop the `fromDate` parameter and its timezone throw, which exist only for tests. Tests use
@@ -58,7 +52,7 @@ The module now serves both `arriveBy` and `departAt`, so "departure" is wrong.
 
 Update the imports in `gmapsRouting.ts`, `destinations.ts` and their tests.
 
-## PR 4: Make the page test survive a restyle (Svelte, optional)
+## PR 3: Make the page test survive a restyle (Svelte, optional)
 `Success.svelte.test.ts` finds routes with `.space-y-2 > div`, a Tailwind class, so restyling the
 page breaks the test.
 - Render the cards and routes in `Success.svelte` / `DestinationCard.svelte` as `<ul>`/`<li>`
@@ -70,14 +64,14 @@ page breaks the test.
   test out of the bike group. Turn `addressUtils.test.ts` into a `test.each`.
 - Run `svelte-autofixer` on each Svelte file touched, until it reports nothing.
 
-## PR 5: README refresh (small)
+## PR 4: README refresh (small)
 - Add `MOCK=1 npm run dev`. AGENTS.md mentions it but the README doesn't.
 - One line naming `src/lib/server/destinations.ts` as where destinations and goals live.
 - "with `envrc`" → direnv. The arrival-time section covers transit only; drives depart at a time.
   Drop the mechanism ("uses Luxon", the step list); `candidateLocations.ts` already holds the
   rejected alternative.
 
-## PR 6: Pass the Google key in, so the fixture script reuses production's requests (optional, largest)
+## PR 5: Pass the Google key in, so the fixture script reuses production's requests (optional, largest)
 `scripts/capture-fixtures.ts` duplicates the computeRoutes call and has its own `nextTime`,
 because the gmaps modules import `$app/env/private`, which plain Node can't load. That's also why
 `routeModes.ts` carries its "no imports" rule.
@@ -114,16 +108,16 @@ modest, so it's fine to skip.
   against the current goals, so a goal tweak re-grades history. That's when `goalStatus` moves out
   of `components/`. A URL per result (`/?address=…`) is the natural first step, because the list
   then links to it. Stored addresses are private: keep them out of the repo and behind the
-  password, and remember PR 1's note about page loads. If it ever needs a server database, which
+  password, and remember the hook only gates `/api/`, not page loads. If it ever needs a server database, which
   one depends on where `adapter-auto` deploys, which is **Open:**.
 
 ## Verification (each PR)
 
 - `npm run lint && npm run check && npm test`. Report any flake by name.
-- PRs 2, 4: confirm the tests fail on the old code / pass on the new. For PR 2, changing a goal in
+- PRs 1, 3: confirm the tests fail on the old code / pass on the new. For PR 1, changing a goal in
   `destinations.ts` locally should leave the suite green.
-- PR 4: `MOCK=1 npm run dev` and eyeball the page to confirm it looks the same.
-- PR 6: `npm run check` covers the script's types. Capturing bills the key, so run at most a
+- PR 3: `MOCK=1 npm run dev` and eyeball the page to confirm it looks the same.
+- PR 5: `npm run check` covers the script's types. Capturing bills the key, so run at most a
   single capture (`direnv exec . node scripts/capture-fixtures.ts walk`), only with Eric's OK, and
   say that it ran. The re-captured `walk.json` should come back unchanged apart from Google's own
   drift.
