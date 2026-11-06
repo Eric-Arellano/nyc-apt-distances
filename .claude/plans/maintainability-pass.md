@@ -16,23 +16,14 @@ nice to have, and it's fine to stop after any one of them.
 The auth hook in `src/hooks.server.ts` now exempts exactly `/api/login`, and gates only `/api/`.
 A page that loads stored addresses must call `hasSession` itself; the hook's comment says so.
 `computeTravelTimes(origin, destinations, maps)` takes the destinations as an argument, so its
-tests use their own and a goal edit in `destinations.ts` stays config-only.
+tests use their own and a goal edit in `destinations.ts` stays config-only. Picking the closest
+candidate is `closest(origin, candidates)` in `closest.ts`, over the non-empty `Candidates` tuple
+that `candidateLocations.ts` defines, and geocoding returns its `Coordinates`.
 
-## PR 1: Bring the two oldest server modules up to convention (two small PRs)
-These predate AGENTS.md: old names, branches that exist only for tests, and "should…" test names.
-
-### 1a. `closestDest.ts` → `closest.ts`
-- Merge `computeClosestPoint` (returns null, used only by tests) and `findClosest` (throws) into a
-  single `closest(origin, candidates: readonly [T, ...T[]])`. A non-empty tuple type means an
-  empty list can't be written, so the throw is no longer needed. Type `closestOf` in
-  `destinations.ts` and the arrays in `candidateLocations.ts` to match.
-- Rename `CoordinatePoint` → `Coordinates` and use it for the geocode return type. Today
-  `gmapsGeocoding.ts` spells it inline twice and `fakeMaps.ts` once.
-- Rewrite `closestDest.test.ts` to follow the conventions: points at White Plains scale, no
-  "should", and no comment restating the test name.
-
-### 1b. `departureTime.ts` → `weeklyTime.ts`
-The module now serves both `arriveBy` and `departAt`, so "departure" is wrong.
+## PR 1: `departureTime.ts` → `weeklyTime.ts`
+This module predates AGENTS.md, and now serves both `arriveBy` and `departAt`, so "departure" is
+wrong. `closest.ts` already shows the shape it should take: no branches that exist only for tests,
+and no "should…" test names.
 - `TargetDate` → `WeeklyTime`, `getNextDateTime` → `nextOccurrence`.
 - Drop the `fromDate` parameter and its timezone throw, which exist only for tests. Tests use
   `vi.useFakeTimers`, as `gmapsRouting.test.ts` and `auth.test.ts` already do, in place of

@@ -1,6 +1,5 @@
 import type { Goal } from '#lib/types.ts';
-import { PARKS, STATIONS, SUPERMARKETS } from './candidateLocations';
-import type { CoordinatePoint } from './closestDest';
+import { type Candidates, PARKS, STATIONS, SUPERMARKETS } from './candidateLocations';
 import { DayOfWeek } from './departureTime';
 import type { Trip } from './gmapsRouting';
 
@@ -8,16 +7,11 @@ import type { Trip } from './gmapsRouting';
 // rejects a match outside this county.
 export const ORIGIN_COUNTY = 'Westchester County';
 
-export interface Candidate extends CoordinatePoint {
-  name: string;
-  address: string;
-}
-
 export interface Destination {
   id: string;
   title: string;
   goal: Goal;
-  place: { address: string } | { closestOf: Candidate[] };
+  place: { address: string } | { closestOf: Candidates };
   trips: readonly Trip[]; // Display order.
 }
 

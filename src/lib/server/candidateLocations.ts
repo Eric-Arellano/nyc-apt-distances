@@ -5,7 +5,16 @@
 // within walking distance of the Hebrew Institute, inside White Plains, where streets follow the
 // straight line closely enough. *Rejected: routing to every candidate, because each is billed.*
 
-export const STATIONS = [
+import type { Coordinates } from './closest';
+
+interface Candidate extends Coordinates {
+  name: string;
+  address: string;
+}
+
+export type Candidates = readonly [Candidate, ...Candidate[]];
+
+export const STATIONS: Candidates = [
   {
     name: 'White Plains',
     latitude: 41.033309,
@@ -39,7 +48,7 @@ export const STATIONS = [
 ];
 
 // Large parks use their entrance, not their middle.
-export const PARKS = [
+export const PARKS: Candidates = [
   {
     name: 'Bronx River Pathway (County Center)',
     latitude: 41.035662,
@@ -102,7 +111,7 @@ export const PARKS = [
   },
 ];
 
-export const SUPERMARKETS = [
+export const SUPERMARKETS: Candidates = [
   {
     name: 'ShopRite',
     latitude: 41.031941,
