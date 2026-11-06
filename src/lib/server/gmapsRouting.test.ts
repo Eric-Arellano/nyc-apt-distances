@@ -1,15 +1,17 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import bike from '#tests/fixtures/google/bike.json';
-import transit from '#tests/fixtures/google/transit.json';
-import transitWalking from '#tests/fixtures/google/transit-walking.json';
+import transitBus from '#tests/fixtures/google/transit-bus.json';
+import transitMetroNorth from '#tests/fixtures/google/transit-metro-north.json';
+import transitNoRoute from '#tests/fixtures/google/transit-no-route.json';
+import transitTransfer from '#tests/fixtures/google/transit-transfer.json';
 import walk from '#tests/fixtures/google/walk.json';
 import { DayOfWeek } from './departureTime';
 import { computeRoute, parseActiveTransportRoute, parseTransitRoute } from './gmapsRouting';
 
 vi.mock('$app/env/private', () => ({ GOOGLE_MAPS_TOKEN: 'test-key' }));
 
-// Stands in for an empty response, so these tests pin the request without inventing a Google reply.
-function stubFetch(response = new Response('{}')) {
+// Defaults to Google's real reply when it finds no route.
+function stubFetch(response = Response.json(transitNoRoute)) {
   const fetchMock = vi.fn(async (_url: string, _init: RequestInit) => response);
   vi.stubGlobal('fetch', fetchMock);
   return fetchMock;
@@ -24,8 +26,11 @@ describe('computeRoute for a bike trip', () => {
   test('sends the mode with a key and field mask', async () => {
     const fetchMock = stubFetch();
 
-    await expect(computeRoute({ origin: 'A', dest: 'B', trip: { mode: 'bike' } })).rejects.toThrow(
-      'Unexpected number of routes: 0',
+    await expect(computeRoute({ origin: 'A', dest: 'B', trip: { mode: 'bike' } })).resolves.toEqual(
+      {
+        mode: 'unavailable',
+        tripMode: 'bike',
+      },
     );
 
     expect(sentRequest(fetchMock)).toEqual({
@@ -41,6 +46,18 @@ describe('computeRoute for a bike trip', () => {
         travelMode: 'BICYCLE',
       },
     });
+  });
+
+  test('adds time to get the bike out', async () => {
+    stubFetch(Response.json(bike));
+
+    await expect(computeRoute({ origin: 'A', dest: 'B', trip: { mode: 'bike' } })).resolves.toEqual(
+      {
+        mode: 'bike',
+        timeMinutes: 29,
+        distanceMiles: 3.6,
+      },
+    );
   });
 
   test('throws with the status and body when Google rejects the request', async () => {
@@ -70,7 +87,7 @@ describe('computeRoute for a transit trip', () => {
         dest: 'B',
         trip: { mode: 'transit', departure: { day: DayOfWeek.Monday, hour: 8, minute: 45 } },
       }),
-    ).rejects.toThrow('Unexpected number of routes: 0');
+    ).resolves.toEqual({ mode: 'unavailable', tripMode: 'transit' });
 
     expect(sentRequest(fetchMock).body).toEqual({
       origin: { address: 'A' },
@@ -85,20 +102,27 @@ describe('parseActiveTransportRoute', () => {
   test('reads a walk response', () => {
     expect(parseActiveTransportRoute(walk, 'walk')).toEqual({
       mode: 'walk',
-      timeMinutes: 12,
-      distanceMiles: 0.5,
+      timeMinutes: 10,
+      distanceMiles: 0.4,
     });
   });
 
   test('reads a bike response', () => {
     expect(parseActiveTransportRoute(bike, 'bike')).toEqual({
       mode: 'bike',
-      timeMinutes: 4,
-      distanceMiles: 0.6,
+      timeMinutes: 27,
+      distanceMiles: 3.6,
     });
   });
 
-  test('throws on anything but one route', () => {
+  test('reads no route as unavailable', () => {
+    expect(parseActiveTransportRoute({}, 'walk')).toEqual({
+      mode: 'unavailable',
+      tripMode: 'walk',
+    });
+  });
+
+  test('throws on more than one route', () => {
     expect(() => parseActiveTransportRoute({ routes: [{}, {}] }, 'walk')).toThrow(
       'Unexpected number of routes: 2',
     );
@@ -120,26 +144,37 @@ describe('parseActiveTransportRoute', () => {
 });
 
 describe('parseTransitRoute', () => {
+  test('names a line by its short name', () => {
+    expect(parseTransitRoute(transitBus)).toEqual({
+      mode: 'transit',
+      timeMinutes: 26,
+      summary: '40',
+    });
+  });
+
+  test('names a line without a short name by its full name', () => {
+    expect(parseTransitRoute(transitMetroNorth)).toEqual({
+      mode: 'transit',
+      timeMinutes: 42,
+      summary: 'Harlem',
+    });
+  });
+
   test('joins the lines of a trip with a transfer', () => {
-    expect(parseTransitRoute(transit)).toEqual({
-      timeMinutes: 28,
+    expect(parseTransitRoute(transitTransfer)).toEqual({
       mode: 'transit',
-      summary: '4 -> 6X',
+      timeMinutes: 78,
+      summary: 'Harlem -> 4',
     });
   });
 
-  test('reads a trip with no lines as walking', () => {
-    expect(parseTransitRoute(transitWalking)).toEqual({
-      mode: 'transit',
-      timeMinutes: 1,
-      summary: null,
-    });
+  test('reads no route as unavailable', () => {
+    expect(parseTransitRoute(transitNoRoute)).toEqual({ mode: 'unavailable', tripMode: 'transit' });
   });
 
-  test('throws on anything but one leg', () => {
-    expect(() => parseTransitRoute({ routes: [{ duration: '60s' }] })).toThrow(
-      'Unexpected number of legs: 0',
-    );
+  test('reads a trip with only walking steps as walking', () => {
+    const response = { routes: [{ duration: '45s', legs: [{ steps: [{ travelMode: 'WALK' }] }] }] };
+    expect(parseTransitRoute(response)).toEqual({ mode: 'transit', timeMinutes: 1, summary: null });
   });
 
   test('reads omitted steps as walking', () => {
@@ -148,5 +183,22 @@ describe('parseTransitRoute', () => {
       timeMinutes: 2,
       summary: null,
     });
+  });
+
+  test('labels a transit step whose line has no name', () => {
+    const response = {
+      routes: [{ duration: '600s', legs: [{ steps: [{ travelMode: 'TRANSIT' }] }] }],
+    };
+    expect(parseTransitRoute(response)).toEqual({
+      mode: 'transit',
+      timeMinutes: 10,
+      summary: 'unnamed line',
+    });
+  });
+
+  test('throws on anything but one leg', () => {
+    expect(() => parseTransitRoute({ routes: [{ duration: '60s' }] })).toThrow(
+      'Unexpected number of legs: 0',
+    );
   });
 });

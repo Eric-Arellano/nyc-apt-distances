@@ -1,0 +1,60 @@
+{
+  "results": [
+    {
+      "address_components": [
+        {
+          "long_name": "White Plains",
+          "short_name": "White Plains",
+          "types": ["locality", "political"]
+        },
+        {
+          "long_name": "Westchester County",
+          "short_name": "Westchester County",
+          "types": ["administrative_area_level_2", "political"]
+        },
+        {
+          "long_name": "New York",
+          "short_name": "NY",
+          "types": ["administrative_area_level_1", "political"]
+        },
+        {
+          "long_name": "United States",
+          "short_name": "US",
+          "types": ["country", "political"]
+        }
+      ],
+      "formatted_address": "White Plains, NY, USA",
+      "geometry": {
+        "bounds": {
+          "northeast": {
+            "lat": 41.0700319,
+            "lng": -73.71952399999999
+          },
+          "southwest": {
+            "lat": 40.982624,
+            "lng": -73.789946
+          }
+        },
+        "location": {
+          "lat": 41.0332209,
+          "lng": -73.7650415
+        },
+        "location_type": "APPROXIMATE",
+        "viewport": {
+          "northeast": {
+            "lat": 41.0700319,
+            "lng": -73.71952399999999
+          },
+          "southwest": {
+            "lat": 40.982624,
+            "lng": -73.789946
+          }
+        }
+      },
+      "partial_match": true,
+      "place_id": "ChIJ2TWj4iKUwokRbPxbGhAEFFQ",
+      "types": ["locality", "political"]
+    }
+  ],
+  "status": "OK"
+}

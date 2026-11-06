@@ -1,0 +1,23 @@
+// No imports, so `scripts/capture-fixtures.ts` can load this under plain Node and capture fixtures
+// with the same field masks production sends.
+export const MODES = {
+  walk: {
+    travelMode: 'WALK',
+    fieldMask: 'routes.duration,routes.distanceMeters',
+    bufferMinutes: 0,
+  },
+  // The buffer is time to get the bike out and locked up.
+  bike: {
+    travelMode: 'BICYCLE',
+    fieldMask: 'routes.duration,routes.distanceMeters',
+    bufferMinutes: 2,
+  },
+  // A step's `travelMode` is always present, unlike `transitDetails`, which a field mask can leave
+  // empty. Metro-North lines have a `name` but no `nameShort`.
+  transit: {
+    travelMode: 'TRANSIT',
+    fieldMask:
+      'routes.duration,routes.legs.steps.travelMode,routes.legs.steps.transitDetails.transitLine.name,routes.legs.steps.transitDetails.transitLine.nameShort',
+    bufferMinutes: 0,
+  },
+} as const;

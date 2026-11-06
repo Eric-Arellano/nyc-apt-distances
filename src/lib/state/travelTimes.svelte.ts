@@ -20,6 +20,12 @@ export async function getTravelTimes(streetAddress: string): Promise<Destination
     throw new Error(`Your session has expired. Please login.`);
   }
 
+  // SvelteKit sends `error(400, message)` as JSON, and the message is written for the user.
+  if (res.status === 400) {
+    const { message } = await res.json();
+    throw new Error(message);
+  }
+
   throw new Error(`Failed to fetch travel times: ${res.status} ${res.statusText}`);
 }
 
