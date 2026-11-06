@@ -51,21 +51,31 @@ export const DESTINATIONS: readonly Destination[] = [
     title: 'Grocery store 🛒',
     goal: { strictness: 'should', idealMinutes: 10, maxMinutes: 20 },
     place: { closestOf: SUPERMARKETS },
-    trips: [WALK],
+    trips: [WALK, { mode: 'drive', departAt: { day: DayOfWeek.Sunday, hour: 11, minute: 0 } }],
   },
   {
     id: 'bet-am-shalom-friday',
     title: 'Bet Am Shalom, Friday 6:15 pm',
     goal: { strictness: 'should', idealMinutes: 15, maxMinutes: 25 },
     place: BET_AM_SHALOM,
-    trips: [WALK, { mode: 'transit', arriveBy: { day: DayOfWeek.Friday, hour: 18, minute: 15 } }],
+    // Each drive departs a quarter hour before the target; in town, the exact minute barely moves
+    // Google's traffic estimate.
+    trips: [
+      WALK,
+      { mode: 'transit', arriveBy: { day: DayOfWeek.Friday, hour: 18, minute: 15 } },
+      { mode: 'drive', departAt: { day: DayOfWeek.Friday, hour: 18, minute: 0 } },
+    ],
   },
   {
     id: 'bet-am-shalom-saturday',
     title: 'Bet Am Shalom, Saturday 9:30 am',
     goal: { strictness: 'should', idealMinutes: 15, maxMinutes: 25 },
     place: BET_AM_SHALOM,
-    trips: [WALK, { mode: 'transit', arriveBy: { day: DayOfWeek.Saturday, hour: 9, minute: 30 } }],
+    trips: [
+      WALK,
+      { mode: 'transit', arriveBy: { day: DayOfWeek.Saturday, hour: 9, minute: 30 } },
+      { mode: 'drive', departAt: { day: DayOfWeek.Saturday, hour: 9, minute: 15 } },
+    ],
   },
   {
     id: 'cbst',
@@ -74,5 +84,12 @@ export const DESTINATIONS: readonly Destination[] = [
     place: { address: '130 W 30th St, New York, NY 10001' },
     // 9:50 already leaves time to be seated for the 10 am service, so any wait counts from it.
     trips: [{ mode: 'transit', arriveBy: { day: DayOfWeek.Saturday, hour: 9, minute: 50 } }],
+  },
+  {
+    id: 'florham-park',
+    title: 'Florham Park, NJ',
+    goal: { strictness: 'should', idealMinutes: 45, maxMinutes: 60 },
+    place: { address: 'Florham Park, NJ 07932' },
+    trips: [{ mode: 'drive', departAt: { day: DayOfWeek.Sunday, hour: 11, minute: 0 } }],
   },
 ];

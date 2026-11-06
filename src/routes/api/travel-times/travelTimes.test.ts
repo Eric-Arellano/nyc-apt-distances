@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { DESTINATIONS } from '#lib/server/destinations.ts';
 import type { DestinationResult } from '#lib/types.ts';
 import bike from '#tests/fixtures/google/bike.json';
+import drive from '#tests/fixtures/google/drive.json';
 import geocode from '#tests/fixtures/google/geocode.json';
 import geocodeZeroResults from '#tests/fixtures/google/geocode-zero-results.json';
 import transit from '#tests/fixtures/google/transit-transfer.json';
@@ -12,7 +13,12 @@ import { GET } from './+server';
 const env = vi.hoisted(() => ({ MOCK: false, GOOGLE_MAPS_TOKEN: 'test-key' }));
 vi.mock('$app/env/private', () => env);
 
-const ROUTE_FIXTURES: Record<string, unknown> = { WALK: walk, BICYCLE: bike, TRANSIT: transit };
+const ROUTE_FIXTURES: Record<string, unknown> = {
+  WALK: walk,
+  BICYCLE: bike,
+  TRANSIT: transit,
+  DRIVE: drive,
+};
 
 async function fakeGoogle(url: URL | string, init?: RequestInit) {
   if (String(url).includes('geocode')) return Response.json(geocode);

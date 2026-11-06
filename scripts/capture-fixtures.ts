@@ -1,7 +1,9 @@
 // Re-captures every Google fixture in tests/fixtures/google, using production's field masks. Run it
-// by hand, never from a test, because each request is billed: about ten per run.
+// by hand, never from a test, because each request is billed: about eleven per run.
 //
-//   node scripts/capture-fixtures.ts
+//   node scripts/capture-fixtures.ts [file ...]
+//
+// Naming files, such as `drive`, captures only those.
 //
 // `direnv exec . node scripts/capture-fixtures.ts` loads the key from `.envrc` without anyone
 // reading the file. Run `npm run format` afterwards, because Biome lays out JSON arrays differently.
@@ -26,6 +28,7 @@ function nextTime(weekday: number, hour: number, minute: number): string {
 
 const MONDAY_RUSH = nextTime(1, 9, 30);
 const SATURDAY_NIGHT = nextTime(6, 19, 0);
+const SUNDAY_MORNING = nextTime(0, 11, 0);
 
 const STATION = 'White Plains station, White Plains, NY 10601';
 const LIBRARY = 'White Plains Public Library, 100 Martine Ave, White Plains, NY 10601';
@@ -41,6 +44,7 @@ const CAPTURES: Capture[] = [
   { file: 'geocode-partial-match', geocode: 'Qwxzv St, White Plains, NY' },
   { file: 'walk', mode: 'walk', origin: STATION, dest: LIBRARY },
   { file: 'bike', mode: 'bike', origin: LIBRARY, dest: COLLEGE },
+  { file: 'drive', mode: 'drive', origin: STATION, dest: 'Florham Park, NJ 07932' },
   {
     file: 'transit-metro-north',
     mode: 'transit',
@@ -74,7 +78,7 @@ async function capture(item: Capture, key: string): Promise<unknown> {
     return await response.json();
   }
 
-  const { travelMode, fieldMask } = MODES[item.mode];
+  const { fieldMask, bufferMinutes: _, ...modeFields } = MODES[item.mode];
   const response = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
     method: 'POST',
     headers: {
@@ -85,8 +89,9 @@ async function capture(item: Capture, key: string): Promise<unknown> {
     body: JSON.stringify({
       origin: { address: item.origin },
       destination: { address: item.dest },
-      travelMode,
+      ...modeFields,
       ...(item.mode === 'transit' && { arrivalTime: item.arriveBy ?? MONDAY_RUSH }),
+      ...(item.mode === 'drive' && { departureTime: SUNDAY_MORNING }),
     }),
   });
   if (!response.ok) {
@@ -97,7 +102,8 @@ async function capture(item: Capture, key: string): Promise<unknown> {
   return await response.json();
 }
 
-for (const item of CAPTURES) {
+const only = process.argv.slice(2);
+for (const item of CAPTURES.filter(({ file }) => only.length === 0 || only.includes(file))) {
   const body = await capture(item, KEY);
   writeFileSync(
     new URL(`../tests/fixtures/google/${item.file}.json`, import.meta.url),

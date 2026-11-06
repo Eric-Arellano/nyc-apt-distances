@@ -4,9 +4,9 @@ export interface Ride {
 }
 
 export type Route =
-  | { mode: 'walk' | 'bike'; timeMinutes: number; distanceMiles: number }
+  | { mode: 'walk' | 'bike' | 'drive'; timeMinutes: number; distanceMiles: number }
   | { mode: 'transit'; timeMinutes: number; rides: readonly Ride[] } // Empty: all walking
-  | { mode: 'unavailable'; tripMode: 'walk' | 'bike' | 'transit' }; // Google found no route.
+  | { mode: 'unavailable'; tripMode: 'walk' | 'bike' | 'transit' | 'drive' }; // Google found no route.
 
 export interface Goal {
   strictness: 'must' | 'should';

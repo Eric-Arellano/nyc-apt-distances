@@ -23,8 +23,9 @@ function walkCard(
   };
 }
 
-// The institute and park are slower than ideal but within the max; the grocery is beyond the max.
-// Bet Am Shalom has a bus on Friday, only walking on Saturday, and no transit route to CBST.
+// The institute and park are slower than ideal but within the max; the grocery's walk is beyond
+// the max, but its drive is not. Bet Am Shalom has a bus on Friday, only walking and no drive on
+// Saturday, and no transit route to CBST. Florham Park is beyond the max.
 const DESTINATIONS: DestinationResult[] = [
   {
     id: 'metro-north',
@@ -38,7 +39,16 @@ const DESTINATIONS: DestinationResult[] = [
   },
   walkCard('Hebrew Institute of White Plains', 'must', [15, 25], null, [18, 1.1]),
   walkCard('Park or trail 🌳', 'should', [10, 20], { name: 'Turnure Park' }, [13, 0.7]),
-  walkCard('Grocery store 🛒', 'should', [10, 20], { name: 'ShopRite' }, [24, 1.2]),
+  {
+    id: 'grocery',
+    title: 'Grocery store 🛒',
+    goal: { strictness: 'should', idealMinutes: 10, maxMinutes: 20 },
+    closest: { name: 'ShopRite' },
+    routes: [
+      { mode: 'walk', timeMinutes: 24, distanceMiles: 1.2 },
+      { mode: 'drive', timeMinutes: 8, distanceMiles: 1.4 },
+    ],
+  },
   {
     id: 'bet-am-shalom-friday',
     title: 'Bet Am Shalom, Friday 6:15 pm',
@@ -47,6 +57,7 @@ const DESTINATIONS: DestinationResult[] = [
     routes: [
       BET_AM_SHALOM_WALK,
       { mode: 'transit', timeMinutes: 14, rides: [{ line: '60', vehicle: 'bus' }] },
+      { mode: 'drive', timeMinutes: 11, distanceMiles: 2.3 },
     ],
   },
   {
@@ -54,7 +65,11 @@ const DESTINATIONS: DestinationResult[] = [
     title: 'Bet Am Shalom, Saturday 9:30 am',
     goal: BET_AM_SHALOM_GOAL,
     closest: null,
-    routes: [BET_AM_SHALOM_WALK, { mode: 'transit', timeMinutes: 30, rides: [] }],
+    routes: [
+      BET_AM_SHALOM_WALK,
+      { mode: 'transit', timeMinutes: 30, rides: [] },
+      { mode: 'unavailable', tripMode: 'drive' },
+    ],
   },
   {
     id: 'cbst',
@@ -62,6 +77,13 @@ const DESTINATIONS: DestinationResult[] = [
     goal: { strictness: 'should', idealMinutes: 75, maxMinutes: 95 },
     closest: null,
     routes: [{ mode: 'unavailable', tripMode: 'transit' }],
+  },
+  {
+    id: 'florham-park',
+    title: 'Florham Park, NJ',
+    goal: { strictness: 'should', idealMinutes: 45, maxMinutes: 60 },
+    closest: null,
+    routes: [{ mode: 'drive', timeMinutes: 68, distanceMiles: 58.2 }],
   },
 ];
 
@@ -87,26 +109,36 @@ const EXPECTED_CARDS = [
   },
   {
     title: 'Grocery store 🛒',
-    goal: 'Should be within a 20-minute walk; ideally within 10 minutes',
-    routes: ['🚶 24 minutes to ShopRite (1.2 miles)'],
-    status: 'unmet',
+    goal: 'Should be within 20 minutes; ideally within 10 minutes',
+    routes: ['🚶 24 minutes to ShopRite (1.2 miles)', '🚗 8 minutes (1.4 miles)'],
+    status: 'met',
   },
   {
     title: 'Bet Am Shalom, Friday 6:15 pm',
     goal: 'Should be within 25 minutes; ideally within 15 minutes',
-    routes: ['🚶 32 minutes (1.6 miles)', '🚌 14 minutes on the 60 bus'],
+    routes: [
+      '🚶 32 minutes (1.6 miles)',
+      '🚌 14 minutes on the 60 bus',
+      '🚗 11 minutes (2.3 miles)',
+    ],
     status: 'met',
   },
   {
     title: 'Bet Am Shalom, Saturday 9:30 am',
     goal: 'Should be within 25 minutes; ideally within 15 minutes',
-    routes: ['🚶 32 minutes (1.6 miles)', '🚆 30 minutes by walking'],
+    routes: ['🚶 32 minutes (1.6 miles)', '🚆 30 minutes by walking', '🚗 No driving route'],
     status: 'unmet',
   },
   {
     title: 'Congregation Beit Simchat Torah, Saturday 10 am',
     goal: 'Should be within 95 minutes; ideally within 75 minutes',
     routes: ['🚆 No transit route'],
+    status: 'unmet',
+  },
+  {
+    title: 'Florham Park, NJ',
+    goal: 'Should be within 60 minutes; ideally within 45 minutes',
+    routes: ['🚗 68 minutes (58.2 miles)'],
     status: 'unmet',
   },
 ];

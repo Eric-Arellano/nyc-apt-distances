@@ -1,13 +1,14 @@
 import { DateTime } from 'luxon';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import bike from '#tests/fixtures/google/bike.json';
+import drive from '#tests/fixtures/google/drive.json';
 import transitBus from '#tests/fixtures/google/transit-bus.json';
 import transitMetroNorth from '#tests/fixtures/google/transit-metro-north.json';
 import transitNoRoute from '#tests/fixtures/google/transit-no-route.json';
 import transitTransfer from '#tests/fixtures/google/transit-transfer.json';
 import walk from '#tests/fixtures/google/walk.json';
 import { DayOfWeek } from './departureTime';
-import { computeRoute, parseActiveTransportRoute, parseTransitRoute } from './gmapsRouting';
+import { computeRoute, parseDistanceRoute, parseTransitRoute } from './gmapsRouting';
 
 vi.mock('$app/env/private', () => ({ GOOGLE_MAPS_TOKEN: 'test-key' }));
 
@@ -118,9 +119,51 @@ describe('computeRoute for a transit trip', () => {
   });
 });
 
-describe('parseActiveTransportRoute', () => {
+describe('computeRoute for a drive', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ now: new Date('2026-11-04T12:00:00Z') });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test('departs at the next target time with traffic, in RFC 3339', async () => {
+    const fetchMock = stubFetch();
+
+    await expect(
+      computeRoute({
+        origin: 'A',
+        dest: 'B',
+        trip: { mode: 'drive', departAt: { day: DayOfWeek.Sunday, hour: 11, minute: 0 } },
+      }),
+    ).resolves.toEqual({ mode: 'unavailable', tripMode: 'drive' });
+
+    expect(sentRequest(fetchMock).body).toEqual({
+      origin: { address: 'A' },
+      destination: { address: 'B' },
+      travelMode: 'DRIVE',
+      routingPreference: 'TRAFFIC_AWARE',
+      departureTime: '2026-11-08T16:00:00.000Z',
+    });
+  });
+
+  test('adds time to park', async () => {
+    stubFetch(Response.json(drive));
+
+    await expect(
+      computeRoute({
+        origin: 'A',
+        dest: 'B',
+        trip: { mode: 'drive', departAt: { day: DayOfWeek.Sunday, hour: 11, minute: 0 } },
+      }),
+    ).resolves.toEqual({ mode: 'drive', timeMinutes: 68, distanceMiles: 58.2 });
+  });
+});
+
+describe('parseDistanceRoute', () => {
   test('reads a walk response', () => {
-    expect(parseActiveTransportRoute(walk, 'walk')).toEqual({
+    expect(parseDistanceRoute(walk, 'walk')).toEqual({
       mode: 'walk',
       timeMinutes: 10,
       distanceMiles: 0.4,
@@ -128,34 +171,42 @@ describe('parseActiveTransportRoute', () => {
   });
 
   test('reads a bike response', () => {
-    expect(parseActiveTransportRoute(bike, 'bike')).toEqual({
+    expect(parseDistanceRoute(bike, 'bike')).toEqual({
       mode: 'bike',
       timeMinutes: 27,
       distanceMiles: 3.6,
     });
   });
 
+  test('reads a drive response', () => {
+    expect(parseDistanceRoute(drive, 'drive')).toEqual({
+      mode: 'drive',
+      timeMinutes: 63,
+      distanceMiles: 58.2,
+    });
+  });
+
   test('reads no route as unavailable', () => {
-    expect(parseActiveTransportRoute({}, 'walk')).toEqual({
+    expect(parseDistanceRoute({}, 'walk')).toEqual({
       mode: 'unavailable',
       tripMode: 'walk',
     });
   });
 
   test('throws on more than one route', () => {
-    expect(() => parseActiveTransportRoute({ routes: [{}, {}] }, 'walk')).toThrow(
+    expect(() => parseDistanceRoute({ routes: [{}, {}] }, 'walk')).toThrow(
       'Unexpected number of routes: 2',
     );
   });
 
   test('throws on a route without a duration', () => {
-    expect(() => parseActiveTransportRoute({ routes: [{}] }, 'walk')).toThrow(
+    expect(() => parseDistanceRoute({ routes: [{}] }, 'walk')).toThrow(
       'Unexpected route duration: undefined',
     );
   });
 
   test('reads an omitted distance as zero', () => {
-    expect(parseActiveTransportRoute({ routes: [{ duration: '0s' }] }, 'walk')).toEqual({
+    expect(parseDistanceRoute({ routes: [{ duration: '0s' }] }, 'walk')).toEqual({
       mode: 'walk',
       timeMinutes: 0,
       distanceMiles: 0,

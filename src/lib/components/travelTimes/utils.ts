@@ -38,6 +38,8 @@ export function formatRoute(route: Route, place?: Place | null): string {
       return formatTransit(route.timeMinutes, route.rides);
     case 'bike':
       return `🚴 ${route.timeMinutes} minutes (${route.distanceMiles} miles)`;
+    case 'drive':
+      return `🚗 ${route.timeMinutes} minutes (${route.distanceMiles} miles)`;
     case 'walk':
       return `🚶 ${route.timeMinutes} minutes${place ? ` to ${place.name}` : ''} (${route.distanceMiles} miles)`;
     case 'unavailable':
@@ -45,6 +47,7 @@ export function formatRoute(route: Route, place?: Place | null): string {
         walk: '🚶 No walking route',
         bike: '🚴 No bike route',
         transit: '🚆 No transit route',
+        drive: '🚗 No driving route',
       }[route.tripMode];
   }
 }
