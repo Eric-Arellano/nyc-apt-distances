@@ -14,7 +14,10 @@
               "transitDetails": {
                 "transitLine": {
                   "name": "40 - MT Vernon-White Plains-WC MC",
-                  "nameShort": "40"
+                  "nameShort": "40",
+                  "vehicle": {
+                    "type": "BUS"
+                  }
                 }
               },
               "travelMode": "TRANSIT"

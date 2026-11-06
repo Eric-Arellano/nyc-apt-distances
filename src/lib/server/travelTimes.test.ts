@@ -50,7 +50,7 @@ describe('computeTravelTimes', () => {
         goal: { strictness: 'must', idealMinutes: 15, maxMinutes: 25 },
         closest: null,
         routes: [
-          { mode: 'transit', timeMinutes: 18, summary: '2' },
+          { mode: 'transit', timeMinutes: 18, rides: [{ line: '2', vehicle: 'train' }] },
           { mode: 'bike', timeMinutes: 4, distanceMiles: 1.5 },
           { mode: 'walk', timeMinutes: 12, distanceMiles: 0.8 },
         ],
