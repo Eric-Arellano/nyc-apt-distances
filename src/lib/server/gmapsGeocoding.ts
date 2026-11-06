@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import type { Coordinates } from './closest';
 import { fetchGoogle } from './gmapsFetch';
 import { requireGmapsToken } from './gmapsToken';
 
@@ -21,10 +22,7 @@ export interface GeocodeResponse {
 export function parseGeocodeResponse(
   response: GeocodeResponse,
   expectedCounty: string,
-): {
-  latitude: number;
-  longitude: number;
-} {
+): Coordinates {
   const { status, results } = response;
   if (status === 'ZERO_RESULTS') {
     throw error(400, 'Google could not find that address.');
@@ -53,10 +51,7 @@ export function parseGeocodeResponse(
   };
 }
 
-export async function geocode(
-  address: string,
-  expectedCounty: string,
-): Promise<{ latitude: number; longitude: number }> {
+export async function geocode(address: string, expectedCounty: string): Promise<Coordinates> {
   const url = new URL(GEOCODE_URL);
   url.search = new URLSearchParams({ key: requireGmapsToken(), address }).toString();
 

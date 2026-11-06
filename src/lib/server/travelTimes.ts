@@ -1,5 +1,5 @@
 import type { DestinationResult, Place } from '#lib/types.ts';
-import { type CoordinatePoint, findClosest } from './closestDest';
+import { type Coordinates, closest } from './closest';
 import { type Destination, ORIGIN_COUNTY } from './destinations';
 import type { geocode } from './gmapsGeocoding';
 import type { computeRoute } from './gmapsRouting';
@@ -11,12 +11,12 @@ export interface Maps {
 
 function resolvePlace(
   place: Destination['place'],
-  originPoint: CoordinatePoint,
+  originPoint: Coordinates,
 ): { address: string; closest: Place | null } {
   if ('address' in place) {
     return { address: place.address, closest: null };
   }
-  const { name, address } = findClosest(originPoint, place.closestOf);
+  const { name, address } = closest(originPoint, place.closestOf);
   return { address, closest: { name } };
 }
 
