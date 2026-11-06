@@ -51,7 +51,8 @@ export const DESTINATIONS: readonly Destination[] = [
     title: 'Grocery store 🛒',
     goal: { strictness: 'should', idealMinutes: 10, maxMinutes: 20 },
     place: { closestOf: SUPERMARKETS },
-    trips: [WALK, { mode: 'drive', departAt: { day: DayOfWeek.Sunday, hour: 11, minute: 0 } }],
+    // Only a walk: any store is a reasonable drive, so the question is whether the car is needed.
+    trips: [WALK],
   },
   {
     id: 'bet-am-shalom-friday',

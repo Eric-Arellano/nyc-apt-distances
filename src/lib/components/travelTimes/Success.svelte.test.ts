@@ -23,9 +23,9 @@ function walkCard(
   };
 }
 
-// The institute and park are slower than ideal but within the max; the grocery's walk is beyond
-// the max, but its drive is not. Bet Am Shalom has a bus on Friday, only walking and no drive on
-// Saturday, and no transit route to CBST. Florham Park is beyond the max.
+// The institute and park are slower than ideal but within the max; the grocery is beyond the max.
+// Bet Am Shalom has a bus on Friday, only walking and no drive on Saturday, and no transit route to
+// CBST. Florham Park is beyond the max.
 const DESTINATIONS: DestinationResult[] = [
   {
     id: 'metro-north',
@@ -39,16 +39,7 @@ const DESTINATIONS: DestinationResult[] = [
   },
   walkCard('Hebrew Institute of White Plains', 'must', [15, 25], null, [18, 1.1]),
   walkCard('Park or trail 🌳', 'should', [10, 20], { name: 'Turnure Park' }, [13, 0.7]),
-  {
-    id: 'grocery',
-    title: 'Grocery store 🛒',
-    goal: { strictness: 'should', idealMinutes: 10, maxMinutes: 20 },
-    closest: { name: 'ShopRite' },
-    routes: [
-      { mode: 'walk', timeMinutes: 24, distanceMiles: 1.2 },
-      { mode: 'drive', timeMinutes: 8, distanceMiles: 1.4 },
-    ],
-  },
+  walkCard('Grocery store 🛒', 'should', [10, 20], { name: 'ShopRite' }, [24, 1.2]),
   {
     id: 'bet-am-shalom-friday',
     title: 'Bet Am Shalom, Friday 6:15 pm',
@@ -109,9 +100,9 @@ const EXPECTED_CARDS = [
   },
   {
     title: 'Grocery store 🛒',
-    goal: 'Should be within 20 minutes; ideally within 10 minutes',
-    routes: ['🚶 24 minutes to ShopRite (1.2 miles)', '🚗 8 minutes (1.4 miles)'],
-    status: 'met',
+    goal: 'Should be within a 20-minute walk; ideally within 10 minutes',
+    routes: ['🚶 24 minutes to ShopRite (1.2 miles)'],
+    status: 'unmet',
   },
   {
     title: 'Bet Am Shalom, Friday 6:15 pm',
