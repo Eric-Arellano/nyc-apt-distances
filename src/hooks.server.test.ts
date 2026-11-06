@@ -18,8 +18,8 @@ async function request(path: string, session?: string) {
 }
 
 describe('handle', () => {
-  test('refuses an API route without a session', async () => {
-    const { resolve, status } = await request('/api/travel-times');
+  test.each(['/api/travel-times', '/api/logins'])('refuses %s without a session', async (path) => {
+    const { resolve, status } = await request(path);
 
     expect(status).toBe(401);
     expect(resolve).not.toHaveBeenCalled();
