@@ -13,11 +13,15 @@ export interface GeocodeResponse {
   results: {
     formatted_address: string;
     types: string[];
+    address_components: { long_name: string; types: string[] }[];
     geometry: { location: { lat: number; lng: number } };
   }[];
 }
 
-export function parseGeocodeResponse(response: GeocodeResponse): {
+export function parseGeocodeResponse(
+  response: GeocodeResponse,
+  expectedCounty: string,
+): {
   latitude: number;
   longitude: number;
 } {
@@ -33,6 +37,15 @@ export function parseGeocodeResponse(response: GeocodeResponse): {
   if (!result.types.some((type) => SPECIFIC_TYPES.includes(type))) {
     throw error(400, `Google only matched "${result.formatted_address}", not a street address.`);
   }
+  const county = result.address_components.find(({ types }) =>
+    types.includes('administrative_area_level_2'),
+  )?.long_name;
+  if (county !== expectedCounty) {
+    throw error(
+      400,
+      `Google placed that address at "${result.formatted_address}", outside ${expectedCounty}.`,
+    );
+  }
   const { lat, lng } = result.geometry.location;
   return {
     latitude: lat,
@@ -40,7 +53,10 @@ export function parseGeocodeResponse(response: GeocodeResponse): {
   };
 }
 
-export async function geocode(address: string): Promise<{ latitude: number; longitude: number }> {
+export async function geocode(
+  address: string,
+  expectedCounty: string,
+): Promise<{ latitude: number; longitude: number }> {
   const url = new URL(GEOCODE_URL);
   url.search = new URLSearchParams({ key: requireGmapsToken(), address }).toString();
 
@@ -49,5 +65,5 @@ export async function geocode(address: string): Promise<{ latitude: number; long
   if (!response.ok) {
     throw new Error(`Geocoding returned ${response.status}`);
   }
-  return parseGeocodeResponse(await response.json());
+  return parseGeocodeResponse(await response.json(), expectedCounty);
 }
