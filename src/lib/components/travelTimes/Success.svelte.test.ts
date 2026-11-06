@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render } from '@testing-library/svelte';
+import { render, within } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import type { DestinationResult, Goal, Route } from '#lib/types.ts';
 import Success from './Success.svelte';
@@ -139,9 +139,9 @@ function renderedCards(destinations: DestinationResult[]) {
   return [...container.querySelectorAll<HTMLElement>('[data-status]')].map((card) => ({
     title: card.querySelector('h3')?.textContent,
     goal: card.querySelector('p')?.textContent,
-    routes: [...card.querySelectorAll('.space-y-2 > div')].map((route) =>
-      route.textContent?.trim(),
-    ),
+    routes: within(card)
+      .getAllByRole('listitem')
+      .map((route) => route.textContent?.trim()),
     status: card.dataset.status,
   }));
 }

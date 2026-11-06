@@ -21,26 +21,14 @@ candidate is `closest(origin, candidates)` in `closest.ts`, over the non-empty `
 that `candidateLocations.ts` defines, and geocoding returns its `Coordinates`. A trip's
 `arriveBy` / `departAt` is a `WeeklyTime`, resolved by `nextOccurrence` in `weeklyTime.ts`.
 
-## PR 1: Make the page test survive a restyle (Svelte, optional)
-`Success.svelte.test.ts` finds routes with `.space-y-2 > div`, a Tailwind class, so restyling the
-page breaks the test.
-- Render the cards and routes in `Success.svelte` / `DestinationCard.svelte` as `<ul>`/`<li>`
-  (better semantics too, with no visual change once list styles are reset), and query by role.
-- `components/travelTimes/utils.ts` → `format.ts`. Replace `DestinationCard`'s nested status
-  ternary with a `Record<GoalStatus, string>` of classes.
-- Fix the top-level `describe`s in `gmapsRouting.test.ts`, which spell the situation into the
-  subject (`'computeRoute for a bike trip'` → `computeRoute` › `for a bike trip`). Move the walk
-  test out of the bike group. Turn `addressUtils.test.ts` into a `test.each`.
-- Run `svelte-autofixer` on each Svelte file touched, until it reports nothing.
-
-## PR 2: README refresh (small)
+## PR 1: README refresh (small)
 - Add `MOCK=1 npm run dev`. AGENTS.md mentions it but the README doesn't.
 - One line naming `src/lib/server/destinations.ts` as where destinations and goals live.
 - "with `envrc`" → direnv. The arrival-time section covers transit only; drives depart at a time.
   Drop the mechanism ("uses Luxon", the step list); `candidateLocations.ts` already holds the
   rejected alternative.
 
-## PR 3: Pass the Google key in, so the fixture script reuses production's requests (optional, largest)
+## PR 2: Pass the Google key in, so the fixture script reuses production's requests (optional, largest)
 `scripts/capture-fixtures.ts` duplicates the computeRoutes call and has its own `nextTime`,
 because the gmaps modules import `$app/env/private`, which plain Node can't load. That's also why
 `routeModes.ts` carries its "no imports" rule.
@@ -83,9 +71,7 @@ modest, so it's fine to skip.
 ## Verification (each PR)
 
 - `npm run lint && npm run check && npm test`. Report any flake by name.
-- PR 1: confirm the tests fail on the old code / pass on the new.
-- PR 1: `MOCK=1 npm run dev` and eyeball the page to confirm it looks the same.
-- PR 3: `npm run check` covers the script's types. Capturing bills the key, so run at most a
+- PR 2: `npm run check` covers the script's types. Capturing bills the key, so run at most a
   single capture (`direnv exec . node scripts/capture-fixtures.ts walk`), only with Eric's OK, and
   say that it ran. The re-captured `walk.json` should come back unchanged apart from Google's own
   drift.

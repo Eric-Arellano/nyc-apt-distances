@@ -1,9 +1,13 @@
-import { expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { isValidAddress } from './addressUtils.js';
 
-test('isValidAddress', () => {
-  expect(isValidAddress('')).toBe(false);
-  expect(isValidAddress('123')).toBe(false);
-  expect(isValidAddress('West 123')).toBe(false);
-  expect(isValidAddress('123 W')).toBe(true);
+describe('isValidAddress', () => {
+  test.each([
+    ['', false],
+    ['123', false],
+    ['West 123', false],
+    ['123 W', true],
+  ])('judges %j valid: %s', (address, valid) => {
+    expect(isValidAddress(address)).toBe(valid);
+  });
 });
