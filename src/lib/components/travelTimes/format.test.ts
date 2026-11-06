@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { Route } from '#lib/types.ts';
-import { formatRoute, goalStatus, goalText } from './utils.js';
+import { formatRoute, goalStatus, goalText } from './format.js';
 
 describe('goalStatus', () => {
   const goal = { strictness: 'must', idealMinutes: 5, maxMinutes: 10 } as const;

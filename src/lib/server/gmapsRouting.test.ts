@@ -27,44 +27,7 @@ function sentRequest(fetchMock: ReturnType<typeof stubFetch>) {
   return { url, headers: init?.headers, body: JSON.parse(String(init?.body)) };
 }
 
-describe('computeRoute for a bike trip', () => {
-  test('sends the mode with a key and field mask', async () => {
-    const fetchMock = stubFetch();
-
-    await expect(computeRoute({ origin: 'A', dest: 'B', trip: { mode: 'bike' } })).resolves.toEqual(
-      {
-        mode: 'unavailable',
-        tripMode: 'bike',
-      },
-    );
-
-    expect(sentRequest(fetchMock)).toEqual({
-      url: 'https://routes.googleapis.com/directions/v2:computeRoutes',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': 'test-key',
-        'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters',
-      },
-      body: {
-        origin: { address: 'A' },
-        destination: { address: 'B' },
-        travelMode: 'BICYCLE',
-      },
-    });
-  });
-
-  test('adds time to get the bike out', async () => {
-    stubFetch(Response.json(bike));
-
-    await expect(computeRoute({ origin: 'A', dest: 'B', trip: { mode: 'bike' } })).resolves.toEqual(
-      {
-        mode: 'bike',
-        timeMinutes: 29,
-        distanceMiles: 3.6,
-      },
-    );
-  });
-
+describe('computeRoute', () => {
   test('throws with the status and body when Google rejects the request', async () => {
     stubFetch(new Response('field mask required', { status: 400 }));
 
@@ -72,92 +35,131 @@ describe('computeRoute for a bike trip', () => {
       'computeRoutes returned 400: field mask required',
     );
   });
-});
 
-describe('computeRoute for a transit trip', () => {
-  beforeEach(() => {
-    vi.useFakeTimers({ now: new Date('2026-11-04T12:00:00Z') });
-  });
+  describe('for a bike trip', () => {
+    test('sends the mode with a key and field mask', async () => {
+      const fetchMock = stubFetch();
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+      await expect(
+        computeRoute({ origin: 'A', dest: 'B', trip: { mode: 'bike' } }),
+      ).resolves.toEqual({
+        mode: 'unavailable',
+        tripMode: 'bike',
+      });
 
-  test('arrives by the next target time, in RFC 3339', async () => {
-    const fetchMock = stubFetch();
+      expect(sentRequest(fetchMock)).toEqual({
+        url: 'https://routes.googleapis.com/directions/v2:computeRoutes',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': 'test-key',
+          'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters',
+        },
+        body: {
+          origin: { address: 'A' },
+          destination: { address: 'B' },
+          travelMode: 'BICYCLE',
+        },
+      });
+    });
 
-    await expect(
-      computeRoute({
-        origin: 'A',
-        dest: 'B',
-        trip: { mode: 'transit', arriveBy: { day: DayOfWeek.Monday, hour: 8, minute: 45 } },
-      }),
-    ).resolves.toEqual({ mode: 'unavailable', tripMode: 'transit' });
+    test('adds time to get the bike out', async () => {
+      stubFetch(Response.json(bike));
 
-    expect(sentRequest(fetchMock).body).toEqual({
-      origin: { address: 'A' },
-      destination: { address: 'B' },
-      travelMode: 'TRANSIT',
-      arrivalTime: '2026-11-09T13:45:00.000Z',
+      await expect(
+        computeRoute({ origin: 'A', dest: 'B', trip: { mode: 'bike' } }),
+      ).resolves.toEqual({
+        mode: 'bike',
+        timeMinutes: 29,
+        distanceMiles: 3.6,
+      });
     });
   });
 
-  test('counts the wait before the next target time', async () => {
-    stubFetch(Response.json(transitBus));
+  describe('for a transit trip', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ now: new Date('2026-11-04T12:00:00Z') });
+    });
 
-    await expect(
-      computeRoute({
-        origin: 'A',
-        dest: 'B',
-        trip: { mode: 'transit', arriveBy: { day: DayOfWeek.Monday, hour: 9, minute: 30 } },
-      }),
-    ).resolves.toEqual({
-      mode: 'transit',
-      timeMinutes: 28,
-      rides: [{ line: '40', vehicle: 'bus' }],
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    test('arrives by the next target time, in RFC 3339', async () => {
+      const fetchMock = stubFetch();
+
+      await expect(
+        computeRoute({
+          origin: 'A',
+          dest: 'B',
+          trip: { mode: 'transit', arriveBy: { day: DayOfWeek.Monday, hour: 8, minute: 45 } },
+        }),
+      ).resolves.toEqual({ mode: 'unavailable', tripMode: 'transit' });
+
+      expect(sentRequest(fetchMock).body).toEqual({
+        origin: { address: 'A' },
+        destination: { address: 'B' },
+        travelMode: 'TRANSIT',
+        arrivalTime: '2026-11-09T13:45:00.000Z',
+      });
+    });
+
+    test('counts the wait before the next target time', async () => {
+      stubFetch(Response.json(transitBus));
+
+      await expect(
+        computeRoute({
+          origin: 'A',
+          dest: 'B',
+          trip: { mode: 'transit', arriveBy: { day: DayOfWeek.Monday, hour: 9, minute: 30 } },
+        }),
+      ).resolves.toEqual({
+        mode: 'transit',
+        timeMinutes: 28,
+        rides: [{ line: '40', vehicle: 'bus' }],
+      });
     });
   });
-});
 
-describe('computeRoute for a drive', () => {
-  beforeEach(() => {
-    vi.useFakeTimers({ now: new Date('2026-11-04T12:00:00Z') });
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  test('departs at the next target time with traffic, in RFC 3339', async () => {
-    const fetchMock = stubFetch();
-
-    await expect(
-      computeRoute({
-        origin: 'A',
-        dest: 'B',
-        trip: { mode: 'drive', departAt: { day: DayOfWeek.Sunday, hour: 11, minute: 0 } },
-      }),
-    ).resolves.toEqual({ mode: 'unavailable', tripMode: 'drive' });
-
-    expect(sentRequest(fetchMock).body).toEqual({
-      origin: { address: 'A' },
-      destination: { address: 'B' },
-      travelMode: 'DRIVE',
-      routingPreference: 'TRAFFIC_AWARE',
-      departureTime: '2026-11-08T16:00:00.000Z',
+  describe('for a drive', () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ now: new Date('2026-11-04T12:00:00Z') });
     });
-  });
 
-  test('adds time to park', async () => {
-    stubFetch(Response.json(drive));
+    afterEach(() => {
+      vi.useRealTimers();
+    });
 
-    await expect(
-      computeRoute({
-        origin: 'A',
-        dest: 'B',
-        trip: { mode: 'drive', departAt: { day: DayOfWeek.Sunday, hour: 11, minute: 0 } },
-      }),
-    ).resolves.toEqual({ mode: 'drive', timeMinutes: 68, distanceMiles: 58.2 });
+    test('departs at the next target time with traffic, in RFC 3339', async () => {
+      const fetchMock = stubFetch();
+
+      await expect(
+        computeRoute({
+          origin: 'A',
+          dest: 'B',
+          trip: { mode: 'drive', departAt: { day: DayOfWeek.Sunday, hour: 11, minute: 0 } },
+        }),
+      ).resolves.toEqual({ mode: 'unavailable', tripMode: 'drive' });
+
+      expect(sentRequest(fetchMock).body).toEqual({
+        origin: { address: 'A' },
+        destination: { address: 'B' },
+        travelMode: 'DRIVE',
+        routingPreference: 'TRAFFIC_AWARE',
+        departureTime: '2026-11-08T16:00:00.000Z',
+      });
+    });
+
+    test('adds time to park', async () => {
+      stubFetch(Response.json(drive));
+
+      await expect(
+        computeRoute({
+          origin: 'A',
+          dest: 'B',
+          trip: { mode: 'drive', departAt: { day: DayOfWeek.Sunday, hour: 11, minute: 0 } },
+        }),
+      ).resolves.toEqual({ mode: 'drive', timeMinutes: 68, distanceMiles: 58.2 });
+    });
   });
 });
 
