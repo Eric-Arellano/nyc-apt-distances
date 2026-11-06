@@ -4,16 +4,8 @@ import { describe, expect, it } from 'vitest';
 import type { DestinationResult, Goal, Route } from '#lib/types.ts';
 import Success from './Success.svelte';
 
-const HARLEM_LINE: Route = {
-  mode: 'transit',
-  timeMinutes: 18,
-  rides: [{ line: 'Harlem', vehicle: 'train' }],
-};
-const SHOULD_GOAL: Goal = { strictness: 'should', idealMinutes: 40, maxMinutes: 55 };
-
-function transitCard(title: string, goal: Goal, routes: Route[]): DestinationResult {
-  return { id: title, title, goal, closest: null, routes };
-}
+const BET_AM_SHALOM_GOAL: Goal = { strictness: 'should', idealMinutes: 15, maxMinutes: 25 };
+const BET_AM_SHALOM_WALK: Route = { mode: 'walk', timeMinutes: 32, distanceMiles: 1.6 };
 
 function walkCard(
   title: string,
@@ -32,6 +24,7 @@ function walkCard(
 }
 
 // The institute and park are slower than ideal but within the max; the grocery is beyond the max.
+// Bet Am Shalom has a bus on Friday, only walking on Saturday, and no transit route to CBST.
 const DESTINATIONS: DestinationResult[] = [
   {
     id: 'metro-north',
@@ -46,9 +39,31 @@ const DESTINATIONS: DestinationResult[] = [
   walkCard('Hebrew Institute of White Plains', 'must', [15, 25], null, [18, 1.1]),
   walkCard('Park or trail 🌳', 'should', [10, 20], { name: 'Turnure Park' }, [13, 0.7]),
   walkCard('Grocery store 🛒', 'should', [10, 20], { name: 'ShopRite' }, [24, 1.2]),
+  {
+    id: 'bet-am-shalom-friday',
+    title: 'Bet Am Shalom, Friday 6:15 pm',
+    goal: BET_AM_SHALOM_GOAL,
+    closest: null,
+    routes: [
+      BET_AM_SHALOM_WALK,
+      { mode: 'transit', timeMinutes: 14, rides: [{ line: '60', vehicle: 'bus' }] },
+    ],
+  },
+  {
+    id: 'bet-am-shalom-saturday',
+    title: 'Bet Am Shalom, Saturday 9:30 am',
+    goal: BET_AM_SHALOM_GOAL,
+    closest: null,
+    routes: [BET_AM_SHALOM_WALK, { mode: 'transit', timeMinutes: 30, rides: [] }],
+  },
+  {
+    id: 'cbst',
+    title: 'Congregation Beit Simchat Torah, Saturday 10 am',
+    goal: { strictness: 'should', idealMinutes: 75, maxMinutes: 95 },
+    closest: null,
+    routes: [{ mode: 'unavailable', tripMode: 'transit' }],
+  },
 ];
-
-const SHOULD_40_55 = 'Should be within 55 minutes; ideally within 40 minutes';
 
 // Every card the page shows, in order. PRs that restructure destinations must leave this alone.
 const EXPECTED_CARDS = [
@@ -76,6 +91,24 @@ const EXPECTED_CARDS = [
     routes: ['🚶 24 minutes to ShopRite (1.2 miles)'],
     status: 'unmet',
   },
+  {
+    title: 'Bet Am Shalom, Friday 6:15 pm',
+    goal: 'Should be within 25 minutes; ideally within 15 minutes',
+    routes: ['🚶 32 minutes (1.6 miles)', '🚌 14 minutes on the 60 bus'],
+    status: 'met',
+  },
+  {
+    title: 'Bet Am Shalom, Saturday 9:30 am',
+    goal: 'Should be within 25 minutes; ideally within 15 minutes',
+    routes: ['🚶 32 minutes (1.6 miles)', '🚆 30 minutes by walking'],
+    status: 'unmet',
+  },
+  {
+    title: 'Congregation Beit Simchat Torah, Saturday 10 am',
+    goal: 'Should be within 95 minutes; ideally within 75 minutes',
+    routes: ['🚆 No transit route'],
+    status: 'unmet',
+  },
 ];
 
 function renderedCards(destinations: DestinationResult[]) {
@@ -93,36 +126,5 @@ function renderedCards(destinations: DestinationResult[]) {
 describe('Success', () => {
   it('renders every destination card', () => {
     expect(renderedCards(DESTINATIONS)).toEqual(EXPECTED_CARDS);
-  });
-
-  it('renders transit routes', () => {
-    const card = transitCard('Grand Central', SHOULD_GOAL, [
-      HARLEM_LINE,
-      { mode: 'transit', timeMinutes: 60, rides: [] },
-    ]);
-
-    expect(renderedCards([card])).toEqual([
-      {
-        title: 'Grand Central',
-        goal: SHOULD_40_55,
-        routes: ['🚆 18 minutes on the Harlem', '🚆 60 minutes by walking'],
-        status: 'met',
-      },
-    ]);
-  });
-
-  it('marks a destination with no route as unmet', () => {
-    const card = transitCard('Pound Ridge', SHOULD_GOAL, [
-      { mode: 'unavailable', tripMode: 'transit' },
-    ]);
-
-    expect(renderedCards([card])).toEqual([
-      {
-        title: 'Pound Ridge',
-        goal: SHOULD_40_55,
-        routes: ['🚆 No transit route'],
-        status: 'unmet',
-      },
-    ]);
   });
 });

@@ -36,9 +36,9 @@ Several destinations have multiple candidates, such as several parks around Whit
 3. Use the Haversine formula to compute which candidate location is closest.
 4. Use the Google Maps Routes API to compute the travel times.
 
-### Consistent departure time
+### Consistent arrival time
 
-For transit, the route time depends on when you are leaving. For example, transit is much better during rush hour. So, I need a way to get a consistent departure time regardless of when the app is running, such as "Monday at 9 AM".
+For transit, the route time depends on when you travel. For example, transit is much better during rush hour, and buses thin out on weekends. So, I need a consistent time regardless of when the app is running. Each transit trip names when it must arrive, such as "Saturday by 9:30 AM", because that is what matters for getting to a service on time.
 
 This app will compute the next target day of the week by comparing it to the present day when the request is made. This works because Google Maps lets you use a date up to 100 days in the future.
 

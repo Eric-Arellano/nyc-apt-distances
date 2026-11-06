@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import type { Ride, Route } from '#lib/types.ts';
 import { getNextDateTime, type TargetDate } from './departureTime';
 import { fetchGoogle } from './gmapsFetch';
@@ -17,7 +18,9 @@ export interface ComputeRoutesResponse {
     legs?: {
       steps?: {
         travelMode?: string;
+        staticDuration?: string;
         transitDetails?: {
+          stopDetails?: { arrivalTime?: string };
           transitLine?: { name?: string; nameShort?: string; vehicle?: { type?: string } };
         };
       }[];
@@ -55,12 +58,34 @@ function onlyRoute(response: ComputeRoutesResponse): GoogleRoute | undefined {
   return routes[0];
 }
 
-function durationToMinutes(duration: string | undefined): number {
+function durationToSeconds(duration: string | undefined): number {
   const seconds = Number(duration?.replace(/s$/, ''));
   if (Number.isNaN(seconds)) {
     throw new Error(`Unexpected route duration: ${duration}`);
   }
-  return Math.round(seconds / 60);
+  return seconds;
+}
+
+function durationToMinutes(duration: string | undefined): number {
+  return Math.round(durationToSeconds(duration) / 60);
+}
+
+type Step = NonNullable<NonNullable<GoogleRoute['legs']>[number]['steps']>[number];
+
+// Google's `duration` stops when the trip arrives, but arriving early still spends that time, so
+// it counts. An all-walking trip keeps no schedule, so it has no wait.
+function waitSeconds(steps: readonly Step[], arriveBy: DateTime): number {
+  const lastRide = steps.findLastIndex((step) => step.travelMode === 'TRANSIT');
+  if (lastRide === -1) return 0;
+  const rideArrival = steps[lastRide]?.transitDetails?.stopDetails?.arrivalTime;
+  if (!rideArrival) throw new Error('Transit step has no arrival time');
+  const walkAfterSeconds = steps
+    .slice(lastRide + 1)
+    .reduce((total, step) => total + durationToSeconds(step.staticDuration), 0);
+  const arrival = DateTime.fromISO(rideArrival).plus({ seconds: walkAfterSeconds });
+  // Summed step durations can overshoot Google's own total by under a minute, landing past the
+  // target; that is rounding, not a late arrival.
+  return Math.max(0, arriveBy.diff(arrival, 'seconds').seconds);
 }
 
 function metersToMi(meters: number): number {
@@ -80,7 +105,7 @@ export function parseActiveTransportRoute(
   };
 }
 
-export function parseTransitRoute(response: ComputeRoutesResponse): Route {
+export function parseTransitRoute(response: ComputeRoutesResponse, arriveBy: DateTime): Route {
   const route = onlyRoute(response);
   if (!route) return { mode: 'unavailable', tripMode: 'transit' };
   const leg = route.legs?.[0];
@@ -88,7 +113,8 @@ export function parseTransitRoute(response: ComputeRoutesResponse): Route {
     throw new Error(`Unexpected number of legs: ${route.legs?.length ?? 0}`);
   }
 
-  const rides = (leg.steps ?? [])
+  const steps = leg.steps ?? [];
+  const rides = steps
     .filter((step) => step.travelMode === 'TRANSIT')
     .map(({ transitDetails }): Ride => {
       const line = transitDetails?.transitLine;
@@ -98,33 +124,40 @@ export function parseTransitRoute(response: ComputeRoutesResponse): Route {
         vehicle: BUS_TYPES.includes(line?.vehicle?.type ?? '') ? 'bus' : 'train',
       };
     });
-  return { mode: 'transit', timeMinutes: durationToMinutes(route.duration), rides };
+  const seconds = durationToSeconds(route.duration) + waitSeconds(steps, arriveBy);
+  return { mode: 'transit', timeMinutes: Math.round(seconds / 60), rides };
 }
 
-export type Trip = { mode: 'walk' | 'bike' } | { mode: 'transit'; departure: TargetDate };
+export type Trip = { mode: 'walk' | 'bike' } | { mode: 'transit'; arriveBy: TargetDate };
+
+async function requestRoute({
+  origin,
+  dest,
+  trip,
+}: {
+  origin: string;
+  dest: string;
+  trip: Trip;
+}): Promise<Route> {
+  const { travelMode, fieldMask } = MODES[trip.mode];
+  const body = { origin: { address: origin }, destination: { address: dest }, travelMode };
+  if (trip.mode !== 'transit') {
+    return parseActiveTransportRoute(await computeRoutes(body, fieldMask), trip.mode);
+  }
+  const arriveBy = getNextDateTime(trip.arriveBy);
+  const response = await computeRoutes(
+    { ...body, arrivalTime: arriveBy.toUTC().toISO() },
+    fieldMask,
+  );
+  return parseTransitRoute(response, arriveBy);
+}
 
 export async function computeRoute(options: {
   origin: string;
   dest: string;
   trip: Trip;
 }): Promise<Route> {
-  const { origin, dest, trip } = options;
-  const { travelMode, fieldMask, bufferMinutes } = MODES[trip.mode];
-  const response = await computeRoutes(
-    {
-      origin: { address: origin },
-      destination: { address: dest },
-      travelMode,
-      ...(trip.mode === 'transit' && {
-        departureTime: getNextDateTime(trip.departure).toUTC().toISO(),
-      }),
-    },
-    fieldMask,
-  );
-  const route =
-    trip.mode === 'transit'
-      ? parseTransitRoute(response)
-      : parseActiveTransportRoute(response, trip.mode);
+  const route = await requestRoute(options);
   if (route.mode === 'unavailable') return route;
-  return { ...route, timeMinutes: route.timeMinutes + bufferMinutes };
+  return { ...route, timeMinutes: route.timeMinutes + MODES[options.trip.mode].bufferMinutes };
 }

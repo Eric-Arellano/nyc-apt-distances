@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import bike from '#tests/fixtures/google/bike.json';
 import transitBus from '#tests/fixtures/google/transit-bus.json';
@@ -9,6 +10,9 @@ import { DayOfWeek } from './departureTime';
 import { computeRoute, parseActiveTransportRoute, parseTransitRoute } from './gmapsRouting';
 
 vi.mock('$app/env/private', () => ({ GOOGLE_MAPS_TOKEN: 'test-key' }));
+
+// The target the transit fixtures were captured with.
+const MONDAY_9_30 = DateTime.fromISO('2026-11-09T09:30', { zone: 'America/New_York' });
 
 // Defaults to Google's real reply when it finds no route.
 function stubFetch(response = Response.json(transitNoRoute)) {
@@ -78,14 +82,14 @@ describe('computeRoute for a transit trip', () => {
     vi.useRealTimers();
   });
 
-  test('departs at the next target time, in RFC 3339', async () => {
+  test('arrives by the next target time, in RFC 3339', async () => {
     const fetchMock = stubFetch();
 
     await expect(
       computeRoute({
         origin: 'A',
         dest: 'B',
-        trip: { mode: 'transit', departure: { day: DayOfWeek.Monday, hour: 8, minute: 45 } },
+        trip: { mode: 'transit', arriveBy: { day: DayOfWeek.Monday, hour: 8, minute: 45 } },
       }),
     ).resolves.toEqual({ mode: 'unavailable', tripMode: 'transit' });
 
@@ -93,7 +97,23 @@ describe('computeRoute for a transit trip', () => {
       origin: { address: 'A' },
       destination: { address: 'B' },
       travelMode: 'TRANSIT',
-      departureTime: '2026-11-09T13:45:00.000Z',
+      arrivalTime: '2026-11-09T13:45:00.000Z',
+    });
+  });
+
+  test('counts the wait before the next target time', async () => {
+    stubFetch(Response.json(transitBus));
+
+    await expect(
+      computeRoute({
+        origin: 'A',
+        dest: 'B',
+        trip: { mode: 'transit', arriveBy: { day: DayOfWeek.Monday, hour: 9, minute: 30 } },
+      }),
+    ).resolves.toEqual({
+      mode: 'transit',
+      timeMinutes: 28,
+      rides: [{ line: '40', vehicle: 'bus' }],
     });
   });
 });
@@ -143,45 +163,56 @@ describe('parseActiveTransportRoute', () => {
   });
 });
 
+function rideArrivingAt(arrivalTime: string) {
+  return { travelMode: 'TRANSIT', transitDetails: { stopDetails: { arrivalTime } } };
+}
+
 describe('parseTransitRoute', () => {
   test('names a bus line by its short name', () => {
-    expect(parseTransitRoute(transitBus)).toEqual({
+    expect(parseTransitRoute(transitBus, MONDAY_9_30)).toEqual({
       mode: 'transit',
-      timeMinutes: 26,
+      timeMinutes: 28,
       rides: [{ line: '40', vehicle: 'bus' }],
     });
   });
 
   test('names a line without a short name by its full name', () => {
-    expect(parseTransitRoute(transitMetroNorth)).toEqual({
+    expect(parseTransitRoute(transitMetroNorth, MONDAY_9_30)).toEqual({
       mode: 'transit',
-      timeMinutes: 42,
+      timeMinutes: 45,
       rides: [{ line: 'Harlem', vehicle: 'train' }],
     });
   });
 
   test('joins the lines of a trip with a transfer', () => {
-    expect(parseTransitRoute(transitTransfer)).toEqual({
+    expect(parseTransitRoute(transitTransfer, MONDAY_9_30)).toEqual({
       mode: 'transit',
-      timeMinutes: 78,
+      timeMinutes: 85,
       rides: [
         { line: 'Harlem', vehicle: 'train' },
-        { line: '4', vehicle: 'train' },
+        { line: '5', vehicle: 'train' },
       ],
     });
   });
 
   test('reads no route as unavailable', () => {
-    expect(parseTransitRoute(transitNoRoute)).toEqual({ mode: 'unavailable', tripMode: 'transit' });
+    expect(parseTransitRoute(transitNoRoute, MONDAY_9_30)).toEqual({
+      mode: 'unavailable',
+      tripMode: 'transit',
+    });
   });
 
   test('reads a trip with only walking steps as walking', () => {
     const response = { routes: [{ duration: '45s', legs: [{ steps: [{ travelMode: 'WALK' }] }] }] };
-    expect(parseTransitRoute(response)).toEqual({ mode: 'transit', timeMinutes: 1, rides: [] });
+    expect(parseTransitRoute(response, MONDAY_9_30)).toEqual({
+      mode: 'transit',
+      timeMinutes: 1,
+      rides: [],
+    });
   });
 
   test('reads omitted steps as walking', () => {
-    expect(parseTransitRoute({ routes: [{ duration: '120s', legs: [{}] }] })).toEqual({
+    expect(parseTransitRoute({ routes: [{ duration: '120s', legs: [{}] }] }, MONDAY_9_30)).toEqual({
       mode: 'transit',
       timeMinutes: 2,
       rides: [],
@@ -190,9 +221,9 @@ describe('parseTransitRoute', () => {
 
   test('labels a transit step whose line has no name or vehicle as an unnamed train', () => {
     const response = {
-      routes: [{ duration: '600s', legs: [{ steps: [{ travelMode: 'TRANSIT' }] }] }],
+      routes: [{ duration: '600s', legs: [{ steps: [rideArrivingAt('2026-11-09T14:30:00Z')] }] }],
     };
-    expect(parseTransitRoute(response)).toEqual({
+    expect(parseTransitRoute(response, MONDAY_9_30)).toEqual({
       mode: 'transit',
       timeMinutes: 10,
       rides: [{ line: 'unnamed line', vehicle: 'train' }],
@@ -200,8 +231,30 @@ describe('parseTransitRoute', () => {
   });
 
   test('throws on anything but one leg', () => {
-    expect(() => parseTransitRoute({ routes: [{ duration: '60s' }] })).toThrow(
+    expect(() => parseTransitRoute({ routes: [{ duration: '60s' }] }, MONDAY_9_30)).toThrow(
       'Unexpected number of legs: 0',
+    );
+  });
+
+  describe('when the trip arrives at or after the target', () => {
+    test('counts no wait', () => {
+      const response = {
+        routes: [{ duration: '600s', legs: [{ steps: [rideArrivingAt('2026-11-09T14:31:00Z')] }] }],
+      };
+      expect(parseTransitRoute(response, MONDAY_9_30)).toEqual({
+        mode: 'transit',
+        timeMinutes: 10,
+        rides: [{ line: 'unnamed line', vehicle: 'train' }],
+      });
+    });
+  });
+
+  test('throws on a ride without an arrival time', () => {
+    const response = {
+      routes: [{ duration: '600s', legs: [{ steps: [{ travelMode: 'TRANSIT' }] }] }],
+    };
+    expect(() => parseTransitRoute(response, MONDAY_9_30)).toThrow(
+      'Transit step has no arrival time',
     );
   });
 });
