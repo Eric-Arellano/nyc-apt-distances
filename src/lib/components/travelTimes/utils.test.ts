@@ -1,15 +1,33 @@
 import { describe, expect, test } from 'vitest';
+import type { Route } from '#lib/types.ts';
 import { formatRoute, goalStatus, goalText } from './utils.js';
 
-test('goalStatus', () => {
-  const targets = { strictness: 'must', idealMinutes: 5, maxMinutes: 10 } as const;
-  expect(goalStatus([{ timeMinutes: 4 }], targets)).toEqual('met');
-  expect(goalStatus([{ timeMinutes: 5 }], targets)).toEqual('met');
-  expect(goalStatus([{ timeMinutes: 6 }], targets)).toEqual('partial');
-  expect(goalStatus([{ timeMinutes: 10 }], targets)).toEqual('partial');
-  expect(goalStatus([{ timeMinutes: 11 }], targets)).toEqual('unmet');
-  expect(goalStatus([{ timeMinutes: 8 }, { timeMinutes: 44 }], targets)).toEqual('partial');
-  expect(goalStatus([{ timeMinutes: 20 }, { timeMinutes: 44 }], targets)).toEqual('unmet');
+describe('goalStatus', () => {
+  const goal = { strictness: 'must', idealMinutes: 5, maxMinutes: 10 } as const;
+  function walk(timeMinutes: number): Route {
+    return { mode: 'walk', timeMinutes, distanceMiles: 1 };
+  }
+  const noTransit: Route = { mode: 'unavailable', tripMode: 'transit' };
+
+  test('grades the fastest route against the goal', () => {
+    expect(goalStatus([walk(4)], goal)).toEqual('met');
+    expect(goalStatus([walk(5)], goal)).toEqual('met');
+    expect(goalStatus([walk(6)], goal)).toEqual('partial');
+    expect(goalStatus([walk(10)], goal)).toEqual('partial');
+    expect(goalStatus([walk(11)], goal)).toEqual('unmet');
+    expect(goalStatus([walk(8), walk(44)], goal)).toEqual('partial');
+    expect(goalStatus([walk(20), walk(44)], goal)).toEqual('unmet');
+  });
+
+  describe('with an unavailable route', () => {
+    test('grades the available routes', () => {
+      expect(goalStatus([noTransit, walk(4)], goal)).toEqual('met');
+    });
+
+    test('is unmet when no route is available', () => {
+      expect(goalStatus([noTransit], goal)).toEqual('unmet');
+    });
+  });
 });
 
 describe('goalText', () => {
@@ -26,6 +44,16 @@ describe('goalText', () => {
     expect(
       goalText({ strictness: 'should', idealMinutes: 40, maxMinutes: 55 }, [transit, walk]),
     ).toEqual('Should be within 55 minutes; ideally within 40 minutes');
+  });
+
+  test('reads an unavailable route by the mode it was for', () => {
+    const goal = { strictness: 'must', idealMinutes: 7, maxMinutes: 12 } as const;
+    expect(goalText(goal, [{ mode: 'unavailable', tripMode: 'walk' }])).toEqual(
+      'Must be within a 12-minute walk; ideally within 7 minutes',
+    );
+    expect(goalText(goal, [walk, { mode: 'unavailable', tripMode: 'transit' }])).toEqual(
+      'Must be within 12 minutes; ideally within 7 minutes',
+    );
   });
 });
 
@@ -57,6 +85,14 @@ describe('formatRoute', () => {
     );
     expect(formatRoute({ mode: 'transit', timeMinutes: 6, summary: '6 -> 7' })).toEqual(
       '🚇 6 minutes on the 6 -> 7',
+    );
+  });
+
+  test('unavailable', () => {
+    expect(formatRoute({ mode: 'unavailable', tripMode: 'walk' })).toEqual('🚶 No walking route');
+    expect(formatRoute({ mode: 'unavailable', tripMode: 'bike' })).toEqual('🚴 No bike route');
+    expect(formatRoute({ mode: 'unavailable', tripMode: 'transit' })).toEqual(
+      '🚇 No transit route',
     );
   });
 });

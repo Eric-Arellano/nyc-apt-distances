@@ -2,6 +2,7 @@ import type { Route } from '#lib/types.ts';
 import { getNextDateTime, type TargetDate } from './departureTime';
 import { fetchGoogle } from './gmapsFetch';
 import { requireGmapsToken } from './gmapsToken';
+import { MODES } from './routeModes';
 
 const COMPUTE_ROUTES_URL = 'https://routes.googleapis.com/directions/v2:computeRoutes';
 
@@ -11,7 +12,10 @@ export interface ComputeRoutesResponse {
     duration?: string;
     distanceMeters?: number;
     legs?: {
-      steps?: { transitDetails?: { transitLine?: { nameShort?: string } } }[];
+      steps?: {
+        travelMode?: string;
+        transitDetails?: { transitLine?: { name?: string; nameShort?: string } };
+      }[];
     }[];
   }[];
 }
@@ -37,12 +41,13 @@ async function computeRoutes(
   return await response.json();
 }
 
-function onlyRoute(response: ComputeRoutesResponse): GoogleRoute {
-  const route = response.routes?.[0];
-  if (!route || response.routes?.length !== 1) {
-    throw new Error(`Unexpected number of routes: ${response.routes?.length ?? 0}`);
+// No route comes back as `{}`, for transit trips with no service and in principle for any mode.
+function onlyRoute(response: ComputeRoutesResponse): GoogleRoute | undefined {
+  const routes = response.routes ?? [];
+  if (routes.length > 1) {
+    throw new Error(`Unexpected number of routes: ${routes.length}`);
   }
-  return route;
+  return routes[0];
 }
 
 function durationToMinutes(duration: string | undefined): number {
@@ -62,6 +67,7 @@ export function parseActiveTransportRoute(
   mode: 'walk' | 'bike',
 ): Route {
   const route = onlyRoute(response);
+  if (!route) return { mode: 'unavailable', tripMode: mode };
   return {
     mode,
     timeMinutes: durationToMinutes(route.duration),
@@ -71,16 +77,19 @@ export function parseActiveTransportRoute(
 
 export function parseTransitRoute(response: ComputeRoutesResponse): Route {
   const route = onlyRoute(response);
+  if (!route) return { mode: 'unavailable', tripMode: 'transit' };
   const leg = route.legs?.[0];
   if (!leg || route.legs?.length !== 1) {
     throw new Error(`Unexpected number of legs: ${route.legs?.length ?? 0}`);
   }
 
   const summary = (leg.steps ?? [])
-    .map((step) =>
-      step.transitDetails?.transitLine?.nameShort?.replace(' Line', '').replace(' Train', ''),
-    )
-    .filter((name) => name !== undefined)
+    .filter((step) => step.travelMode === 'TRANSIT')
+    .map(({ transitDetails }) => {
+      const line = transitDetails?.transitLine;
+      const name = line?.nameShort ?? line?.name ?? 'unnamed line';
+      return name.replace(' Line', '').replace(' Train', '');
+    })
     .join(' -> ');
   return {
     mode: 'transit',
@@ -90,26 +99,6 @@ export function parseTransitRoute(response: ComputeRoutesResponse): Route {
 }
 
 export type Trip = { mode: 'walk' | 'bike' } | { mode: 'transit'; departure: TargetDate };
-
-const MODES = {
-  walk: {
-    travelMode: 'WALK',
-    fieldMask: 'routes.duration,routes.distanceMeters',
-    bufferMinutes: 0,
-  },
-  // The buffer is time to get the bike out and locked up.
-  bike: {
-    travelMode: 'BICYCLE',
-    fieldMask: 'routes.duration,routes.distanceMeters',
-    bufferMinutes: 2,
-  },
-  transit: {
-    travelMode: 'TRANSIT',
-    fieldMask:
-      'routes.duration,routes.description,routes.legs.steps.transitDetails.transitLine.nameShort',
-    bufferMinutes: 0,
-  },
-} as const;
 
 export async function computeRoute(options: {
   origin: string;
@@ -133,5 +122,6 @@ export async function computeRoute(options: {
     trip.mode === 'transit'
       ? parseTransitRoute(response)
       : parseActiveTransportRoute(response, trip.mode);
+  if (route.mode === 'unavailable') return route;
   return { ...route, timeMinutes: route.timeMinutes + bufferMinutes };
 }

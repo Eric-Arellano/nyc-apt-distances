@@ -1,0 +1,50 @@
+import { describe, expect, test, vi } from 'vitest';
+import { getTravelTimes } from './travelTimes.svelte';
+
+const navigation = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}) }));
+vi.mock('$app/navigation', () => navigation);
+
+function stubResponse(response: Response) {
+  vi.stubGlobal('fetch', async () => response);
+}
+
+describe('getTravelTimes', () => {
+  test('returns the destinations', async () => {
+    stubResponse(Response.json([]));
+
+    expect(await getTravelTimes('1 Main St')).toEqual([]);
+  });
+
+  describe('when the server rejects the address', () => {
+    test("throws the server's message", async () => {
+      stubResponse(
+        Response.json({ message: 'Google could not find that address.' }, { status: 400 }),
+      );
+
+      await expect(getTravelTimes('1 Main St')).rejects.toThrow(
+        'Google could not find that address.',
+      );
+    });
+  });
+
+  describe('when the session has expired', () => {
+    test('reloads the page data and asks the user to log in', async () => {
+      stubResponse(Response.json({ error: 'Unauthorized' }, { status: 401 }));
+
+      await expect(getTravelTimes('1 Main St')).rejects.toThrow(
+        'Your session has expired. Please login.',
+      );
+      expect(navigation.invalidateAll).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('when the server fails', () => {
+    test('throws the status', async () => {
+      stubResponse(new Response(null, { status: 500, statusText: 'Internal Error' }));
+
+      await expect(getTravelTimes('1 Main St')).rejects.toThrow(
+        'Failed to fetch travel times: 500 Internal Error',
+      );
+    });
+  });
+});

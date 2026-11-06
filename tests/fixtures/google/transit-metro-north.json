@@ -1,0 +1,33 @@
+{
+  "routes": [
+    {
+      "legs": [
+        {
+          "steps": [
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "transitDetails": {
+                "transitLine": {
+                  "name": "Harlem"
+                }
+              },
+              "travelMode": "TRANSIT"
+            },
+            {
+              "travelMode": "WALK"
+            }
+          ]
+        }
+      ],
+      "duration": "2520s"
+    }
+  ]
+}

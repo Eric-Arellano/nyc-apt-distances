@@ -1,0 +1,54 @@
+{
+  "routes": [
+    {
+      "legs": [
+        {
+          "steps": [
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "transitDetails": {
+                "transitLine": {
+                  "name": "Harlem"
+                }
+              },
+              "travelMode": "TRANSIT"
+            },
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "transitDetails": {
+                "transitLine": {
+                  "name": "Lexington Avenue Express",
+                  "nameShort": "4"
+                }
+              },
+              "travelMode": "TRANSIT"
+            },
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "travelMode": "WALK"
+            }
+          ]
+        }
+      ],
+      "duration": "4670s"
+    }
+  ]
+}

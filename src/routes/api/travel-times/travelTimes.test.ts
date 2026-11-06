@@ -4,7 +4,8 @@ import { DESTINATIONS } from '#lib/server/destinations.ts';
 import type { DestinationResult } from '#lib/types.ts';
 import bike from '#tests/fixtures/google/bike.json';
 import geocode from '#tests/fixtures/google/geocode.json';
-import transit from '#tests/fixtures/google/transit.json';
+import geocodeZeroResults from '#tests/fixtures/google/geocode-zero-results.json';
+import transit from '#tests/fixtures/google/transit-transfer.json';
 import walk from '#tests/fixtures/google/walk.json';
 import { GET } from './+server';
 
@@ -59,6 +60,15 @@ describe('GET', () => {
 
       expect(await destinationIds(response)).toEqual(DESTINATIONS.map(({ id }) => id));
       expect(fetchMock).toHaveBeenCalled();
+    });
+
+    test('refuses an address Google cannot find', async () => {
+      fetchMock.mockImplementationOnce(async () => Response.json(geocodeZeroResults));
+
+      await expect(get('?street-address=nowhere')).rejects.toEqual({
+        status: 400,
+        body: { message: 'Google could not find that address.', status: 400 },
+      });
     });
   });
 

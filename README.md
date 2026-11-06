@@ -22,6 +22,8 @@ Then, run `npm install`
 - `npm run test`
 - `npm run check`
 - `npm run lint`
+- `node scripts/capture-fixtures.ts`: re-captures the Google responses in `tests/fixtures/google`,
+  which bills your key
 
 ## Interesting parts of this project
 

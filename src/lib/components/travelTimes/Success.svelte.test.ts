@@ -144,19 +144,36 @@ const EXPECTED_CARDS = [
   },
 ];
 
+function renderedCards(destinations: DestinationResult[]) {
+  const { container } = render(Success, { destinations });
+  return [...container.querySelectorAll<HTMLElement>('[data-status]')].map((card) => ({
+    title: card.querySelector('h3')?.textContent,
+    goal: card.querySelector('p')?.textContent,
+    routes: [...card.querySelectorAll('.space-y-2 > div')].map((route) =>
+      route.textContent?.trim(),
+    ),
+    status: card.dataset.status,
+  }));
+}
+
 describe('Success', () => {
   it('renders every destination card', () => {
-    const { container } = render(Success, { destinations: DESTINATIONS });
+    expect(renderedCards(DESTINATIONS)).toEqual(EXPECTED_CARDS);
+  });
 
-    const cards = [...container.querySelectorAll<HTMLElement>('[data-status]')].map((card) => ({
-      title: card.querySelector('h3')?.textContent,
-      goal: card.querySelector('p')?.textContent,
-      routes: [...card.querySelectorAll('.space-y-2 > div')].map((route) =>
-        route.textContent?.trim(),
-      ),
-      status: card.dataset.status,
-    }));
+  it('marks a destination with no route as unmet', () => {
+    const card = transitCard('Pound Ridge', SHOULD_GOAL, {
+      mode: 'unavailable',
+      tripMode: 'transit',
+    });
 
-    expect(cards).toEqual(EXPECTED_CARDS);
+    expect(renderedCards([card])).toEqual([
+      {
+        title: 'Pound Ridge',
+        goal: SHOULD_40_55,
+        routes: ['🚇 No transit route'],
+        status: 'unmet',
+      },
+    ]);
   });
 });

@@ -1,0 +1,34 @@
+{
+  "routes": [
+    {
+      "legs": [
+        {
+          "steps": [
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "transitDetails": {
+                "transitLine": {
+                  "name": "40 - MT Vernon-White Plains-WC MC",
+                  "nameShort": "40"
+                }
+              },
+              "travelMode": "TRANSIT"
+            },
+            {
+              "travelMode": "WALK"
+            },
+            {
+              "travelMode": "WALK"
+            }
+          ]
+        }
+      ],
+      "duration": "1557s"
+    }
+  ]
+}

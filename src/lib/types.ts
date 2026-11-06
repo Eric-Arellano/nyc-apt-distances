@@ -1,6 +1,7 @@
 export type Route =
   | { mode: 'walk' | 'bike'; timeMinutes: number; distanceMiles: number }
-  | { mode: 'transit'; timeMinutes: number; summary: string | null }; // null: all walking
+  | { mode: 'transit'; timeMinutes: number; summary: string | null } // null: all walking
+  | { mode: 'unavailable'; tripMode: 'walk' | 'bike' | 'transit' }; // Google found no route.
 
 export interface Goal {
   strictness: 'must' | 'should';

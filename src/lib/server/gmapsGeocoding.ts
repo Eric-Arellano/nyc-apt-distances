@@ -1,11 +1,20 @@
+import { error } from '@sveltejs/kit';
 import { fetchGoogle } from './gmapsFetch';
 import { requireGmapsToken } from './gmapsToken';
 
 const GEOCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
 
+// A misspelled street comes back as the whole town, marked `partial_match`, rather than as
+// ZERO_RESULTS. Its centre would quietly stand in for the apartment when picking the closest place.
+const SPECIFIC_TYPES = ['street_address', 'premise', 'subpremise', 'establishment'];
+
 export interface GeocodeResponse {
   status: string;
-  results: { geometry: { location: { lat: number; lng: number } } }[];
+  results: {
+    formatted_address: string;
+    types: string[];
+    geometry: { location: { lat: number; lng: number } };
+  }[];
 }
 
 export function parseGeocodeResponse(response: GeocodeResponse): {
@@ -13,9 +22,16 @@ export function parseGeocodeResponse(response: GeocodeResponse): {
   longitude: number;
 } {
   const { status, results } = response;
+  if (status === 'ZERO_RESULTS') {
+    throw error(400, 'Google could not find that address.');
+  }
+  // Several results means an ambiguous address, and Google ranks its best guess first.
   const result = results[0];
-  if (!result || results.length !== 1) {
-    throw new Error(`Unexpected geocoding response: ${status} with ${results.length} results`);
+  if (!result) {
+    throw new Error(`Unexpected geocoding response: ${status} with no results`);
+  }
+  if (!result.types.some((type) => SPECIFIC_TYPES.includes(type))) {
+    throw error(400, `Google only matched "${result.formatted_address}", not a street address.`);
   }
   const { lat, lng } = result.geometry.location;
   return {
