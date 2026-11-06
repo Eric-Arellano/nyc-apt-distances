@@ -5,7 +5,7 @@ import type { Maps } from './travelTimes';
 const ROUTES: Record<Trip['mode'], Route> = {
   walk: { mode: 'walk', timeMinutes: 12, distanceMiles: 0.8 },
   bike: { mode: 'bike', timeMinutes: 4, distanceMiles: 1.5 },
-  transit: { mode: 'transit', timeMinutes: 18, summary: '2' },
+  transit: { mode: 'transit', timeMinutes: 18, rides: [{ line: '2', vehicle: 'train' }] },
 };
 
 // Serves `MOCK=1` and tests, so neither spends the Google key.

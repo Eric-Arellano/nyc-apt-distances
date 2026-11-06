@@ -16,7 +16,10 @@
             {
               "transitDetails": {
                 "transitLine": {
-                  "name": "Harlem"
+                  "name": "Harlem",
+                  "vehicle": {
+                    "type": "HEAVY_RAIL"
+                  }
                 }
               },
               "travelMode": "TRANSIT"
@@ -31,7 +34,10 @@
               "transitDetails": {
                 "transitLine": {
                   "name": "Lexington Avenue Express",
-                  "nameShort": "4"
+                  "nameShort": "4",
+                  "vehicle": {
+                    "type": "SUBWAY"
+                  }
                 }
               },
               "travelMode": "TRANSIT"

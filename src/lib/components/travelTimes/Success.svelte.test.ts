@@ -4,7 +4,11 @@ import { describe, expect, it } from 'vitest';
 import type { DestinationResult, Goal, Route } from '#lib/types.ts';
 import Success from './Success.svelte';
 
-const TWO_TRAIN: Route = { mode: 'transit', timeMinutes: 18, summary: '2' };
+const TWO_TRAIN: Route = {
+  mode: 'transit',
+  timeMinutes: 18,
+  rides: [{ line: '2', vehicle: 'train' }],
+};
 const SHOULD_GOAL: Goal = { strictness: 'should', idealMinutes: 40, maxMinutes: 55 };
 
 function transitCard(title: string, goal: Goal, route = TWO_TRAIN): DestinationResult {
@@ -35,7 +39,7 @@ const DESTINATIONS: DestinationResult[] = [
     goal: { strictness: 'must', idealMinutes: 15, maxMinutes: 25 },
     closest: null,
     routes: [
-      { mode: 'transit', timeMinutes: 7, summary: 'N' },
+      { mode: 'transit', timeMinutes: 7, rides: [{ line: 'N', vehicle: 'train' }] },
       { mode: 'bike', timeMinutes: 4, distanceMiles: 1.5 },
       { mode: 'walk', timeMinutes: 18, distanceMiles: 1.5 },
     ],
@@ -61,7 +65,7 @@ const DESTINATIONS: DestinationResult[] = [
   transitCard('Astoria (low priority)', SHOULD_GOAL, {
     mode: 'transit',
     timeMinutes: 60,
-    summary: null,
+    rides: [],
   }),
   transitCard('Jackson Heights (low priority)', SHOULD_GOAL),
   transitCard('Mott Haven (low priority)', SHOULD_GOAL),
@@ -79,7 +83,7 @@ const EXPECTED_CARDS = [
   {
     title: 'Work 👨🏼‍💻',
     goal: 'Must be within 25 minutes; ideally within 15 minutes',
-    routes: ['🚇 7 minutes on the N', '🚴 4 minutes (1.5 miles)', '🚶 18 minutes (1.5 miles)'],
+    routes: ['🚆 7 minutes on the N', '🚴 4 minutes (1.5 miles)', '🚶 18 minutes (1.5 miles)'],
     status: 'met',
   },
   {
@@ -103,43 +107,43 @@ const EXPECTED_CARDS = [
   {
     title: 'Downtown Brooklyn',
     goal: 'Should be within 45 minutes; ideally within 30 minutes',
-    routes: ['🚇 18 minutes on the 2'],
+    routes: ['🚆 18 minutes on the 2'],
     status: 'met',
   },
   {
     title: 'Park Slope',
     goal: SHOULD_40_55,
-    routes: ['🚇 18 minutes on the 2'],
+    routes: ['🚆 18 minutes on the 2'],
     status: 'met',
   },
   {
     title: 'Williamsburg',
     goal: 'Should be within 50 minutes; ideally within 35 minutes',
-    routes: ['🚇 18 minutes on the 2'],
+    routes: ['🚆 18 minutes on the 2'],
     status: 'met',
   },
   {
     title: 'Astoria (low priority)',
     goal: SHOULD_40_55,
-    routes: ['🚇 60 minutes by walking'],
+    routes: ['🚆 60 minutes by walking'],
     status: 'unmet',
   },
   {
     title: 'Jackson Heights (low priority)',
     goal: SHOULD_40_55,
-    routes: ['🚇 18 minutes on the 2'],
+    routes: ['🚆 18 minutes on the 2'],
     status: 'met',
   },
   {
     title: 'Mott Haven (low priority)',
     goal: SHOULD_40_55,
-    routes: ['🚇 18 minutes on the 2'],
+    routes: ['🚆 18 minutes on the 2'],
     status: 'met',
   },
   {
     title: 'Jersey City (low priority)',
     goal: 'Should be within 60 minutes; ideally within 45 minutes',
-    routes: ['🚇 18 minutes on the 2'],
+    routes: ['🚆 18 minutes on the 2'],
     status: 'met',
   },
 ];
@@ -171,7 +175,7 @@ describe('Success', () => {
       {
         title: 'Pound Ridge',
         goal: SHOULD_40_55,
-        routes: ['🚇 No transit route'],
+        routes: ['🚆 No transit route'],
         status: 'unmet',
       },
     ]);

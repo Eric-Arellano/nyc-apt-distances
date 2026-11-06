@@ -13,11 +13,11 @@ export const MODES = {
     bufferMinutes: 2,
   },
   // A step's `travelMode` is always present, unlike `transitDetails`, which a field mask can leave
-  // empty. Metro-North lines have a `name` but no `nameShort`.
+  // empty. Metro-North lines have a `name` but no `nameShort`. Bee-Line buses report `BUS`.
   transit: {
     travelMode: 'TRANSIT',
     fieldMask:
-      'routes.duration,routes.legs.steps.travelMode,routes.legs.steps.transitDetails.transitLine.name,routes.legs.steps.transitDetails.transitLine.nameShort',
+      'routes.duration,routes.legs.steps.travelMode,routes.legs.steps.transitDetails.transitLine.name,routes.legs.steps.transitDetails.transitLine.nameShort,routes.legs.steps.transitDetails.transitLine.vehicle.type',
     bufferMinutes: 0,
   },
 } as const;

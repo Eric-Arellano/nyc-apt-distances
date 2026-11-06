@@ -1,10 +1,13 @@
-import type { Route } from '#lib/types.ts';
+import type { Ride, Route } from '#lib/types.ts';
 import { getNextDateTime, type TargetDate } from './departureTime';
 import { fetchGoogle } from './gmapsFetch';
 import { requireGmapsToken } from './gmapsToken';
 import { MODES } from './routeModes';
 
 const COMPUTE_ROUTES_URL = 'https://routes.googleapis.com/directions/v2:computeRoutes';
+
+// Google's `TransitVehicle.TransitVehicleType` values for buses. Every other type reads as a train.
+const BUS_TYPES = ['BUS', 'INTERCITY_BUS', 'TROLLEYBUS'];
 
 // Proto3 JSON omits zero values and empty lists, so a field the mask asked for can still be absent.
 export interface ComputeRoutesResponse {
@@ -14,7 +17,9 @@ export interface ComputeRoutesResponse {
     legs?: {
       steps?: {
         travelMode?: string;
-        transitDetails?: { transitLine?: { name?: string; nameShort?: string } };
+        transitDetails?: {
+          transitLine?: { name?: string; nameShort?: string; vehicle?: { type?: string } };
+        };
       }[];
     }[];
   }[];
@@ -83,19 +88,17 @@ export function parseTransitRoute(response: ComputeRoutesResponse): Route {
     throw new Error(`Unexpected number of legs: ${route.legs?.length ?? 0}`);
   }
 
-  const summary = (leg.steps ?? [])
+  const rides = (leg.steps ?? [])
     .filter((step) => step.travelMode === 'TRANSIT')
-    .map(({ transitDetails }) => {
+    .map(({ transitDetails }): Ride => {
       const line = transitDetails?.transitLine;
       const name = line?.nameShort ?? line?.name ?? 'unnamed line';
-      return name.replace(' Line', '').replace(' Train', '');
-    })
-    .join(' -> ');
-  return {
-    mode: 'transit',
-    timeMinutes: durationToMinutes(route.duration),
-    summary: summary || null,
-  };
+      return {
+        line: name.replace(' Line', '').replace(' Train', ''),
+        vehicle: BUS_TYPES.includes(line?.vehicle?.type ?? '') ? 'bus' : 'train',
+      };
+    });
+  return { mode: 'transit', timeMinutes: durationToMinutes(route.duration), rides };
 }
 
 export type Trip = { mode: 'walk' | 'bike' } | { mode: 'transit'; departure: TargetDate };

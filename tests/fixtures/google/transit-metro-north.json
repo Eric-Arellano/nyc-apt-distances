@@ -16,7 +16,10 @@
             {
               "transitDetails": {
                 "transitLine": {
-                  "name": "Harlem"
+                  "name": "Harlem",
+                  "vehicle": {
+                    "type": "HEAVY_RAIL"
+                  }
                 }
               },
               "travelMode": "TRANSIT"

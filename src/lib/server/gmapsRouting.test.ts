@@ -144,11 +144,11 @@ describe('parseActiveTransportRoute', () => {
 });
 
 describe('parseTransitRoute', () => {
-  test('names a line by its short name', () => {
+  test('names a bus line by its short name', () => {
     expect(parseTransitRoute(transitBus)).toEqual({
       mode: 'transit',
       timeMinutes: 26,
-      summary: '40',
+      rides: [{ line: '40', vehicle: 'bus' }],
     });
   });
 
@@ -156,7 +156,7 @@ describe('parseTransitRoute', () => {
     expect(parseTransitRoute(transitMetroNorth)).toEqual({
       mode: 'transit',
       timeMinutes: 42,
-      summary: 'Harlem',
+      rides: [{ line: 'Harlem', vehicle: 'train' }],
     });
   });
 
@@ -164,7 +164,10 @@ describe('parseTransitRoute', () => {
     expect(parseTransitRoute(transitTransfer)).toEqual({
       mode: 'transit',
       timeMinutes: 78,
-      summary: 'Harlem -> 4',
+      rides: [
+        { line: 'Harlem', vehicle: 'train' },
+        { line: '4', vehicle: 'train' },
+      ],
     });
   });
 
@@ -174,25 +177,25 @@ describe('parseTransitRoute', () => {
 
   test('reads a trip with only walking steps as walking', () => {
     const response = { routes: [{ duration: '45s', legs: [{ steps: [{ travelMode: 'WALK' }] }] }] };
-    expect(parseTransitRoute(response)).toEqual({ mode: 'transit', timeMinutes: 1, summary: null });
+    expect(parseTransitRoute(response)).toEqual({ mode: 'transit', timeMinutes: 1, rides: [] });
   });
 
   test('reads omitted steps as walking', () => {
     expect(parseTransitRoute({ routes: [{ duration: '120s', legs: [{}] }] })).toEqual({
       mode: 'transit',
       timeMinutes: 2,
-      summary: null,
+      rides: [],
     });
   });
 
-  test('labels a transit step whose line has no name', () => {
+  test('labels a transit step whose line has no name or vehicle as an unnamed train', () => {
     const response = {
       routes: [{ duration: '600s', legs: [{ steps: [{ travelMode: 'TRANSIT' }] }] }],
     };
     expect(parseTransitRoute(response)).toEqual({
       mode: 'transit',
       timeMinutes: 10,
-      summary: 'unnamed line',
+      rides: [{ line: 'unnamed line', vehicle: 'train' }],
     });
   });
 

@@ -32,7 +32,7 @@ describe('goalStatus', () => {
 
 describe('goalText', () => {
   const walk = { mode: 'walk', timeMinutes: 4, distanceMiles: 2.1 } as const;
-  const transit = { mode: 'transit', timeMinutes: 4, summary: null } as const;
+  const transit = { mode: 'transit', timeMinutes: 4, rides: [] } as const;
 
   test('names a walk when every route walks', () => {
     expect(goalText({ strictness: 'must', idealMinutes: 7, maxMinutes: 12 }, [walk])).toEqual(
@@ -79,20 +79,42 @@ describe('formatRoute', () => {
     ).toEqual('🚶 15 minutes to Union Square Station with N, Q, R lines (0.7 miles)');
   });
 
-  test('transit', () => {
-    expect(formatRoute({ mode: 'transit', timeMinutes: 4, summary: null })).toEqual(
-      '🚇 4 minutes by walking',
-    );
-    expect(formatRoute({ mode: 'transit', timeMinutes: 6, summary: '6 -> 7' })).toEqual(
-      '🚇 6 minutes on the 6 -> 7',
-    );
+  describe('transit', () => {
+    const bus = { line: '40', vehicle: 'bus' } as const;
+    const train = { line: 'Harlem', vehicle: 'train' } as const;
+
+    test('with no rides', () => {
+      expect(formatRoute({ mode: 'transit', timeMinutes: 4, rides: [] })).toEqual(
+        '🚆 4 minutes by walking',
+      );
+    });
+
+    test('with only buses', () => {
+      const rides = [bus, { line: '41', vehicle: 'bus' } as const];
+      expect(formatRoute({ mode: 'transit', timeMinutes: 6, rides })).toEqual(
+        '🚌 6 minutes on the 40 bus -> 41 bus',
+      );
+    });
+
+    test('with only trains', () => {
+      const rides = [train, { line: '4', vehicle: 'train' } as const];
+      expect(formatRoute({ mode: 'transit', timeMinutes: 6, rides })).toEqual(
+        '🚆 6 minutes on the Harlem -> 4',
+      );
+    });
+
+    test('with a bus and a train', () => {
+      expect(formatRoute({ mode: 'transit', timeMinutes: 6, rides: [bus, train] })).toEqual(
+        '🚆 6 minutes on the 40 bus -> Harlem',
+      );
+    });
   });
 
   test('unavailable', () => {
     expect(formatRoute({ mode: 'unavailable', tripMode: 'walk' })).toEqual('🚶 No walking route');
     expect(formatRoute({ mode: 'unavailable', tripMode: 'bike' })).toEqual('🚴 No bike route');
     expect(formatRoute({ mode: 'unavailable', tripMode: 'transit' })).toEqual(
-      '🚇 No transit route',
+      '🚆 No transit route',
     );
   });
 });
