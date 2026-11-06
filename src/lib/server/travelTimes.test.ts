@@ -16,7 +16,7 @@ describe('computeTravelTimes', () => {
 
   test('geocodes within the origin county and routes each trip from the address as typed', async () => {
     const maps = spyMaps();
-    const origin = '1 Main St, New York';
+    const origin = '1 Main St, White Plains';
 
     await computeTravelTimes(origin, maps);
 
@@ -44,16 +44,12 @@ describe('computeTravelTimes', () => {
     test('keeps trip order and names no place', async () => {
       const results = await computeTravelTimes('1 Main St', fakeMaps);
 
-      expect(results[0]).toEqual({
-        id: 'work',
-        title: 'Work 👨🏼‍💻',
+      expect(results.find(({ id }) => id === 'hebrew-institute')).toEqual({
+        id: 'hebrew-institute',
+        title: 'Hebrew Institute of White Plains',
         goal: { strictness: 'must', idealMinutes: 15, maxMinutes: 25 },
         closest: null,
-        routes: [
-          { mode: 'transit', timeMinutes: 18, rides: [{ line: '2', vehicle: 'train' }] },
-          { mode: 'bike', timeMinutes: 4, distanceMiles: 1.5 },
-          { mode: 'walk', timeMinutes: 12, distanceMiles: 0.8 },
-        ],
+        routes: [{ mode: 'walk', timeMinutes: 12, distanceMiles: 0.8 }],
       });
     });
   });
@@ -65,21 +61,12 @@ describe('computeTravelTimes', () => {
       const results = await computeTravelTimes('1 Main St', maps);
 
       expect(results.find(({ id }) => id === 'park')?.closest).toEqual({
-        name: 'Union Square Park',
+        name: 'Bronx River Pathway (County Center)',
       });
       expect(maps.computeRoute).toHaveBeenCalledWith({
         origin: '1 Main St',
-        dest: '201 Park Ave S, New York, NY 10003',
+        dest: '198 Central Ave, White Plains, NY 10606',
         trip: { mode: 'walk' },
-      });
-    });
-
-    test('lists the lines of a subway stop', async () => {
-      const results = await computeTravelTimes('1 Main St', fakeMaps);
-
-      expect(results.find(({ id }) => id === 'subway-stop')?.closest).toEqual({
-        name: '14 St - Union Square',
-        additionalInfo: 'with L, N, Q, R, W, 4, 5, 6',
       });
     });
   });

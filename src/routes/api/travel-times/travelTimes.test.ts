@@ -11,11 +11,6 @@ import { GET } from './+server';
 
 const env = vi.hoisted(() => ({ MOCK: false, GOOGLE_MAPS_TOKEN: 'test-key' }));
 vi.mock('$app/env/private', () => env);
-// `geocode.json` is in White Plains.
-vi.mock('#lib/server/destinations.ts', async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  ORIGIN_COUNTY: 'Westchester County',
-}));
 
 const ROUTE_FIXTURES: Record<string, unknown> = { WALK: walk, BICYCLE: bike, TRANSIT: transit };
 

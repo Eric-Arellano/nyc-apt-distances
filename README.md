@@ -29,7 +29,7 @@ Then, run `npm install`
 
 ### Computing the nearest place
 
-Several destinations have multiple candidates, such as multiple parks in NYC. I only care about being close enough to one of the candidates. It would be inefficient to compute the distances between every single candidate, so instead I pre-compute the closest candidate as follows:
+Several destinations have multiple candidates, such as several parks around White Plains. I only care about being close enough to one of the candidates. It would be inefficient to compute the distances between every single candidate, so instead I pre-compute the closest candidate as follows:
 
 1. Hardcode all the candidate locations and their latitude and longitude.
 2. Use the Google Maps Geocoding API to get the latitude and longitude for the apartment address.

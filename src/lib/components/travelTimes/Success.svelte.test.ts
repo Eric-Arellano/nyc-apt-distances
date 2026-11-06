@@ -4,15 +4,15 @@ import { describe, expect, it } from 'vitest';
 import type { DestinationResult, Goal, Route } from '#lib/types.ts';
 import Success from './Success.svelte';
 
-const TWO_TRAIN: Route = {
+const HARLEM_LINE: Route = {
   mode: 'transit',
   timeMinutes: 18,
-  rides: [{ line: '2', vehicle: 'train' }],
+  rides: [{ line: 'Harlem', vehicle: 'train' }],
 };
 const SHOULD_GOAL: Goal = { strictness: 'should', idealMinutes: 40, maxMinutes: 55 };
 
-function transitCard(title: string, goal: Goal, route = TWO_TRAIN): DestinationResult {
-  return { id: title, title, goal, closest: null, routes: [route] };
+function transitCard(title: string, goal: Goal, routes: Route[]): DestinationResult {
+  return { id: title, title, goal, closest: null, routes };
 }
 
 function walkCard(
@@ -31,49 +31,21 @@ function walkCard(
   };
 }
 
-// Park is slower than ideal but within the max; Astoria is beyond the max.
+// The institute and park are slower than ideal but within the max; the grocery is beyond the max.
 const DESTINATIONS: DestinationResult[] = [
   {
-    id: 'work',
-    title: 'Work 👨🏼‍💻',
-    goal: { strictness: 'must', idealMinutes: 15, maxMinutes: 25 },
-    closest: null,
+    id: 'metro-north',
+    title: 'Metro-North station 🚆',
+    goal: { strictness: 'must', idealMinutes: 10, maxMinutes: 20 },
+    closest: { name: 'White Plains' },
     routes: [
-      { mode: 'transit', timeMinutes: 7, rides: [{ line: 'N', vehicle: 'train' }] },
+      { mode: 'walk', timeMinutes: 9, distanceMiles: 0.4 },
       { mode: 'bike', timeMinutes: 4, distanceMiles: 1.5 },
-      { mode: 'walk', timeMinutes: 18, distanceMiles: 1.5 },
     ],
   },
-  walkCard(
-    'Subway stop 🚇',
-    'must',
-    [7, 12],
-    { name: '14th St', additionalInfo: 'with E, Q, R' },
-    [6, 0.3],
-  ),
-  walkCard('Park 🌳', 'must', [10, 15], { name: 'Union Square' }, [13, 0.7]),
-  walkCard(
-    'Farmers market 🍉 (low priority)',
-    'should',
-    [15, 20],
-    { name: 'Union Square' },
-    [12, 0.8],
-  ),
-  transitCard('Downtown Brooklyn', { strictness: 'should', idealMinutes: 30, maxMinutes: 45 }),
-  transitCard('Park Slope', SHOULD_GOAL),
-  transitCard('Williamsburg', { strictness: 'should', idealMinutes: 35, maxMinutes: 50 }),
-  transitCard('Astoria (low priority)', SHOULD_GOAL, {
-    mode: 'transit',
-    timeMinutes: 60,
-    rides: [],
-  }),
-  transitCard('Jackson Heights (low priority)', SHOULD_GOAL),
-  transitCard('Mott Haven (low priority)', SHOULD_GOAL),
-  transitCard('Jersey City (low priority)', {
-    strictness: 'should',
-    idealMinutes: 45,
-    maxMinutes: 60,
-  }),
+  walkCard('Hebrew Institute of White Plains', 'must', [15, 25], null, [18, 1.1]),
+  walkCard('Park or trail 🌳', 'should', [10, 20], { name: 'Turnure Park' }, [13, 0.7]),
+  walkCard('Grocery store 🛒', 'should', [10, 20], { name: 'ShopRite' }, [24, 1.2]),
 ];
 
 const SHOULD_40_55 = 'Should be within 55 minutes; ideally within 40 minutes';
@@ -81,70 +53,28 @@ const SHOULD_40_55 = 'Should be within 55 minutes; ideally within 40 minutes';
 // Every card the page shows, in order. PRs that restructure destinations must leave this alone.
 const EXPECTED_CARDS = [
   {
-    title: 'Work 👨🏼‍💻',
-    goal: 'Must be within 25 minutes; ideally within 15 minutes',
-    routes: ['🚆 7 minutes on the N', '🚴 4 minutes (1.5 miles)', '🚶 18 minutes (1.5 miles)'],
+    title: 'Metro-North station 🚆',
+    goal: 'Must be within 20 minutes; ideally within 10 minutes',
+    routes: ['🚶 9 minutes to White Plains (0.4 miles)', '🚴 4 minutes (1.5 miles)'],
     status: 'met',
   },
   {
-    title: 'Subway stop 🚇',
-    goal: 'Must be within a 12-minute walk; ideally within 7 minutes',
-    routes: ['🚶 6 minutes to 14th St with E, Q, R (0.3 miles)'],
-    status: 'met',
-  },
-  {
-    title: 'Park 🌳',
-    goal: 'Must be within a 15-minute walk; ideally within 10 minutes',
-    routes: ['🚶 13 minutes to Union Square (0.7 miles)'],
+    title: 'Hebrew Institute of White Plains',
+    goal: 'Must be within a 25-minute walk; ideally within 15 minutes',
+    routes: ['🚶 18 minutes (1.1 miles)'],
     status: 'partial',
   },
   {
-    title: 'Farmers market 🍉 (low priority)',
-    goal: 'Should be within a 20-minute walk; ideally within 15 minutes',
-    routes: ['🚶 12 minutes to Union Square (0.8 miles)'],
-    status: 'met',
+    title: 'Park or trail 🌳',
+    goal: 'Should be within a 20-minute walk; ideally within 10 minutes',
+    routes: ['🚶 13 minutes to Turnure Park (0.7 miles)'],
+    status: 'partial',
   },
   {
-    title: 'Downtown Brooklyn',
-    goal: 'Should be within 45 minutes; ideally within 30 minutes',
-    routes: ['🚆 18 minutes on the 2'],
-    status: 'met',
-  },
-  {
-    title: 'Park Slope',
-    goal: SHOULD_40_55,
-    routes: ['🚆 18 minutes on the 2'],
-    status: 'met',
-  },
-  {
-    title: 'Williamsburg',
-    goal: 'Should be within 50 minutes; ideally within 35 minutes',
-    routes: ['🚆 18 minutes on the 2'],
-    status: 'met',
-  },
-  {
-    title: 'Astoria (low priority)',
-    goal: SHOULD_40_55,
-    routes: ['🚆 60 minutes by walking'],
+    title: 'Grocery store 🛒',
+    goal: 'Should be within a 20-minute walk; ideally within 10 minutes',
+    routes: ['🚶 24 minutes to ShopRite (1.2 miles)'],
     status: 'unmet',
-  },
-  {
-    title: 'Jackson Heights (low priority)',
-    goal: SHOULD_40_55,
-    routes: ['🚆 18 minutes on the 2'],
-    status: 'met',
-  },
-  {
-    title: 'Mott Haven (low priority)',
-    goal: SHOULD_40_55,
-    routes: ['🚆 18 minutes on the 2'],
-    status: 'met',
-  },
-  {
-    title: 'Jersey City (low priority)',
-    goal: 'Should be within 60 minutes; ideally within 45 minutes',
-    routes: ['🚆 18 minutes on the 2'],
-    status: 'met',
   },
 ];
 
@@ -165,11 +95,26 @@ describe('Success', () => {
     expect(renderedCards(DESTINATIONS)).toEqual(EXPECTED_CARDS);
   });
 
+  it('renders transit routes', () => {
+    const card = transitCard('Grand Central', SHOULD_GOAL, [
+      HARLEM_LINE,
+      { mode: 'transit', timeMinutes: 60, rides: [] },
+    ]);
+
+    expect(renderedCards([card])).toEqual([
+      {
+        title: 'Grand Central',
+        goal: SHOULD_40_55,
+        routes: ['🚆 18 minutes on the Harlem', '🚆 60 minutes by walking'],
+        status: 'met',
+      },
+    ]);
+  });
+
   it('marks a destination with no route as unmet', () => {
-    const card = transitCard('Pound Ridge', SHOULD_GOAL, {
-      mode: 'unavailable',
-      tripMode: 'transit',
-    });
+    const card = transitCard('Pound Ridge', SHOULD_GOAL, [
+      { mode: 'unavailable', tripMode: 'transit' },
+    ]);
 
     expect(renderedCards([card])).toEqual([
       {

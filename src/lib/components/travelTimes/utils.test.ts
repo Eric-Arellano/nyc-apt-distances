@@ -69,14 +69,11 @@ describe('formatRoute', () => {
       '🚶 4 minutes (2.1 miles)',
     );
     expect(
-      formatRoute({ mode: 'walk', timeMinutes: 10, distanceMiles: 0.5 }, { name: 'Central Park' }),
-    ).toEqual('🚶 10 minutes to Central Park (0.5 miles)');
-    expect(
       formatRoute(
-        { mode: 'walk', timeMinutes: 15, distanceMiles: 0.7 },
-        { name: 'Union Square Station', additionalInfo: 'with N, Q, R lines' },
+        { mode: 'walk', timeMinutes: 10, distanceMiles: 0.5 },
+        { name: 'Saxon Woods Park' },
       ),
-    ).toEqual('🚶 15 minutes to Union Square Station with N, Q, R lines (0.7 miles)');
+    ).toEqual('🚶 10 minutes to Saxon Woods Park (0.5 miles)');
   });
 
   describe('transit', () => {

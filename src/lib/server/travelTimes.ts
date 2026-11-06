@@ -16,11 +16,8 @@ function resolvePlace(
   if ('address' in place) {
     return { address: place.address, closest: null };
   }
-  const { name, address, lines } = findClosest(originPoint, place.closestOf);
-  return {
-    address,
-    closest: lines ? { name, additionalInfo: `with ${lines.join(', ')}` } : { name },
-  };
+  const { name, address } = findClosest(originPoint, place.closestOf);
+  return { address, closest: { name } };
 }
 
 export async function computeTravelTimes(origin: string, maps: Maps): Promise<DestinationResult[]> {
