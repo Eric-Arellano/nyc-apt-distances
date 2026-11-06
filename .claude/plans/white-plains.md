@@ -13,8 +13,6 @@ and git keeps the NYC version. The White Plains page needs four things NYC never
 - **A full address.** Apartments in West Harrison count as well as White Plains, so a fixed origin
   suffix no longer works.
 
-The page also drops the apartment criteria and the neighborhood tiers.
-
 Facts from Google's docs and the protos that shape the design:
 
 - `routingPreference` is valid only for `DRIVE` and `TWO_WHEELER`; on other modes the request
@@ -22,7 +20,7 @@ Facts from Google's docs and the protos that shape the design:
 - `arrivalTime` is valid only for `TRANSIT`, and a request may set it or `departureTime`, not both.
   So a drive cannot arrive by a time; it departs at one.
 - A transit step's `transitLine.vehicle.type` names the vehicle. Google's bus types are `BUS`,
-  `INTERCITY_BUS` and `TROLLEYBUS`. This is unverified for Bee-Line, so PR 3 checks it on capture.
+  `INTERCITY_BUS` and `TROLLEYBUS`. This is unverified for Bee-Line, so PR 2 checks it on capture.
 
 ## Decisions
 
@@ -76,14 +74,9 @@ want one later, it can be two trips added together.*
 *Rejected: `allowedTravelModes: ['BUS']` on transit trips. It is only a preference, and no
 destination needs to force a bus.*
 
-## PR 1: Drop the apartment criteria and neighborhoods
+## PR 1: Take a full address (prefactor)
 
-Delete `OtherCriteria.svelte`, `CriteriaSection.svelte` and `Neighborhoods.svelte`, along with
-their uses in `src/routes/+page.svelte`. Nothing replaces them.
-
-## PR 2: Take a full address (prefactor)
-
-- Replace `ORIGIN_SUFFIX` with `ORIGIN_COUNTY = 'New York County'`, which PR 4 changes to
+- Replace `ORIGIN_SUFFIX` with `ORIGIN_COUNTY = 'New York County'`, which PR 3 changes to
   Westchester. `computeTravelTimes` geocodes and routes from the address as typed.
 - `parseGeocodeResponse` takes the expected county and reads `administrative_area_level_2` from
   `address_components`. A missing or different county is a 400 naming `formatted_address`. Tests
@@ -91,7 +84,7 @@ their uses in `src/routes/+page.svelte`. Nothing replaces them.
 - The address card asks for the town too, through its title and a placeholder such as
   "100 Martine Ave, White Plains".
 
-## PR 3: Name buses as buses (prefactor)
+## PR 2: Name buses as buses (prefactor)
 
 - Add `transitLine.vehicle.type` to the transit field mask and re-run `capture-fixtures.ts`.
   Confirm that `transit-bus.json` reports a bus type before trusting the list in Context.
@@ -100,7 +93,7 @@ their uses in `src/routes/+page.svelte`. Nothing replaces them.
 - NYC's transit lines in `Success.svelte.test.ts` change from 🚇 to 🚆, and that is the only
   expected-output change.
 
-## PR 4: White Plains, on foot and by bike
+## PR 3: White Plains, on foot and by bike
 
 Replace `DESTINATIONS` and every list in `candidateLocations.ts`, set `ORIGIN_COUNTY` to
 `'Westchester County'`, and update the page title and the README's NYC prose. This PR adds only
@@ -111,7 +104,7 @@ the destinations whose trips all exist already:
 | `metro-north` | Metro-North station 🚆 | closest station | walk, bike | must, 10 / 20 |
 | `hebrew-institute` | Hebrew Institute of White Plains | 20 Greenridge Ave, White Plains, NY 10605 | walk | must, 15 / 25 |
 | `park` | Park or trail 🌳 | closest park or trailhead | walk | should, 10 / 20 |
-| `grocery` | Grocery store 🛒 | closest supermarket | walk (PR 6 adds drive) | should, 10 / 20 |
+| `grocery` | Grocery store 🛒 | closest supermarket | walk (PR 5 adds drive) | should, 10 / 20 |
 
 Check each candidate before it goes in: is it still open, and is it at that address?
 
@@ -127,10 +120,10 @@ Check each candidate before it goes in: is it still open, and is it at that addr
 Remove `Candidate.lines` and `Place.additionalInfo`, which only subway stops used. `fakeMaps`
 geocodes to a public White Plains point so that `MOCK=1` picks White Plains candidates.
 `travelTimes.test.ts` and `Success.svelte.test.ts` switch to White Plains cards and still cover
-every status and route shape. Transit has no destination until PR 5, but its own tests still cover
+every status and route shape. Transit has no destination until PR 4, but its own tests still cover
 it.
 
-## PR 5: Transit that arrives by a time
+## PR 4: Transit that arrives by a time
 
 - Transit trips take `arriveBy` and send `arrivalTime`. `capture-fixtures.ts` does the same, and
   its transit fixtures are re-captured.
@@ -147,7 +140,7 @@ it.
 getting there and the target. A sparse Saturday bus that arrives 40 minutes early would then look
 fast. Read the re-captured fixtures, and decide whether the card should show when the trip arrives.
 
-## PR 6: Drive
+## PR 5: Drive
 
 - Add `'drive'` to the distance member of `Route` and to `tripMode` on the unavailable member.
   Add a `MODES` row with `DRIVE`, the distance field mask, `routingPreference: 'TRAFFIC_AWARE'` and
@@ -172,9 +165,9 @@ For each PR, run `npm run lint && npm run check && npm test` and `npm run build`
 page with `MOCK=1 npm run dev`, by hand or with `/run`. Run `svelte-autofixer` on each Svelte file
 touched until it reports nothing.
 
-Fixture re-captures in PRs 3, 5 and 6 are billed, at about ten requests each, so say so in the PR.
+Fixture re-captures in PRs 2, 4 and 5 are billed, at about ten requests each, so say so in the PR.
 
-Before PRs 4, 5 and 6 merge, try one real White Plains address and one real West Harrison address.
+Before PRs 3, 4 and 5 merge, try one real White Plains address and one real West Harrison address.
 Check that each closest candidate is plausible, and that an address in another county gets the
 400.
 
