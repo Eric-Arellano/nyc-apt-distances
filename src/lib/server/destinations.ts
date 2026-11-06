@@ -72,7 +72,7 @@ export const DESTINATIONS: readonly Destination[] = [
     title: 'Congregation Beit Simchat Torah, Saturday 10 am',
     goal: { strictness: 'should', idealMinutes: 75, maxMinutes: 95 },
     place: { address: '130 W 30th St, New York, NY 10001' },
-    // Ten minutes early, to be seated by the 10 am service.
+    // 9:50 already leaves time to be seated for the 10 am service, so any wait counts from it.
     trips: [{ mode: 'transit', arriveBy: { day: DayOfWeek.Saturday, hour: 9, minute: 50 } }],
   },
 ];

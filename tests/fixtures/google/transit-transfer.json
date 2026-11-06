@@ -5,16 +5,23 @@
         {
           "steps": [
             {
+              "staticDuration": "27s",
               "travelMode": "WALK"
             },
             {
+              "staticDuration": "30s",
               "travelMode": "WALK"
             },
             {
+              "staticDuration": "13s",
               "travelMode": "WALK"
             },
             {
+              "staticDuration": "2400s",
               "transitDetails": {
+                "stopDetails": {
+                  "arrivalTime": "2026-11-09T13:46:00Z"
+                },
                 "transitLine": {
                   "name": "Harlem",
                   "vehicle": {
@@ -25,13 +32,19 @@
               "travelMode": "TRANSIT"
             },
             {
+              "staticDuration": "110s",
               "travelMode": "WALK"
             },
             {
+              "staticDuration": "51s",
               "travelMode": "WALK"
             },
             {
+              "staticDuration": "1560s",
               "transitDetails": {
+                "stopDetails": {
+                  "arrivalTime": "2026-11-09T14:18:30Z"
+                },
                 "transitLine": {
                   "name": "Lexington Avenue Express",
                   "nameShort": "5",
@@ -43,12 +56,15 @@
               "travelMode": "TRANSIT"
             },
             {
+              "staticDuration": "166s",
               "travelMode": "WALK"
             },
             {
+              "staticDuration": "143s",
               "travelMode": "WALK"
             },
             {
+              "staticDuration": "56s",
               "travelMode": "WALK"
             }
           ]

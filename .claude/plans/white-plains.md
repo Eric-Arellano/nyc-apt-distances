@@ -14,13 +14,6 @@ Facts from Google's docs and the protos that shape the design:
   fails. A drive `departureTime` applies only with `TRAFFIC_AWARE`, which bills at a higher rate.
 - `arrivalTime` is valid only for `TRANSIT`, and a request may set it or `departureTime`, not both.
   So a drive cannot arrive by a time; it departs at one.
-- With `arrivalTime`, `duration` runs from the trip's first step to its last and leaves out the
-  slack before the target. From the library, the Saturday 63 bus reaches Bet Am Shalom around
-  8:58 for 9:30 and reports 16 minutes; CBST's Harlem and M5 trip arrives around 9:24 for 9:50.
-
-**Open:** a sparse Saturday bus that arrives half an hour early therefore looks fast. Decide
-whether the card should show when the trip arrives, which needs the arrival time in the transit
-field mask.
 
 ## Decisions
 
@@ -33,6 +26,11 @@ export type Trip =
   | { mode: 'transit'; arriveBy: TargetDate }
   | { mode: 'drive'; departAt: TargetDate };
 ```
+
+**Transit time counts the wait before the target**, because getting there half an hour early is
+half an hour less sleep. Google's `duration` stops when the trip arrives, so `parseTransitRoute`
+adds the gap from the last ride's arrival, plus the walk after it, to the target. The card shows
+only the total. CBST's 9:50 target is already the buffer, so its wait counts from 9:50.
 
 **A drive toward an arrival target departs a quarter hour before it.** Inside White Plains the
 drive is short enough that the exact minute barely moves Google's traffic estimate.
