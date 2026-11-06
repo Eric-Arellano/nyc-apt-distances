@@ -7,8 +7,8 @@ import transitMetroNorth from '#tests/fixtures/google/transit-metro-north.json';
 import transitNoRoute from '#tests/fixtures/google/transit-no-route.json';
 import transitTransfer from '#tests/fixtures/google/transit-transfer.json';
 import walk from '#tests/fixtures/google/walk.json';
-import { DayOfWeek } from './departureTime';
 import { computeRoute, parseDistanceRoute, parseTransitRoute } from './gmapsRouting';
+import { DayOfWeek } from './weeklyTime';
 
 vi.mock('$app/env/private', () => ({ GOOGLE_MAPS_TOKEN: 'test-key' }));
 

@@ -1,7 +1,7 @@
 import type { Goal } from '#lib/types.ts';
 import { type Candidates, PARKS, STATIONS, SUPERMARKETS } from './candidateLocations';
-import { DayOfWeek } from './departureTime';
 import type { Trip } from './gmapsRouting';
+import { DayOfWeek } from './weeklyTime';
 
 // Without a fixed suffix, an address missing its town lands wherever Google guesses, so geocoding
 // rejects a match outside this county.
