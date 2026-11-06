@@ -1,9 +1,9 @@
 import { DateTime } from 'luxon';
 import type { Ride, Route } from '#lib/types.ts';
-import { getNextDateTime, type TargetDate } from './departureTime';
 import { fetchGoogle } from './gmapsFetch';
 import { requireGmapsToken } from './gmapsToken';
 import { MODES } from './routeModes';
+import { nextOccurrence, type WeeklyTime } from './weeklyTime';
 
 const COMPUTE_ROUTES_URL = 'https://routes.googleapis.com/directions/v2:computeRoutes';
 
@@ -132,8 +132,8 @@ export function parseTransitRoute(response: ComputeRoutesResponse, arriveBy: Dat
 // at a time rather than arriving by one.
 export type Trip =
   | { mode: 'walk' | 'bike' }
-  | { mode: 'transit'; arriveBy: TargetDate }
-  | { mode: 'drive'; departAt: TargetDate };
+  | { mode: 'transit'; arriveBy: WeeklyTime }
+  | { mode: 'drive'; departAt: WeeklyTime };
 
 async function requestRoute({
   origin,
@@ -147,7 +147,7 @@ async function requestRoute({
   const { fieldMask, bufferMinutes: _, ...modeFields } = MODES[trip.mode];
   const body = { origin: { address: origin }, destination: { address: dest }, ...modeFields };
   if (trip.mode === 'transit') {
-    const arriveBy = getNextDateTime(trip.arriveBy);
+    const arriveBy = nextOccurrence(trip.arriveBy);
     const response = await computeRoutes(
       { ...body, arrivalTime: arriveBy.toUTC().toISO() },
       fieldMask,
@@ -155,7 +155,7 @@ async function requestRoute({
     return parseTransitRoute(response, arriveBy);
   }
   if (trip.mode === 'drive') {
-    const departureTime = getNextDateTime(trip.departAt).toUTC().toISO();
+    const departureTime = nextOccurrence(trip.departAt).toUTC().toISO();
     return parseDistanceRoute(await computeRoutes({ ...body, departureTime }, fieldMask), 'drive');
   }
   return parseDistanceRoute(await computeRoutes(body, fieldMask), trip.mode);
