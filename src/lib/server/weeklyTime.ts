@@ -2,16 +2,18 @@ import { DateTime } from 'luxon';
 
 const ZONE = 'America/New_York';
 
-// Luxon numbers days of the week from 1-7.
-export enum DayOfWeek {
-  Monday = 1,
-  Tuesday = 2,
-  Wednesday = 3,
-  Thursday = 4,
-  Friday = 5,
-  Saturday = 6,
-  Sunday = 7,
-}
+// Luxon numbers days of the week from 1-7. Not an `enum`, because `scripts/capture-fixtures.ts`
+// loads this under plain Node, whose type stripping rejects one.
+export const DayOfWeek = {
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+  Sunday: 7,
+} as const;
+export type DayOfWeek = (typeof DayOfWeek)[keyof typeof DayOfWeek];
 
 // In Eastern time.
 export interface WeeklyTime {

@@ -1,7 +1,6 @@
 import { error } from '@sveltejs/kit';
-import type { Coordinates } from './closest';
-import { fetchGoogle } from './gmapsFetch';
-import { requireGmapsToken } from './gmapsToken';
+import type { Coordinates } from '#lib/server/closest.ts';
+import { fetchGoogle } from '#lib/server/gmapsFetch.ts';
 
 const GEOCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
 
@@ -51,14 +50,22 @@ export function parseGeocodeResponse(
   };
 }
 
-export async function geocode(address: string, expectedCounty: string): Promise<Coordinates> {
+export async function fetchGeocode(key: string, address: string): Promise<GeocodeResponse> {
   const url = new URL(GEOCODE_URL);
-  url.search = new URLSearchParams({ key: requireGmapsToken(), address }).toString();
+  url.search = new URLSearchParams({ key, address }).toString();
 
   // `url` holds the key, so it must stay out of every error and log line here.
   const response = await fetchGoogle(url);
   if (!response.ok) {
     throw new Error(`Geocoding returned ${response.status}`);
   }
-  return parseGeocodeResponse(await response.json(), expectedCounty);
+  return await response.json();
+}
+
+export async function geocode(
+  key: string,
+  address: string,
+  expectedCounty: string,
+): Promise<Coordinates> {
+  return parseGeocodeResponse(await fetchGeocode(key, address), expectedCounty);
 }

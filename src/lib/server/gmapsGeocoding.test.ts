@@ -4,14 +4,14 @@ import partialMatch from '#tests/fixtures/google/geocode-partial-match.json';
 import zeroResults from '#tests/fixtures/google/geocode-zero-results.json';
 import { geocode, parseGeocodeResponse } from './gmapsGeocoding';
 
-vi.mock('$app/env/private', () => ({ GOOGLE_MAPS_TOKEN: 'test-key' }));
-
 describe('geocode', () => {
   test('encodes the address and key into the query string', async () => {
     const fetchMock = vi.fn(async (_url: URL) => new Response('{"status":"X","results":[]}'));
     vi.stubGlobal('fetch', fetchMock);
 
-    await expect(geocode('1 Madison Ave, New York', 'New York County')).rejects.toThrow();
+    await expect(
+      geocode('test-key', '1 Madison Ave, New York', 'New York County'),
+    ).rejects.toThrow();
 
     expect(fetchMock.mock.calls[0]?.[0].href).toBe(
       'https://maps.googleapis.com/maps/api/geocode/json?key=test-key&address=1+Madison+Ave%2C+New+York',
@@ -21,7 +21,7 @@ describe('geocode', () => {
   test('keeps the key out of the error when Google rejects the request', async () => {
     vi.stubGlobal('fetch', async () => new Response(null, { status: 403 }));
 
-    const error: Error = await geocode('A', 'New York County').catch((e) => e);
+    const error: Error = await geocode('test-key', 'A', 'New York County').catch((e) => e);
 
     expect(error.message).toBe('Geocoding returned 403');
   });

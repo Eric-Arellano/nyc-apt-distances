@@ -1,11 +1,43 @@
+// `scripts/capture-fixtures.ts` loads this module under plain Node, to capture fixtures with the
+// same requests production sends. So its imports, and theirs, carry `.ts` extensions.
 import { DateTime } from 'luxon';
+import { fetchGoogle } from '#lib/server/gmapsFetch.ts';
+import { nextOccurrence, type WeeklyTime } from '#lib/server/weeklyTime.ts';
 import type { Ride, Route } from '#lib/types.ts';
-import { fetchGoogle } from './gmapsFetch';
-import { requireGmapsToken } from './gmapsToken';
-import { MODES } from './routeModes';
-import { nextOccurrence, type WeeklyTime } from './weeklyTime';
 
 const COMPUTE_ROUTES_URL = 'https://routes.googleapis.com/directions/v2:computeRoutes';
+
+const MODES = {
+  walk: {
+    travelMode: 'WALK',
+    fieldMask: 'routes.duration,routes.distanceMeters',
+    bufferMinutes: 0,
+  },
+  // The buffer is time to get the bike out and locked up.
+  bike: {
+    travelMode: 'BICYCLE',
+    fieldMask: 'routes.duration,routes.distanceMeters',
+    bufferMinutes: 2,
+  },
+  // `routingPreference` is valid only for driving and two-wheeler trips; on other modes Google
+  // rejects the request. Only `TRAFFIC_AWARE` reads `departureTime`, and it bills at a higher rate.
+  // The buffer is time to park.
+  drive: {
+    travelMode: 'DRIVE',
+    fieldMask: 'routes.duration,routes.distanceMeters',
+    routingPreference: 'TRAFFIC_AWARE',
+    bufferMinutes: 5,
+  },
+  // A step's `travelMode` is always present, unlike `transitDetails`, which a field mask can leave
+  // empty. Metro-North lines have a `name` but no `nameShort`. Bee-Line buses report `BUS`. The
+  // last ride's arrival and the walks after it give when the trip arrives, to count the wait.
+  transit: {
+    travelMode: 'TRANSIT',
+    fieldMask:
+      'routes.duration,routes.legs.steps.travelMode,routes.legs.steps.staticDuration,routes.legs.steps.transitDetails.stopDetails.arrivalTime,routes.legs.steps.transitDetails.transitLine.name,routes.legs.steps.transitDetails.transitLine.nameShort,routes.legs.steps.transitDetails.transitLine.vehicle.type',
+    bufferMinutes: 0,
+  },
+} as const;
 
 // Google's `TransitVehicle.TransitVehicleType` values for buses. Every other type reads as a train.
 const BUS_TYPES = ['BUS', 'INTERCITY_BUS', 'TROLLEYBUS'];
@@ -30,15 +62,20 @@ export interface ComputeRoutesResponse {
 
 type GoogleRoute = NonNullable<ComputeRoutesResponse['routes']>[number];
 
-async function computeRoutes(
-  body: Record<string, unknown>,
-  fieldMask: string,
+export interface RouteRequest {
+  body: Record<string, unknown>;
+  fieldMask: string;
+}
+
+export async function computeRoutes(
+  key: string,
+  { body, fieldMask }: RouteRequest,
 ): Promise<ComputeRoutesResponse> {
   const response = await fetchGoogle(COMPUTE_ROUTES_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Goog-Api-Key': requireGmapsToken(),
+      'X-Goog-Api-Key': key,
       'X-Goog-FieldMask': fieldMask,
     },
     body: JSON.stringify(body),
@@ -135,38 +172,42 @@ export type Trip =
   | { mode: 'transit'; arriveBy: WeeklyTime }
   | { mode: 'drive'; departAt: WeeklyTime };
 
-async function requestRoute({
-  origin,
-  dest,
-  trip,
-}: {
+export interface RouteOptions {
   origin: string;
   dest: string;
   trip: Trip;
-}): Promise<Route> {
-  const { fieldMask, bufferMinutes: _, ...modeFields } = MODES[trip.mode];
-  const body = { origin: { address: origin }, destination: { address: dest }, ...modeFields };
-  if (trip.mode === 'transit') {
-    const arriveBy = nextOccurrence(trip.arriveBy);
-    const response = await computeRoutes(
-      { ...body, arrivalTime: arriveBy.toUTC().toISO() },
-      fieldMask,
-    );
-    return parseTransitRoute(response, arriveBy);
-  }
-  if (trip.mode === 'drive') {
-    const departureTime = nextOccurrence(trip.departAt).toUTC().toISO();
-    return parseDistanceRoute(await computeRoutes({ ...body, departureTime }, fieldMask), 'drive');
-  }
-  return parseDistanceRoute(await computeRoutes(body, fieldMask), trip.mode);
 }
 
-export async function computeRoute(options: {
-  origin: string;
-  dest: string;
-  trip: Trip;
-}): Promise<Route> {
-  const route = await requestRoute(options);
+export function routeRequest({ origin, dest, trip }: RouteOptions): RouteRequest {
+  const { fieldMask, bufferMinutes: _, ...modeFields } = MODES[trip.mode];
+  const body = { origin: { address: origin }, destination: { address: dest }, ...modeFields };
+  switch (trip.mode) {
+    case 'transit':
+      return {
+        fieldMask,
+        body: { ...body, arrivalTime: nextOccurrence(trip.arriveBy).toUTC().toISO() },
+      };
+    case 'drive':
+      return {
+        fieldMask,
+        body: { ...body, departureTime: nextOccurrence(trip.departAt).toUTC().toISO() },
+      };
+    default:
+      return { fieldMask, body };
+  }
+}
+
+async function requestRoute(key: string, options: RouteOptions): Promise<Route> {
+  const request = routeRequest(options);
+  const response = await computeRoutes(key, request);
+  const { trip } = options;
+  if (trip.mode !== 'transit') return parseDistanceRoute(response, trip.mode);
+  // The target the request asked for. A second `nextOccurrence` could already be a week later.
+  return parseTransitRoute(response, DateTime.fromISO(String(request.body.arrivalTime)));
+}
+
+export async function computeRoute(key: string, options: RouteOptions): Promise<Route> {
+  const route = await requestRoute(key, options);
   if (route.mode === 'unavailable') return route;
   return { ...route, timeMinutes: route.timeMinutes + MODES[options.trip.mode].bufferMinutes };
 }
