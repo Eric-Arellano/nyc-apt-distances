@@ -78,14 +78,14 @@ describe('computeRoute for a transit trip', () => {
     vi.useRealTimers();
   });
 
-  test('departs at the next target time, in RFC 3339', async () => {
+  test('arrives by the next target time, in RFC 3339', async () => {
     const fetchMock = stubFetch();
 
     await expect(
       computeRoute({
         origin: 'A',
         dest: 'B',
-        trip: { mode: 'transit', departure: { day: DayOfWeek.Monday, hour: 8, minute: 45 } },
+        trip: { mode: 'transit', arriveBy: { day: DayOfWeek.Monday, hour: 8, minute: 45 } },
       }),
     ).resolves.toEqual({ mode: 'unavailable', tripMode: 'transit' });
 
@@ -93,7 +93,7 @@ describe('computeRoute for a transit trip', () => {
       origin: { address: 'A' },
       destination: { address: 'B' },
       travelMode: 'TRANSIT',
-      departureTime: '2026-11-09T13:45:00.000Z',
+      arrivalTime: '2026-11-09T13:45:00.000Z',
     });
   });
 });
@@ -147,7 +147,7 @@ describe('parseTransitRoute', () => {
   test('names a bus line by its short name', () => {
     expect(parseTransitRoute(transitBus)).toEqual({
       mode: 'transit',
-      timeMinutes: 26,
+      timeMinutes: 25,
       rides: [{ line: '40', vehicle: 'bus' }],
     });
   });
@@ -163,10 +163,10 @@ describe('parseTransitRoute', () => {
   test('joins the lines of a trip with a transfer', () => {
     expect(parseTransitRoute(transitTransfer)).toEqual({
       mode: 'transit',
-      timeMinutes: 78,
+      timeMinutes: 80,
       rides: [
         { line: 'Harlem', vehicle: 'train' },
-        { line: '4', vehicle: 'train' },
+        { line: '5', vehicle: 'train' },
       ],
     });
   });

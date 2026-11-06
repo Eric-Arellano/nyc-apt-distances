@@ -34,7 +34,7 @@
               "transitDetails": {
                 "transitLine": {
                   "name": "Lexington Avenue Express",
-                  "nameShort": "4",
+                  "nameShort": "5",
                   "vehicle": {
                     "type": "SUBWAY"
                   }
@@ -54,7 +54,7 @@
           ]
         }
       ],
-      "duration": "4670s"
+      "duration": "4790s"
     }
   ]
 }

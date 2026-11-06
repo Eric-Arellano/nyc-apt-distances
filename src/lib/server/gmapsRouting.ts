@@ -101,7 +101,7 @@ export function parseTransitRoute(response: ComputeRoutesResponse): Route {
   return { mode: 'transit', timeMinutes: durationToMinutes(route.duration), rides };
 }
 
-export type Trip = { mode: 'walk' | 'bike' } | { mode: 'transit'; departure: TargetDate };
+export type Trip = { mode: 'walk' | 'bike' } | { mode: 'transit'; arriveBy: TargetDate };
 
 export async function computeRoute(options: {
   origin: string;
@@ -116,7 +116,7 @@ export async function computeRoute(options: {
       destination: { address: dest },
       travelMode,
       ...(trip.mode === 'transit' && {
-        departureTime: getNextDateTime(trip.departure).toUTC().toISO(),
+        arrivalTime: getNextDateTime(trip.arriveBy).toUTC().toISO(),
       }),
     },
     fieldMask,

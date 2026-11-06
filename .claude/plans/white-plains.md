@@ -3,12 +3,10 @@
 ## Context
 
 The page covers White Plains on foot and by bike: a Metro-North station, the Hebrew Institute, a
-park or trail and a grocery store. NYC is gone, with no region switch, and git keeps it. What is
-left needs two things NYC never did:
-
-- **Driving**, to Florham Park, NJ, and as one way to reach Bet Am Shalom and the grocery store.
-- **Transit that arrives by a time** rather than departing at one: Bet Am Shalom by 6:15 pm Friday
-  and 9:30 am Saturday, and CBST in time for its 10 am Saturday service.
+park or trail and a grocery store. NYC is gone, with no region switch, and git keeps it. Transit
+trips arrive by a target time: Bet Am Shalom by 6:15 pm Friday and 9:30 am Saturday, and CBST in
+time for its 10 am Saturday service. What is left is **driving**, to Florham Park, NJ, and as one
+way to reach Bet Am Shalom and the grocery store.
 
 Facts from Google's docs and the protos that shape the design:
 
@@ -16,6 +14,13 @@ Facts from Google's docs and the protos that shape the design:
   fails. A drive `departureTime` applies only with `TRAFFIC_AWARE`, which bills at a higher rate.
 - `arrivalTime` is valid only for `TRANSIT`, and a request may set it or `departureTime`, not both.
   So a drive cannot arrive by a time; it departs at one.
+- With `arrivalTime`, `duration` runs from the trip's first step to its last and leaves out the
+  slack before the target. From the library, the Saturday 63 bus reaches Bet Am Shalom around
+  8:58 for 9:30 and reports 16 minutes; CBST's Harlem and M5 trip arrives around 9:24 for 9:50.
+
+**Open:** a sparse Saturday bus that arrives half an hour early therefore looks fast. Decide
+whether the card should show when the trip arrives, which needs the arrival time in the transit
+field mask.
 
 ## Decisions
 
@@ -60,26 +65,7 @@ want one later, it can be two trips added together.*
 *Rejected: `allowedTravelModes: ['BUS']` on transit trips. It is only a preference, and no
 destination needs to force a bus.*
 
-## PR 1: Transit that arrives by a time
-
-- Transit trips take `arriveBy` and send `arrivalTime`. `capture-fixtures.ts` does the same, and
-  its transit fixtures are re-captured.
-- The README's "Consistent departure time" section covers arrival times too.
-- `Success.svelte.test.ts` tests transit routes apart from `EXPECTED_CARDS`, because no
-  destination had a transit trip. Fold them into the Bet Am Shalom cards there.
-- New destinations:
-
-| id | Title | Place | Trips | Goal |
-| --- | --- | --- | --- | --- |
-| `bet-am-shalom-friday` | Bet Am Shalom, Friday 6:15 pm | 295 Soundview Ave, White Plains, NY 10606 | walk; transit arriving Fri 18:15 | should, 15 / 25 |
-| `bet-am-shalom-saturday` | Bet Am Shalom, Saturday 9:30 am | same | walk; transit arriving Sat 9:30 | should, 15 / 25 |
-| `cbst` | Congregation Beit Simchat Torah, Saturday 10 am | 130 W 30th St, New York, NY 10001 | transit arriving Sat 9:50 | should, 75 / 95 |
-
-**Open:** with `arrivalTime`, Google's `duration` probably covers the ride but not the wait between
-getting there and the target. A sparse Saturday bus that arrives 40 minutes early would then look
-fast. Read the re-captured fixtures, and decide whether the card should show when the trip arrives.
-
-## PR 2: Drive
+## PR 1: Drive
 
 - Add `'drive'` to the distance member of `Route` and to `tripMode` on the unavailable member.
   Add a `MODES` row with `DRIVE`, the distance field mask, `routingPreference: 'TRAFFIC_AWARE'` and
@@ -104,7 +90,7 @@ For each PR, run `npm run lint && npm run check && npm test` and `npm run build`
 page with `MOCK=1 npm run dev`, by hand or with `/run`. Run `svelte-autofixer` on each Svelte file
 touched until it reports nothing.
 
-Fixture re-captures in PRs 1 and 2 are billed, at about ten requests each, so say so in the PR.
+The fixture re-capture in PR 1 is billed, at about ten requests, so say so in the PR.
 
 Before each PR merges, try one real White Plains address and one real West Harrison address.
 Check that each closest candidate is plausible, and that an address in another county gets the
