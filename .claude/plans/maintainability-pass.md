@@ -10,8 +10,7 @@ and stopping soon is a real option.
 
 **Overall assessment:** the codebase is in good shape. Google sits behind the `Maps` seam
 (`src/lib/server/travelTimes.ts`), `Route` is a proper union, fixtures are real, and AGENTS.md is
-thorough. What's left is a handful of small PRs, stacked in order. All are nice to have, and it's
-fine to stop after any one of them.
+thorough. What's left is one optional PR, and it's fine to stop here.
 
 The auth hook in `src/hooks.server.ts` now exempts exactly `/api/login`, and gates only `/api/`.
 A page that loads stored addresses must call `hasSession` itself; the hook's comment says so.
@@ -21,14 +20,7 @@ candidate is `closest(origin, candidates)` in `closest.ts`, over the non-empty `
 that `candidateLocations.ts` defines, and geocoding returns its `Coordinates`. A trip's
 `arriveBy` / `departAt` is a `WeeklyTime`, resolved by `nextOccurrence` in `weeklyTime.ts`.
 
-## PR 1: README refresh (small)
-- Add `MOCK=1 npm run dev`. AGENTS.md mentions it but the README doesn't.
-- One line naming `src/lib/server/destinations.ts` as where destinations and goals live.
-- "with `envrc`" → direnv. The arrival-time section covers transit only; drives depart at a time.
-  Drop the mechanism ("uses Luxon", the step list); `candidateLocations.ts` already holds the
-  rejected alternative.
-
-## PR 2: Pass the Google key in, so the fixture script reuses production's requests (optional, largest)
+## PR 1: Pass the Google key in, so the fixture script reuses production's requests (optional, largest)
 `scripts/capture-fixtures.ts` duplicates the computeRoutes call and has its own `nextTime`,
 because the gmaps modules import `$app/env/private`, which plain Node can't load. That's also why
 `routeModes.ts` carries its "no imports" rule.
@@ -71,7 +63,7 @@ modest, so it's fine to skip.
 ## Verification (each PR)
 
 - `npm run lint && npm run check && npm test`. Report any flake by name.
-- PR 2: `npm run check` covers the script's types. Capturing bills the key, so run at most a
+- PR 1: `npm run check` covers the script's types. Capturing bills the key, so run at most a
   single capture (`direnv exec . node scripts/capture-fixtures.ts walk`), only with Eric's OK, and
   say that it ran. The re-captured `walk.json` should come back unchanged apart from Google's own
   drift.
