@@ -13,7 +13,7 @@ and probably for later moves too, so it needs three things:
   check, need to send reference"). This replaces the spreadsheet from the last move.
 
 All three depend on one new concept, **a saved apartment**: an address plus its stored results
-plus free-form tracking fields. This document is the roadmap of milestones. Each milestone gets
+plus free-form tracking fields. This document is the roadmap of PRs. Each PR gets
 its own detailed plan before work starts.
 
 **Out of scope:** automatically finding listings (no usable listings API exists), accounts for
@@ -21,8 +21,9 @@ each person, destinations stored in the database, maps.
 
 ## Architecture
 
-- **Auth stays the one shared site password.** Two people don't need accounts. Once addresses
-  are stored, every route is gated by default, not just `/api/`.
+- **Auth stays the one shared site password.** Two people don't need accounts. Every route is
+  gated by default, except `/login` and `/api/login` (`src/hooks.server.ts`): pages redirect to
+  `/login` and `/api/` returns 401. A new route is private unless someone opens it on purpose.
 - **Neon Postgres, through Vercel's Neon integration.** Production uses Neon's main branch, and
   each PR preview gets its own Neon branch, created and deleted by the integration.
   *Rejected: Supabase, because branching needs a paid plan and free projects pause after a week
@@ -55,34 +56,27 @@ each person, destinations stored in the database, maps.
 ## Privacy, standing rules
 
 - Apartment addresses **and agent contact details** never appear in fixtures, tests, seeds,
-  commits or PRs. Milestone 2 extends AGENTS.md's hard rule to cover contacts and pages.
+  commits or PRs.
 - Previews hold copies of production data, which is acceptable only because every route requires
-  the password (milestone 2). Vercel's fork protection must stay enabled.
+  the password. Vercel's fork protection must stay enabled.
 
-## Milestones
+## PRs
 
-Dependencies: 1 and 2 don't depend on anything. 3 must land before 4, and 2 must land before 4,
-because 4 is the first milestone that stores addresses. 5 and 6 can run in parallel after 4. 7
-comes after 6.
+Dependencies: 1 doesn't depend on anything. 2 must land before 3, the first PR that stores
+addresses. 4 and 5 can run in parallel after 3. 6 comes after 5.
 
-### 1. Shareable lookups (no database)
+## PR 1: Shareable lookups (no database)
 
 The address goes in the URL (`/?address=…`), and the lookup runs when the page loads, so sharing
 a link reproduces the query. Each open of a link spends the Google key again, at a few cents per
-lookup. This stays useful after milestone 4 for one-off checks of addresses not worth saving.
+lookup. This stays useful after PR 3 for one-off checks of addresses not worth saving.
 
+- **Open:** the login redirect drops the query string, so a shared link loses its address for
+  anyone not signed in. The redirect in `src/hooks.server.ts` and the login page need to return to
+  the original URL.
 - Touches `AddressInput.svelte`, `src/lib/state/travelTimes.svelte.ts` and `src/routes/+page.svelte`.
-- About one PR.
 
-### 2. Gate every route (prefactor)
-
-`src/hooks.server.ts` switches to blocking by default. Everything except the login route and
-static assets requires a session: pages redirect to login, and `/api/` returns 401. The AGENTS.md
-hard rules are updated to say "every route" and to cover agent contacts.
-
-- About one PR.
-
-### 3. Database foundation
+## PR 2: Database foundation
 
 - **Neon setup** (done by hand in the Vercel and Neon dashboards): connect the integration and set
   up branch-per-preview.
@@ -92,7 +86,7 @@ hard rules are updated to say "every route" and to cover agent contacts.
   script, and a first migration.
 - **README:** what someone now runs, such as the env vars and migrate and type-generation
   commands.
-- **Spikes to settle in this milestone's detailed plan:**
+- **Spikes to settle in this PR's detailed plan:**
   - Kanel needs the Postgres wire protocol to read the dev database, so try `pglite-socket` with a
     Docker fallback.
   - PGlite under `vite dev`: two module instances could open the same directory during a hot
@@ -102,7 +96,7 @@ hard rules are updated to say "every route" and to cover agent contacts.
 - Likely 2–3 PRs: dev and test infrastructure first, then the Neon wiring and build-step
   migrations.
 
-### 4. Saved apartments
+## PR 3: Saved apartments
 
 - **Save:** a "Save" button on a lookup stores the address and its results snapshot.
 - **Apartment page:** `/apartments/[id]` renders the stored results with no Google call. This is
@@ -111,7 +105,7 @@ hard rules are updated to say "every route" and to cover agent contacts.
 - **Open:** whether to warn when saving an address that's already saved. Google's geocoding
   normalizes addresses, which could make duplicates detectable.
 
-### 5. Tracking fields
+## PR 4: Tracking fields
 
 - **Fields:** label (such as "Unit 4B"), rent, listing URL, status, next step, agent contact, and
   notes.
@@ -121,21 +115,21 @@ hard rules are updated to say "every route" and to cover agent contacts.
 - **Open:** an explicit Save button or autosave, and form actions or `+server.ts` with `fetch`.
   foodservice-insights chose the latter, so read its reasoning before deciding.
 
-### 6. Pipeline list
+## PR 5: Pipeline list
 
 The home page lists every saved apartment, with status, rent, next step, goals met and the best
 time per destination. It's sortable and filterable by status, and links to each apartment page.
 The address lookup stays on the same page. This is the first "compare" view. Ship it and watch how
-your partner uses it before designing milestone 7.
+your partner uses it before designing PR 6.
 
-### 7. Side-by-side compare
+## PR 6: Side-by-side compare
 
 - **The view:** pick 2–3 apartments; destinations are rows and apartments are columns, with the
   better time highlighted and rent and next step at the top.
 - **Screenshot tests:** revisit them here, as their own PR, because adding Playwright to CI is a
   CI change.
 
-### Later, only if needed
+## Later, only if needed
 
 Notes or ratings for each person, CSV export, destinations stored per move.
 
@@ -144,7 +138,7 @@ Notes or ratings for each person, CSV export, destinations stored per move.
 For every PR: `npm run lint && npm run check && npm test`, plus `MOCK=1 npm run dev` to click
 through UI changes.
 
-From milestone 3 on, also check the PR's Vercel preview against its own Neon branch:
+From PR 2 on, also check the PR's Vercel preview against its own Neon branch:
 - the migration ran;
 - a saved apartment survives a reload;
 - production data wasn't touched.
@@ -153,5 +147,4 @@ Real Google calls happen only to check a change by hand, and the PR says so.
 
 ## Next step
 
-Bring this plan into the repo with `/plan-adopt`, as `.claude/plans/apartment-tracker.md`. Then
-write a detailed plan for milestone 1 or 2; neither depends on anything.
+Write a detailed plan for PR 1, which depends on nothing, or for PR 2.
