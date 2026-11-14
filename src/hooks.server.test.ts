@@ -14,35 +14,45 @@ async function request(path: string, session?: string) {
     cookies: { get: () => session } as unknown as Cookies,
   } as RequestEvent;
   const response = await handle({ event, resolve });
-  return { resolve, status: response.status };
+  return { resolve, response, status: response.status };
 }
 
 describe('handle', () => {
-  test.each(['/api/travel-times', '/api/logins'])('refuses %s without a session', async (path) => {
-    const { resolve, status } = await request(path);
+  describe('without a session', () => {
+    test.each(['/api/travel-times', '/api/logins'])('refuses %s with a 401', async (path) => {
+      const { resolve, status } = await request(path);
 
-    expect(status).toBe(401);
-    expect(resolve).not.toHaveBeenCalled();
+      expect(status).toBe(401);
+      expect(resolve).not.toHaveBeenCalled();
+    });
+
+    test.each(['/', '/apartments/1', '/loginx'])('sends %s to the login page', async (path) => {
+      const { resolve, response } = await request(path);
+
+      expect(response.status).toBe(303);
+      expect(response.headers.get('location')).toBe('/login');
+      expect(resolve).not.toHaveBeenCalled();
+    });
+
+    test.each(['/login', '/api/login'])('leaves %s open', async (path) => {
+      const { resolve, status } = await request(path);
+
+      expect(status).toBe(200);
+      expect(resolve).toHaveBeenCalledOnce();
+    });
   });
 
-  test('refuses an API route with a forged session', async () => {
+  test('refuses a forged session', async () => {
     const { resolve, status } = await request('/api/travel-times', '9999999999.forged');
 
     expect(status).toBe(401);
     expect(resolve).not.toHaveBeenCalled();
   });
 
-  test('allows an API route with a live session', async () => {
+  test.each(['/', '/api/travel-times'])('allows %s with a live session', async (path) => {
     const session = signSession(PASSWORD, Math.floor(Date.now() / 1000) + 60);
 
-    const { resolve, status } = await request('/api/travel-times', session);
-
-    expect(status).toBe(200);
-    expect(resolve).toHaveBeenCalledOnce();
-  });
-
-  test.each(['/', '/api/login'])('leaves %s open', async (path) => {
-    const { resolve, status } = await request(path);
+    const { resolve, status } = await request(path, session);
 
     expect(status).toBe(200);
     expect(resolve).toHaveBeenCalledOnce();

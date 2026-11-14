@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import { getTravelTimes } from './travelTimes.svelte';
 
-const navigation = vi.hoisted(() => ({ invalidateAll: vi.fn(async () => {}) }));
+const navigation = vi.hoisted(() => ({ goto: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => navigation);
 
 function stubResponse(response: Response) {
@@ -28,13 +28,11 @@ describe('getTravelTimes', () => {
   });
 
   describe('when the session has expired', () => {
-    test('reloads the page data and asks the user to log in', async () => {
+    test('sends the user to the login page', async () => {
       stubResponse(Response.json({ error: 'Unauthorized' }, { status: 401 }));
 
-      await expect(getTravelTimes('1 Main St')).rejects.toThrow(
-        'Your session has expired. Please login.',
-      );
-      expect(navigation.invalidateAll).toHaveBeenCalledOnce();
+      await expect(getTravelTimes('1 Main St')).rejects.toThrow('Your session has expired.');
+      expect(navigation.goto).toHaveBeenCalledExactlyOnceWith('/login');
     });
   });
 

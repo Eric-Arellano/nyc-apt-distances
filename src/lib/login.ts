@@ -1,4 +1,4 @@
-import { invalidateAll } from '$app/navigation';
+import { goto } from '$app/navigation';
 
 export async function login(password: string): Promise<void> {
   const res = await fetch(`/api/login`, {
@@ -13,5 +13,5 @@ export async function login(password: string): Promise<void> {
     );
   }
 
-  await invalidateAll();
+  await goto('/');
 }
