@@ -14,11 +14,11 @@ let pending = $state(false);
   <title>Sign in · White Plains apartment travel times</title>
 </svelte:head>
 
-<div class="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+<div class="flex min-h-screen items-center justify-center px-4">
   <div
-    class="flex w-full max-w-sm flex-col space-y-3 rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+    class="flex w-full max-w-sm flex-col space-y-3 rounded-lg border border-gray-800 bg-gray-900 p-6 shadow-sm"
   >
-    <h1 class="text-xl font-semibold text-gray-900">🔒 Enter the site's password</h1>
+    <h1 class="text-xl font-semibold text-gray-100">🔒 Enter the site's password</h1>
     <!-- No `action`, so the post keeps this page's `?redirectTo=`. -->
     <form
       method="POST"

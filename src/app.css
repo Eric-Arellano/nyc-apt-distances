@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* The site is dark-only, so native controls and scrollbars should be too. */
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-gray-950 text-gray-100;
+}
+
 body > div:first-child {
   display: contents;
 }

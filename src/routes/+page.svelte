@@ -32,7 +32,7 @@ afterNavigate(({ to }) => {
   <title>White Plains apartment travel times</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50 py-8">
+<div class="min-h-screen py-8">
   <div class="container mx-auto max-w-6xl px-4">
     <h1 class="mb-6 text-center text-3xl font-bold md:text-left">
       White Plains apartment travel times
