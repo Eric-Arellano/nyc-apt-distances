@@ -13,7 +13,7 @@ const { title, goal, closest, routes }: DestinationResult = $props();
 const status = $derived(goalStatus(routes, goal));
 </script>
 
-<li data-status={status} class="rounded-lg border-2 bg-gray-50 p-4 {STATUS_CLASSES[status]}">
+<li data-status={status} class="rounded-lg border-2 p-4 {STATUS_CLASSES[status]}">
   <h3 class="mb-2 text-lg font-semibold">{title}</h3>
   <p class="mb-3 text-base text-gray-700 italic">{goalText(goal, routes)}</p>
 

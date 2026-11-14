@@ -1,9 +1,9 @@
 <script lang="ts">
 interface Props {
-  error: string;
+  message: string;
 }
 
-const { error }: Props = $props();
+const { message }: Props = $props();
 </script>
 
 <div class="flex items-center space-x-2 pt-2 text-red-600">
@@ -22,5 +22,5 @@ const { error }: Props = $props();
       d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
     ></path>
   </svg>
-  <p>{error}</p>
+  <p>{message}</p>
 </div>

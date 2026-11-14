@@ -3,7 +3,7 @@ import type { DestinationResult } from '#lib/types.ts';
 import Card from '../Card.svelte';
 import ErrorMessage from '../ErrorMessage.svelte';
 import Loading from '../Loading.svelte';
-import Success from './Success.svelte';
+import DestinationList from './DestinationList.svelte';
 
 interface Props {
   task: Promise<DestinationResult[]> | null;
@@ -17,9 +17,9 @@ const { task }: Props = $props();
     {#await task}
       <Loading message="Calculating travel times..." />
     {:then result}
-      <Success destinations={result} />
+      <DestinationList destinations={result} />
     {:catch error}
-      <ErrorMessage error={error.message} />
+      <ErrorMessage message={error.message} />
     {/await}
   </Card>
 {/if}

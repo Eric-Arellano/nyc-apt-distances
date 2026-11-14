@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { render, within } from '@testing-library/svelte';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import type { DestinationResult, Goal, Route } from '#lib/types.ts';
-import Success from './Success.svelte';
+import DestinationList from './DestinationList.svelte';
 
 const BET_AM_SHALOM_GOAL: Goal = { strictness: 'should', idealMinutes: 15, maxMinutes: 25 };
 const BET_AM_SHALOM_WALK: Route = { mode: 'walk', timeMinutes: 32, distanceMiles: 1.6 };
@@ -135,7 +135,7 @@ const EXPECTED_CARDS = [
 ];
 
 function renderedCards(destinations: DestinationResult[]) {
-  const { container } = render(Success, { destinations });
+  const { container } = render(DestinationList, { destinations });
   return [...container.querySelectorAll<HTMLElement>('[data-status]')].map((card) => ({
     title: card.querySelector('h3')?.textContent,
     goal: card.querySelector('p')?.textContent,
@@ -146,8 +146,8 @@ function renderedCards(destinations: DestinationResult[]) {
   }));
 }
 
-describe('Success', () => {
-  it('renders every destination card', () => {
+describe('DestinationList', () => {
+  test('renders every destination card', () => {
     expect(renderedCards(DESTINATIONS)).toEqual(EXPECTED_CARDS);
   });
 });
