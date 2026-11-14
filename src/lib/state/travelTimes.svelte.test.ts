@@ -28,11 +28,14 @@ describe('getTravelTimes', () => {
   });
 
   describe('when the session has expired', () => {
-    test('sends the user to the login page', async () => {
+    test('sends the user to the login page, to return here', async () => {
+      vi.stubGlobal('location', new URL('https://example.com/?address=1+Main+St'));
       stubResponse(Response.json({ error: 'Unauthorized' }, { status: 401 }));
 
       await expect(getTravelTimes('1 Main St')).rejects.toThrow('Your session has expired.');
-      expect(navigation.goto).toHaveBeenCalledExactlyOnceWith('/login');
+      expect(navigation.goto).toHaveBeenCalledExactlyOnceWith(
+        '/login?redirectTo=%2F%3Faddress%3D1%2BMain%2BSt',
+      );
     });
   });
 

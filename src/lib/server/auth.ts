@@ -5,7 +5,7 @@
  * stored, and changing the password signs every browser out.
  */
 
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, scryptSync, timingSafeEqual } from 'node:crypto';
 import type { Cookies } from '@sveltejs/kit';
 import { SITE_PASSWORD } from '$app/env/private';
 
@@ -17,34 +17,48 @@ export function isSitePassword(candidate: string): boolean {
   return timingSafeEqual(sha256(candidate), sha256(SITE_PASSWORD));
 }
 
-export function signSession(password: string, expiresAt: number): string {
-  const signature = createHmac('sha256', password).update(`${expiresAt}`).digest('base64url');
+// A cookie is an HMAC of a known message, so whoever holds one can test password guesses against
+// it offline. scrypt makes each guess cost tens of milliseconds rather than nanoseconds. The salt
+// can be fixed: it only has to rule out precomputed tables, and there is one password.
+export function deriveSessionKey(password: string): Buffer {
+  return scryptSync(password, 'apt-distances site session', 32);
+}
+
+export function signSession(key: Buffer, expiresAt: number): string {
+  const signature = createHmac('sha256', key).update(`${expiresAt}`).digest('base64url');
   return `${expiresAt}.${signature}`;
 }
 
-export function isLiveSession(password: string, session: string, now: number): boolean {
+export function isLiveSession(key: Buffer, session: string, now: number): boolean {
   const expiresAt = Number(session.split('.')[0]);
   // Re-signing the expiry it claims means a malformed value simply fails to match.
-  const expected = Buffer.from(signSession(password, expiresAt));
+  const expected = Buffer.from(signSession(key, expiresAt));
   const given = Buffer.from(session);
   return given.length === expected.length && timingSafeEqual(given, expected) && expiresAt > now;
 }
 
 export function hasSession(cookies: Cookies): boolean {
   const session = cookies.get(SESSION_COOKIE_NAME);
-  return session !== undefined && isLiveSession(SITE_PASSWORD, session, nowSeconds());
+  return session !== undefined && isLiveSession(siteSessionKey(), session, nowSeconds());
 }
 
 export function startSession(cookies: Cookies): void {
   // `httpOnly`, `secure` and `sameSite` are left to SvelteKit's defaults.
   cookies.set(
     SESSION_COOKIE_NAME,
-    signSession(SITE_PASSWORD, nowSeconds() + SESSION_LIFETIME_SECONDS),
+    signSession(siteSessionKey(), nowSeconds() + SESSION_LIFETIME_SECONDS),
     {
       path: '/',
       maxAge: SESSION_LIFETIME_SECONDS,
     },
   );
+}
+
+// Derived once per server instance, since every request checks a session.
+let sessionKey: Buffer | undefined;
+function siteSessionKey(): Buffer {
+  sessionKey ??= deriveSessionKey(SITE_PASSWORD);
+  return sessionKey;
 }
 
 function sha256(text: string): Buffer {
