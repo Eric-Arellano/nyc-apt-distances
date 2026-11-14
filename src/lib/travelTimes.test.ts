@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { getTravelTimes } from './travelTimes.svelte';
+import { getTravelTimes } from './travelTimes';
 
 const navigation = vi.hoisted(() => ({ goto: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => navigation);

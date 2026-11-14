@@ -2,12 +2,6 @@ import { loginPath } from '#lib/loginRedirect.ts';
 import type { DestinationResult } from '#lib/types.ts';
 import { goto } from '$app/navigation';
 
-interface TravelTimesRequest {
-  task: Promise<DestinationResult[]> | null;
-}
-
-const travelTimesRequest: TravelTimesRequest = $state({ task: null });
-
 export async function getTravelTimes(streetAddress: string): Promise<DestinationResult[]> {
   const params = new URLSearchParams({ 'street-address': streetAddress });
   const res = await fetch(`/api/travel-times?${params}`, { signal: AbortSignal.timeout(30_000) });
@@ -27,5 +21,3 @@ export async function getTravelTimes(streetAddress: string): Promise<Destination
 
   throw new Error(`Failed to fetch travel times: ${res.status} ${res.statusText}`);
 }
-
-export default travelTimesRequest;

@@ -1,14 +1,20 @@
 <script lang="ts">
+import type { DestinationResult } from '#lib/types.ts';
 import Card from '../Card.svelte';
-import Loading from '../Loading.svelte';
 import ErrorMessage from '../ErrorMessage.svelte';
+import Loading from '../Loading.svelte';
 import Success from './Success.svelte';
-import travelTimesRequest from '#lib/state/travelTimes.svelte.ts';
+
+interface Props {
+  task: Promise<DestinationResult[]> | null;
+}
+
+const { task }: Props = $props();
 </script>
 
-{#if travelTimesRequest.task}
+{#if task}
   <Card title="Travel times">
-    {#await travelTimesRequest.task}
+    {#await task}
       <Loading message="Calculating travel times..." />
     {:then result}
       <Success destinations={result} />

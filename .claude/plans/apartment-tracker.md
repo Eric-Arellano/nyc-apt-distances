@@ -22,8 +22,14 @@ each person, destinations stored in the database, maps.
 ## Architecture
 
 - **Auth stays the one shared site password.** Two people don't need accounts. Every route is
-  gated by default, except `/login` and `/api/login` (`src/hooks.server.ts`): pages redirect to
-  `/login` and `/api/` returns 401. A new route is private unless someone opens it on purpose.
+  gated by default except the `/login` route, matched by route id in `src/hooks.server.ts`: pages
+  redirect to `/login?redirectTo=…` and `/api/` returns 401. A new route is private unless someone
+  opens it on purpose. Signing in is a form action on `/login` that returns to `redirectTo`, so a
+  shared link to an apartment page survives the login, and the session cookie's key is stretched
+  from the password with scrypt (`src/lib/server/auth.ts`).
+- **One-off lookups stay in the URL** (`/?address=…`), run in the browser after each navigation by
+  `src/routes/+page.svelte`, which owns the lookup's promise. Every open of such a link spends the
+  Google key again; a saved apartment is what avoids that.
 - **Neon Postgres, through Vercel's Neon integration.** Production uses Neon's main branch, and
   each PR preview gets its own Neon branch, created and deleted by the integration.
   *Rejected: Supabase, because branching needs a paid plan and free projects pause after a week
@@ -62,21 +68,10 @@ each person, destinations stored in the database, maps.
 
 ## PRs
 
-Dependencies: 1 doesn't depend on anything. 2 must land before 3, the first PR that stores
-addresses. 4 and 5 can run in parallel after 3. 6 comes after 5.
+Dependencies: 1 must land before 2, the first PR that stores addresses. 3 and 4 can run in
+parallel after 2. 5 comes after 4.
 
-## PR 1: Shareable lookups (no database)
-
-The address goes in the URL (`/?address=…`), and the lookup runs when the page loads, so sharing
-a link reproduces the query. Each open of a link spends the Google key again, at a few cents per
-lookup. This stays useful after PR 3 for one-off checks of addresses not worth saving.
-
-- **Open:** the login redirect drops the query string, so a shared link loses its address for
-  anyone not signed in. The redirect in `src/hooks.server.ts` and the login page need to return to
-  the original URL.
-- Touches `AddressInput.svelte`, `src/lib/state/travelTimes.svelte.ts` and `src/routes/+page.svelte`.
-
-## PR 2: Database foundation
+## PR 1: Database foundation
 
 - **Neon setup** (done by hand in the Vercel and Neon dashboards): connect the integration and set
   up branch-per-preview.
@@ -96,16 +91,17 @@ lookup. This stays useful after PR 3 for one-off checks of addresses not worth s
 - Likely 2–3 PRs: dev and test infrastructure first, then the Neon wiring and build-step
   migrations.
 
-## PR 3: Saved apartments
+## PR 2: Saved apartments
 
-- **Save:** a "Save" button on a lookup stores the address and its results snapshot.
+- **Save:** a "Save" button on a lookup in `src/routes/+page.svelte` stores the address and its
+  results snapshot.
 - **Apartment page:** `/apartments/[id]` renders the stored results with no Google call. This is
   the share link.
 - **Staleness:** the page shows the compute date, and offers recompute and delete.
 - **Open:** whether to warn when saving an address that's already saved. Google's geocoding
   normalizes addresses, which could make duplicates detectable.
 
-## PR 4: Tracking fields
+## PR 3: Tracking fields
 
 - **Fields:** label (such as "Unit 4B"), rent, listing URL, status, next step, agent contact, and
   notes.
@@ -113,16 +109,17 @@ lookup. This stays useful after PR 3 for one-off checks of addresses not worth s
   work on a phone, since it'll be used while touring.
 - **Open:** the status values. Draft: considering, contacted, toured, applied, signed, passed.
 - **Open:** an explicit Save button or autosave, and form actions or `+server.ts` with `fetch`.
-  foodservice-insights chose the latter, so read its reasoning before deciding.
+  foodservice-insights chose the latter, so read its reasoning before deciding; the login here is
+  already a form action.
 
-## PR 5: Pipeline list
+## PR 4: Pipeline list
 
 The home page lists every saved apartment, with status, rent, next step, goals met and the best
 time per destination. It's sortable and filterable by status, and links to each apartment page.
 The address lookup stays on the same page. This is the first "compare" view. Ship it and watch how
-your partner uses it before designing PR 6.
+your partner uses it before designing PR 5.
 
-## PR 6: Side-by-side compare
+## PR 5: Side-by-side compare
 
 - **The view:** pick 2–3 apartments; destinations are rows and apartments are columns, with the
   better time highlighted and rent and next step at the top.
@@ -136,9 +133,7 @@ Notes or ratings for each person, CSV export, destinations stored per move.
 ## Verification
 
 For every PR: `npm run lint && npm run check && npm test`, plus `MOCK=1 npm run dev` to click
-through UI changes.
-
-From PR 2 on, also check the PR's Vercel preview against its own Neon branch:
+through UI changes. Also check the PR's Vercel preview against its own Neon branch:
 - the migration ran;
 - a saved apartment survives a reload;
 - production data wasn't touched.
@@ -147,4 +142,4 @@ Real Google calls happen only to check a change by hand, and the PR says so.
 
 ## Next step
 
-Write a detailed plan for PR 1, which depends on nothing, or for PR 2.
+Write a detailed plan for PR 1, the database foundation.
