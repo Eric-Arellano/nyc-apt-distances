@@ -1,8 +1,12 @@
 <script lang="ts">
-import DestinationCard from './DestinationCard.svelte';
 import type { DestinationResult } from '#lib/types.ts';
+import DestinationCard from './DestinationCard.svelte';
 
-const { destinations }: { destinations: DestinationResult[] } = $props();
+interface Props {
+  destinations: DestinationResult[];
+}
+
+const { destinations }: Props = $props();
 </script>
 
 <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2">

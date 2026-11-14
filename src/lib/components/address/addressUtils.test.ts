@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { isValidAddress } from './addressUtils.js';
+import { isValidAddress } from './addressUtils';
 
 describe('isValidAddress', () => {
   test.each([
