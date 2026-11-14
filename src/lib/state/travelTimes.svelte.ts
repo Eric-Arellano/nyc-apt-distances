@@ -1,3 +1,4 @@
+import { loginPath } from '#lib/loginRedirect.ts';
 import type { DestinationResult } from '#lib/types.ts';
 import { goto } from '$app/navigation';
 
@@ -14,7 +15,7 @@ export async function getTravelTimes(streetAddress: string): Promise<Destination
 
   // Every page is gated, so a 401 means the session expired after the page loaded.
   if (res.status === 401) {
-    await goto('/login');
+    await goto(loginPath(new URL(location.href)));
     throw new Error('Your session has expired.');
   }
 

@@ -1,6 +1,7 @@
 import type { Cookies } from '@sveltejs/kit';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import {
+  deriveSessionKey,
   hasSession,
   isLiveSession,
   isSitePassword,
@@ -11,6 +12,7 @@ import {
 } from './auth';
 
 const PASSWORD = 'correct-horse-battery';
+const KEY = deriveSessionKey(PASSWORD);
 const NOW = 1_800_000_000;
 
 vi.mock('$app/env/private', () => ({ SITE_PASSWORD: 'correct-horse-battery' }));
@@ -36,31 +38,33 @@ describe('isSitePassword', () => {
 
 describe('isLiveSession', () => {
   test('accepts an unexpired session the password signed', () => {
-    expect(isLiveSession(PASSWORD, signSession(PASSWORD, NOW + 60), NOW)).toBe(true);
+    expect(isLiveSession(KEY, signSession(KEY, NOW + 60), NOW)).toBe(true);
   });
 
   test('refuses an expired session', () => {
-    expect(isLiveSession(PASSWORD, signSession(PASSWORD, NOW), NOW)).toBe(false);
+    expect(isLiveSession(KEY, signSession(KEY, NOW), NOW)).toBe(false);
   });
 
-  test('refuses a session another password signed', () => {
-    expect(isLiveSession(PASSWORD, signSession('the-previous-one', NOW + 60), NOW)).toBe(false);
+  test('refuses a session signed with another password', () => {
+    expect(
+      isLiveSession(KEY, signSession(deriveSessionKey('the-previous-one'), NOW + 60), NOW),
+    ).toBe(false);
   });
 
   test('refuses an expiry moved without re-signing', () => {
-    const signature = signSession(PASSWORD, NOW - 60).split('.')[1];
+    const signature = signSession(KEY, NOW - 60).split('.')[1];
 
-    expect(isLiveSession(PASSWORD, `${NOW + 60}.${signature}`, NOW)).toBe(false);
+    expect(isLiveSession(KEY, `${NOW + 60}.${signature}`, NOW)).toBe(false);
   });
 
   test('refuses a valid session with anything appended', () => {
-    expect(isLiveSession(PASSWORD, `${signSession(PASSWORD, NOW + 60)}.extra`, NOW)).toBe(false);
+    expect(isLiveSession(KEY, `${signSession(KEY, NOW + 60)}.extra`, NOW)).toBe(false);
   });
 
   test.each(['', 'garbage', `${NOW + 60}`, `${NOW + 60}.`, `.${NOW}`, '1e12.abc', 'a.b.c'])(
     'refuses the malformed %j',
     (session) => {
-      expect(isLiveSession(PASSWORD, session, NOW)).toBe(false);
+      expect(isLiveSession(KEY, session, NOW)).toBe(false);
     },
   );
 });
@@ -78,7 +82,7 @@ describe('startSession', () => {
     expect(jar.set.mock.calls).toEqual([
       [
         SESSION_COOKIE_NAME,
-        signSession(PASSWORD, NOW + SESSION_LIFETIME_SECONDS),
+        signSession(KEY, NOW + SESSION_LIFETIME_SECONDS),
         { path: '/', maxAge: SESSION_LIFETIME_SECONDS },
       ],
     ]);
@@ -91,13 +95,19 @@ describe('hasSession', () => {
   });
 
   test('is true for a live session in the cookie', () => {
-    const jar = aJar(signSession(PASSWORD, NOW + 60));
+    const jar = aJar(signSession(KEY, NOW + 60));
 
     expect(hasSession(jar as unknown as Cookies)).toBe(true);
     expect(jar.get).toHaveBeenCalledWith(SESSION_COOKIE_NAME);
   });
 
   test('is false for an expired session in the cookie', () => {
-    expect(hasSession(aJar(signSession(PASSWORD, NOW)) as unknown as Cookies)).toBe(false);
+    expect(hasSession(aJar(signSession(KEY, NOW)) as unknown as Cookies)).toBe(false);
+  });
+
+  test('is false for a session keyed by the raw password', () => {
+    const jar = aJar(signSession(Buffer.from(PASSWORD), NOW + 60));
+
+    expect(hasSession(jar as unknown as Cookies)).toBe(false);
   });
 });
