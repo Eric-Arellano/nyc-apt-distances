@@ -6,7 +6,7 @@ interface Props {
 const { message }: Props = $props();
 </script>
 
-<div class="flex items-center space-x-2 pt-2 text-red-600">
+<div class="flex items-center space-x-2 pt-2 text-red-400">
   <svg
     aria-hidden="true"
     class="h-5 w-5"
