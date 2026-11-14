@@ -1,5 +1,5 @@
 import type { DestinationResult } from '#lib/types.ts';
-import { invalidateAll } from '$app/navigation';
+import { goto } from '$app/navigation';
 
 interface TravelTimesRequest {
   task: Promise<DestinationResult[]> | null;
@@ -12,12 +12,10 @@ export async function getTravelTimes(streetAddress: string): Promise<Destination
   const res = await fetch(`/api/travel-times?${params}`, { signal: AbortSignal.timeout(30_000) });
   if (res.ok) return res.json() as Promise<DestinationResult[]>;
 
-  // The user should only have been able to submit the request if they were previously
-  // determined by the client to be authenticated. So, receiving a 401 most likely means that
-  // the session has expired.
+  // Every page is gated, so a 401 means the session expired after the page loaded.
   if (res.status === 401) {
-    await invalidateAll();
-    throw new Error(`Your session has expired. Please login.`);
+    await goto('/login');
+    throw new Error('Your session has expired.');
   }
 
   // SvelteKit sends `error(400, message)` as JSON, and the message is written for the user.

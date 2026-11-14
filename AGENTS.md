@@ -14,13 +14,14 @@ one of those two facts.
 - **No test reaches the network.** Real Google calls are billed, so make them only to verify a
   change or capture a fixture, and say when you did. `MOCK=1 npm run dev` serves canned travel
   times without calling Google.
-- **Keep `/api/` behind the site password.** Every route there except `/api/login` must stay
-  behind the check in `src/hooks.server.ts`, because each request spends the Google key.
+- **Keep every route behind the site password.** Only `/login` and `/api/login` may be open in
+  `src/hooks.server.ts`: each `/api/` request spends the Google key, and pages will hold
+  apartments and agent contacts.
 - **No secrets, and no absolute home paths**, in code, config or fixtures. The Google key and site
   password live in `.envrc`, which is never read or committed. Google's Geocoding API takes its
   key in the query string, so never log those URLs.
 - **Only publish addresses meant to be published.** Destinations are fine. An apartment I am
-  considering is not, so it never goes in a fixture, test, commit or PR.
+  considering is not, nor is an agent's contact, so neither goes in a fixture, test, commit or PR.
 - **Ask before adding a dependency**, including a dev dependency. Prefer the standard library,
   then first-party code when it is simple to write, because supply-chain security is a pain.
 - **Svelte 5 runes only.** Most Svelte in training data is Svelte 4, so look an API up with the

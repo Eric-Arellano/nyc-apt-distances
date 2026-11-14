@@ -1,23 +1,20 @@
 import type { Handle } from '@sveltejs/kit/hooks';
 import { hasSession } from '#lib/server/auth.ts';
 
-// Only `/api/` is gated, because each request there spends the Google key. A page is not: one
-// whose `+page.server.ts` loads private data, such as stored apartment addresses, must call
-// `hasSession` itself.
+// Everything is gated except the login page and its endpoint, so a route added later is private
+// by default. Every request to `/api/` spends the Google key, and stored apartments, agent
+// contacts included, are private.
+const OPEN_PATHS = new Set(['/login', '/api/login']);
+
 export const handle: Handle = async ({ event, resolve }) => {
   const { pathname } = event.url;
-  // Exact match, so a future `/api/login-history` is still gated.
-  if (!pathname.startsWith('/api/') || pathname === '/api/login') {
+  // Exact match, so a future `/login-history` is still gated.
+  if (OPEN_PATHS.has(pathname) || hasSession(event.cookies)) {
     return resolve(event);
   }
 
-  if (!hasSession(event.cookies)) {
-    return Response.json(
-      { error: 'Unauthorized' },
-      {
-        status: 401,
-      },
-    );
+  if (pathname.startsWith('/api/')) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  return resolve(event);
+  return new Response(null, { status: 303, headers: { location: '/login' } });
 };
