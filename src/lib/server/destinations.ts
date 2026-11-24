@@ -3,8 +3,10 @@ import { type Candidates, PARKS, STATIONS, SUPERMARKETS } from './candidateLocat
 import type { Trip } from './gmapsRouting';
 import { DayOfWeek } from './weeklyTime';
 
-// Without a fixed suffix, an address missing its town lands wherever Google guesses, so geocoding
-// rejects a match outside this county.
+/**
+ * Without a fixed suffix, an address missing its town lands wherever Google guesses, so geocoding
+ * rejects a match outside this county.
+ */
 export const ORIGIN_COUNTY = 'Westchester County';
 
 export interface Destination {

@@ -11,7 +11,7 @@ interface Props {
 
 const { address, busy }: Props = $props();
 
-// Follows the URL, as on back and forward, until someone types.
+/** Follows the URL, as on back and forward, until someone types. */
 let value = $derived(address);
 </script>
 

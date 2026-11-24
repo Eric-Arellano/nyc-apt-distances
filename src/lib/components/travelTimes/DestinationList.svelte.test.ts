@@ -23,9 +23,11 @@ function walkCard(
   };
 }
 
-// The institute and park are slower than ideal but within the max; the grocery is beyond the max.
-// Bet Am Shalom has a bus on Friday, only walking and no drive on Saturday, and no transit route to
-// CBST. Florham Park is beyond the max.
+/**
+ * The institute and park are slower than ideal but within the max; the grocery is beyond the max.
+ * Bet Am Shalom has a bus on Friday, only walking and no drive on Saturday, and no transit route to
+ * CBST. Florham Park is beyond the max.
+ */
 const DESTINATIONS: DestinationResult[] = [
   {
     id: 'metro-north',
@@ -78,7 +80,7 @@ const DESTINATIONS: DestinationResult[] = [
   },
 ];
 
-// Every card the page shows, in order. PRs that restructure destinations must leave this alone.
+/** Every card the page shows, in order. PRs that restructure destinations must leave this alone. */
 const EXPECTED_CARDS = [
   {
     title: 'Metro-North station 🚆',

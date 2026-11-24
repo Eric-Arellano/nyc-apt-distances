@@ -10,10 +10,10 @@ import walk from '#tests/fixtures/google/walk.json';
 import { computeRoute, parseDistanceRoute, parseTransitRoute } from './gmapsRouting';
 import { DayOfWeek } from './weeklyTime';
 
-// The target the transit fixtures were captured with.
+/** The target the transit fixtures were captured with. */
 const MONDAY_9_30 = DateTime.fromISO('2026-11-09T09:30', { zone: 'America/New_York' });
 
-// Defaults to Google's real reply when it finds no route.
+/** Defaults to Google's real reply when it finds no route. */
 function stubFetch(response = Response.json(transitNoRoute)) {
   const fetchMock = vi.fn(async (_url: string, _init: RequestInit) => response);
   vi.stubGlobal('fetch', fetchMock);

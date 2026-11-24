@@ -7,13 +7,15 @@ import type Database from '#lib/server/db/schema/Database.ts';
 import { dev } from '$app/env';
 import { DATABASE_URL } from '$app/env/private';
 
-// Each worktree gets its own dev database, since this is relative to where `vite dev` runs.
+/** Each worktree gets its own dev database, since this is relative to where `vite dev` runs. */
 export const DEV_DATA_DIR = '.pglite';
 
-// `vite dev` always uses PGlite, even when `.env.local` holds the DATABASE_URL that `vercel env
-// pull` writes there, so nothing run locally can write to Neon.
-// *Rejected: an opt-in to develop against a Neon branch, because an agent could point it at
-// production; previews already run against real Postgres.*
+/**
+ * `vite dev` always uses PGlite, even when `.env.local` holds the DATABASE_URL that `vercel env
+ * pull` writes there, so nothing run locally can write to Neon.
+ * *Rejected: an opt-in to develop against a Neon branch, because an agent could point it at
+ * production; previews already run against real Postgres.*
+ */
 export function databaseTarget(
   url: string | undefined,
   runtime: 'deployed' | 'dev',
@@ -23,12 +25,16 @@ export function databaseTarget(
   throw new Error('DATABASE_URL must be set outside `vite dev`.');
 }
 
-// The connection is kept on `globalThis` because a hot reload re-runs this module, and a second
-// PGlite opening the same directory would corrupt it.
+/**
+ * The connection is kept on `globalThis` because a hot reload re-runs this module, and a second
+ * PGlite opening the same directory would corrupt it.
+ */
 const cache = globalThis as typeof globalThis & { aptDatabase?: Kysely<Database> };
 
-// Module state, unlike the connection: editing a migration re-runs this module, so `vite dev`
-// applies a new migration without a restart.
+/**
+ * Module state, unlike the connection: editing a migration re-runs this module, so `vite dev`
+ * applies a new migration without a restart.
+ */
 let ready: Promise<Kysely<Database>> | undefined;
 
 export function getDatabase(): Promise<Kysely<Database>> {

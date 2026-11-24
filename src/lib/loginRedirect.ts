@@ -6,8 +6,10 @@ export function loginPath(from: URL): string {
   return target === '/' ? '/login' : `/login?${new URLSearchParams({ redirectTo: target })}`;
 }
 
-// Anyone can craft a login link. SvelteKit's `redirect` already refuses another origin, but by
-// throwing, so anything not on this site goes home instead of failing the sign-in.
+/**
+ * Anyone can craft a login link. SvelteKit's `redirect` already refuses another origin, but by
+ * throwing, so anything not on this site goes home instead of failing the sign-in.
+ */
 export function returnPath(redirectTo: string | null, origin: string): string {
   const target = redirectTo ? URL.parse(redirectTo, origin) : null;
   return target?.origin === origin ? `${target.pathname}${target.search}` : '/';

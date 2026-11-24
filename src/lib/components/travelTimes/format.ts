@@ -24,7 +24,7 @@ export function goalText(goal: Goal, routes: readonly Route[]): string {
   return `${strictness === 'must' ? 'Must' : 'Should'} be within ${limit}; ideally within ${idealMinutes} minutes`;
 }
 
-// Bee-Line lines are numbers, so a bus is named as one rather than passing for a subway line.
+/** Bee-Line lines are numbers, so a bus is named as one rather than passing for a subway line. */
 function formatTransit(timeMinutes: number, rides: readonly Ride[]): string {
   if (rides.length === 0) return `🚆 ${timeMinutes} minutes by walking`;
   const emoji = rides.every(({ vehicle }) => vehicle === 'bus') ? '🚌' : '🚆';

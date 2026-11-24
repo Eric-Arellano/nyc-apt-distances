@@ -13,7 +13,7 @@ beforeEach(() => {
   vi.stubGlobal('window', { location: { origin: 'https://example.com' } });
 });
 
-// `routeId` is what SvelteKit's router matched, or null when nothing did.
+/** `routeId` is what SvelteKit's router matched, or null when nothing did. */
 async function request(path: string, routeId: string | null, session?: string) {
   const resolve = vi.fn(async () => new Response('resolved'));
   const event = {

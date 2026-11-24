@@ -39,10 +39,14 @@ const MODES = {
   },
 } as const;
 
-// Google's `TransitVehicle.TransitVehicleType` values for buses. Every other type reads as a train.
+/**
+ * Google's `TransitVehicle.TransitVehicleType` values for buses. Every other type reads as a train.
+ */
 const BUS_TYPES = ['BUS', 'INTERCITY_BUS', 'TROLLEYBUS'];
 
-// Proto3 JSON omits zero values and empty lists, so a field the mask asked for can still be absent.
+/**
+ * Proto3 JSON omits zero values and empty lists, so a field the mask asked for can still be absent.
+ */
 export interface ComputeRoutesResponse {
   routes?: {
     duration?: string;
@@ -86,7 +90,7 @@ export async function computeRoutes(
   return await response.json();
 }
 
-// No route comes back as `{}`, for transit trips with no service and in principle for any mode.
+/** No route comes back as `{}`, for transit trips with no service and in principle for any mode. */
 function onlyRoute(response: ComputeRoutesResponse): GoogleRoute | undefined {
   const routes = response.routes ?? [];
   if (routes.length > 1) {
@@ -109,8 +113,10 @@ function durationToMinutes(duration: string | undefined): number {
 
 type Step = NonNullable<NonNullable<GoogleRoute['legs']>[number]['steps']>[number];
 
-// Google's `duration` stops when the trip arrives, but arriving early still spends that time, so
-// it counts. An all-walking trip keeps no schedule, so it has no wait.
+/**
+ * Google's `duration` stops when the trip arrives, but arriving early still spends that time, so
+ * it counts. An all-walking trip keeps no schedule, so it has no wait.
+ */
 function waitSeconds(steps: readonly Step[], arriveBy: DateTime): number {
   const lastRide = steps.findLastIndex((step) => step.travelMode === 'TRANSIT');
   if (lastRide === -1) return 0;
@@ -165,8 +171,10 @@ export function parseTransitRoute(response: ComputeRoutesResponse, arriveBy: Dat
   return { mode: 'transit', timeMinutes: Math.round(seconds / 60), rides };
 }
 
-// Google takes `arrivalTime` only for transit, and never with `departureTime`, so a drive departs
-// at a time rather than arriving by one.
+/**
+ * Google takes `arrivalTime` only for transit, and never with `departureTime`, so a drive departs
+ * at a time rather than arriving by one.
+ */
 export type Trip =
   | { mode: 'walk' | 'bike' }
   | { mode: 'transit'; arriveBy: WeeklyTime }

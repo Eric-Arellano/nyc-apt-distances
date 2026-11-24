@@ -17,8 +17,10 @@ export function createDatabase(target: DatabaseTarget): Kysely<Database> {
   });
 }
 
-// The one place that knows which driver an environment uses: Neon through `pg`, and PGlite for dev
-// and tests.
+/**
+ * The one place that knows which driver an environment uses: Neon through `pg`, and PGlite for dev
+ * and tests.
+ */
 function createDialect(target: DatabaseTarget): Dialect {
   switch (target.kind) {
     case 'postgres': {

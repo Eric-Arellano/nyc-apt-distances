@@ -47,7 +47,7 @@ export const STATIONS: Candidates = [
   },
 ];
 
-// Large parks use their entrance, not their middle.
+/** Large parks use their entrance, not their middle. */
 export const PARKS: Candidates = [
   {
     name: 'Bronx River Pathway (County Center)',
