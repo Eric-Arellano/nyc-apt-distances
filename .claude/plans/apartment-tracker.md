@@ -12,8 +12,8 @@ and probably for later moves too, so it needs three things:
 - **Track:** rent, listing, agent contact, and where each one is in the process ("did credit
   check, need to send reference"). This replaces the spreadsheet from the last move.
 
-All three depend on one new concept, **a saved apartment**: an address plus its stored results
-plus free-form tracking fields. This document is the roadmap of PRs. Each PR gets
+All three depend on one new concept, **a saved apartment**: an address plus its stored travel
+times plus free-form tracking fields. This document is the roadmap of PRs. Each PR gets
 its own detailed plan before work starts.
 
 **Out of scope:** automatically finding listings (no usable listings API exists), accounts for
@@ -35,24 +35,45 @@ each person, destinations stored in the database, maps.
   *Rejected: Supabase, because branching needs a paid plan and free projects pause after a week
   idle; we need neither Supabase Auth nor Storage.*
 - **The database is reached only from the server, with no RLS**, as in foodservice-insights.
-- **Kysely** builds the queries and runs the migrations; **Kanel** generates types from the live
-  schema.
-- **One Kysely database, a different driver per environment:**
-  - Tests: PGlite in memory, a fresh migrated database for each test file. No network, no Docker,
-    and worktrees are isolated automatically.
-  - Dev: PGlite saved to a gitignored directory in each worktree.
-  - Previews and production: `pg` against Neon.
+- **Kysely** builds the queries, in camelCase through its `CamelCasePlugin`, and runs the
+  migrations; **Kanel** generates the types in
+  `src/lib/server/db/schema` from the migrations, not from any live database. `npm run db:types`
+  migrates a throwaway PGlite and has Kanel read it directly, so no Postgres server or Docker is
+  involved. A new migration goes in `src/lib/server/db/migrations/`, listed by hand in its
+  `index.ts` so the same list works under Vite, Vitest and plain Node.
+- **One Kysely database, a different driver per environment,** chosen only in `createDatabase`
+  (`src/lib/server/db/createDatabase.ts`):
+  - Tests: PGlite in memory. `createTestDatabase()` in `tests/db.ts` gives each test file a fresh,
+    migrated one. No network, no Docker, and worktrees are isolated automatically.
+  - Dev: PGlite in a gitignored `.pglite/` in each worktree. `getDatabase()` in
+    `src/lib/server/database.ts` applies pending migrations on first use and keeps the instance on
+    `globalThis`, so a hot reload can't open the directory twice. `MOCK=1` fakes only Google;
+    saves still go to this database. Dev always ignores `DATABASE_URL`, so a production URL
+    pulled from Vercel can't reach it.
+  - Previews and production: `pg` against Neon's pooled `DATABASE_URL`. The code never tells a
+    preview from production: the integration hands each deployment its own branch's URL.
 
-  Only the function that creates the database knows which driver it is using. *Rejected: copying
-  foodservice-insights' local Supabase stacks; most of that code exists to work around
-  Supabase-specific problems.*
-- **Migrations run in Vercel's build step,** against whichever Neon branch that deployment uses,
-  so CI doesn't change. Every pending migration runs in one transaction, and a migration that has
-  landed is never edited.
-- **Results are stored as a snapshot:** the `DestinationResult[]` the API already returns,
-  recorded with the time it was computed. Destinations stay in code
-  (`src/lib/server/destinations.ts`), so a snapshot can go stale. The app shows the compute date,
-  flags a snapshot whose destination ids no longer match, and offers a "Recompute" button.
+  *Rejected: copying foodservice-insights' local Supabase stacks; most of that code exists to work
+  around Supabase-specific problems.*
+- **Migrations run in Vercel's build step** (`buildCommand` in `vercel.json`, which runs
+  `scripts/migrate.ts` over `DATABASE_URL_UNPOOLED`), against whichever Neon branch that
+  deployment uses, so CI doesn't change. The script logs the host it migrated, which names the
+  branch, and refuses to run outside a Vercel build. Every pending migration runs in one
+  transaction, and a migration that has landed is never edited.
+- **Nothing run locally writes to Neon.** Postgres-specific behavior is checked on a PR's preview
+  (`src/lib/server/database.ts` holds the reasoning).
+- **`pg` and PGlite bind `jsonb` differently.** `pg` sends a JS array as a Postgres array
+  literal, which `jsonb` rejects; PGlite accepts it. `npm run db:types` types `jsonb` writes as
+  `string`, so the type checker demands `JSON.stringify(…)`, the form both accept.
+- **Travel times are stored as a snapshot** in `apartment.travel_times`, with the time it was
+  computed. The `apartment` table already exists (`001-create-apartment`). Each entry holds only
+  what Google produced (closest place and routes), keyed by destination id and a fingerprint of
+  that destination, so copy such as titles and goals can change in code without touching stored
+  rows. PR 0 sets that up. Kanel types the column's reads as `unknown`, so reads need a typed
+  boundary. **Open:** whether to also store the coordinates the lookup geocodes
+  but doesn't yet return. Without them, maps and every recompute geocode the address again, billed.
+- **Deleting is a hard delete.** Any table that references `apartment` declares
+  `on delete cascade`, so one statement removes an apartment and everything about it.
 - **Tracking fields are free-form, except status.** Status is a fixed list, so it can be sorted
   and filtered. Everything else is text: label, rent, listing URL, next step, agent contact, and
   one shared notes textarea (we type our names inline).
@@ -65,41 +86,54 @@ each person, destinations stored in the database, maps.
   commits or PRs.
 - Previews hold copies of production data, which is acceptable only because every route requires
   the password. Vercel's fork protection must stay enabled.
+- A deleted apartment survives in any preview branched before the delete, until that branch is
+  deleted, and in Neon's restore window.
 
 ## PRs
 
-Dependencies: 1 must land before 2, the first PR that stores addresses. 3 and 4 can run in
-parallel after 2. 5 comes after 4.
+Dependencies: 0 is a prefactor for 1, which is the first PR that stores addresses. 2, 3 and 4 can run in parallel after 1. 5
+comes after 4.
 
-## PR 1: Database foundation
+**The Neon setup is done by hand** in the Vercel and Neon dashboards: install Vercel's Neon
+integration and connect it to the project with **Preview** checked under "Create database branch
+for deployment". The database foundation needs it before it lands, since every build now runs
+`scripts/migrate.ts`, which fails without a database URL. The foundation's preview built, so some
+URL reached its build step.
 
-- **Neon setup** (done by hand in the Vercel and Neon dashboards): connect the integration and set
-  up branch-per-preview.
-- **Dependencies:** Kysely, `pg`, PGlite, Kanel.
-- **Code:** the function that creates the database for each environment, the migrator and its
-  build-step hook, a test helper that gives each file a fresh PGlite, the Kanel type-generation
-  script, and a first migration.
-- **README:** what someone now runs, such as the env vars and migrate and type-generation
-  commands.
-- **Spikes to settle in this PR's detailed plan:**
-  - Kanel needs the Postgres wire protocol to read the dev database, so try `pglite-socket` with a
-    Docker fallback.
-  - PGlite under `vite dev`: two module instances could open the same directory during a hot
-    reload, so keep one instance on `globalThis`.
-  - How Vercel's build environment tells a preview from production.
-  - How `MOCK=1` combines with a real dev database.
-- Likely 2–3 PRs: dev and test infrastructure first, then the Neon wiring and build-step
-  migrations.
+**Open:** which one. Neon's docs say branch connection strings are "injected via webhook at
+deployment time", but not whether the build step sees them or the stored Preview values, which
+point at production. The `Migrating <host>` line in the foundation preview's build log answers
+it, and must differ from production's host. If it is production's, the empty `apartment` table
+and Kysely's two tables there must be dropped before the foundation merges, because
+`001-create-apartment` changed after that preview ran.
 
-## PR 2: Saved apartments
+## PR 0: Separate copy from travel times (prefactor)
+
+`computeTravelTimes` in `src/lib/server/travelTimes.ts` returns, per destination, only its id, a
+fingerprint, the closest place and the routes. A server-side join adds title and goal from
+`DESTINATIONS` to make the `DestinationResult` the cards already render, and the API and, later,
+the apartment page both use it. The fingerprint hashes the destination's place and trips with
+`node:crypto`, so a moved address, a new trip or reordered trips changes it, while a new title or
+goal doesn't. Routes match trips by position, which the fingerprint covers. No behavior changes.
+
+## PR 1: Saved apartments
 
 - **Save:** a "Save" button on a lookup in `src/routes/+page.svelte` stores the address and its
-  results snapshot.
-- **Apartment page:** `/apartments/[id]` renders the stored results with no Google call. This is
-  the share link.
-- **Staleness:** the page shows the compute date, and offers recompute and delete.
+  travel-times snapshot.
+- **Apartment page:** `/apartments/[id]` renders the stored travel times with no Google call.
+  This is the share link.
+- **Staleness:** the page shows the compute date and drops entries for destinations removed
+  from code. A destination with no entry, or whose fingerprint no longer matches, shows as
+  missing, with a "Recompute" button that replaces the whole snapshot, so
+  `travel_times_computed_at` stays true of every entry. *Rejected: computing only the missing
+  destinations automatically, because it needs a compute time per entry and saves little.*
 - **Open:** whether to warn when saving an address that's already saved. Google's geocoding
   normalizes addresses, which could make duplicates detectable.
+
+## PR 2: Delete an apartment
+
+A "Delete" button on the apartment page, behind a confirmation, deletes the row and returns home.
+Ship it soon after PR 1: until then, a mistaken save comes out only through Neon's console.
 
 ## PR 3: Tracking fields
 
@@ -134,7 +168,7 @@ Notes or ratings for each person, CSV export, destinations stored per move.
 
 For every PR: `npm run lint && npm run check && npm test`, plus `MOCK=1 npm run dev` to click
 through UI changes. Also check the PR's Vercel preview against its own Neon branch:
-- the migration ran;
+- the migration ran, and the build log names the preview branch's host, not production's;
 - a saved apartment survives a reload;
 - production data wasn't touched.
 
@@ -142,4 +176,5 @@ Real Google calls happen only to check a change by hand, and the PR says so.
 
 ## Next step
 
-Write a detailed plan for PR 1, the database foundation.
+Settle the Neon **Open:** above from the foundation preview's build log, then write detailed plans
+for PR 0 and PR 1, saved apartments.

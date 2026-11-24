@@ -10,4 +10,6 @@ export const variables = defineEnvVars({
     },
   },
   MOCK: { schema: (value) => !!value },
+  // Set by Vercel's Neon integration. `vite dev` ignores it.
+  DATABASE_URL: { schema: (value) => value || undefined },
 });

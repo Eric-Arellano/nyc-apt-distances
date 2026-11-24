@@ -1,5 +1,8 @@
 node_modules
 
+# Dev database
+.pglite
+
 # Output
 .output
 .vercel

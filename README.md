@@ -23,8 +23,24 @@ Then, run `npm install`
 - `npm run test`
 - `npm run check`
 - `npm run lint`
+- `npm run db:types`: regenerates the database types in `src/lib/server/db/schema` after you add
+  a migration to `src/lib/server/db/migrations`
 - `node scripts/capture-fixtures.ts`: re-captures the Google responses in `tests/fixtures/google`,
   which bills your key
+
+### The dev database
+
+`npm run dev` keeps its database in `.pglite/`, using [PGlite](https://pglite.dev), so there is no
+Postgres server to install. It applies new migrations on first use. To start over, stop the server
+and delete `.pglite/`. Each test file gets its own database in memory.
+
+`npm run dev` ignores `DATABASE_URL`, so a production URL from `vercel env pull` can't reach it. Nothing run locally writes to Neon; check Postgres-specific behavior on a PR's preview instead.
+
+### Deploying
+
+The app runs on Vercel with [Neon](https://neon.com) Postgres, through Vercel's Neon integration.
+Production uses Neon's main branch, and each preview deployment gets its own Neon branch. Each
+deploy runs pending migrations against its own branch before it builds, as set in `vercel.json`.
 
 ### Changing destinations and goals
 
