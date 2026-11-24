@@ -1,11 +1,15 @@
 import { type Kysely, sql } from 'kysely';
-import { afterEach, describe, expect, test } from 'vitest';
-import { createDatabase } from './createDatabase.ts';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { createEmptyTestDatabase } from '#tests/db.ts';
 import { migrateToLatest } from './migrate.ts';
 import { MIGRATIONS } from './migrations/index.ts';
 import type Database from './schema/Database.ts';
 
 let db: Kysely<Database>;
+
+beforeEach(async () => {
+  db = await createEmptyTestDatabase();
+});
 
 afterEach(async () => {
   await db.destroy();
@@ -20,12 +24,10 @@ async function tableNames(): Promise<string[]> {
 
 describe('migrateToLatest', () => {
   test('runs every migration on an empty database', async () => {
-    db = createDatabase({ kind: 'pglite' });
     expect(await migrateToLatest(db)).toEqual(Object.keys(MIGRATIONS));
   });
 
   test('runs nothing once the database is current', async () => {
-    db = createDatabase({ kind: 'pglite' });
     await migrateToLatest(db);
     expect(await migrateToLatest(db)).toEqual([]);
   });
@@ -45,12 +47,10 @@ describe('migrateToLatest', () => {
     };
 
     test('throws, naming the migration', async () => {
-      db = createDatabase({ kind: 'pglite' });
       await expect(migrateToLatest(db, migrations)).rejects.toThrow('Migration 002-broken failed');
     });
 
     test('rolls back the migrations that ran before it', async () => {
-      db = createDatabase({ kind: 'pglite' });
       await migrateToLatest(db, migrations).catch(() => {});
       expect(await tableNames()).toEqual(['kysely_migration', 'kysely_migration_lock']);
     });
