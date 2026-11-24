@@ -9,5 +9,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn('results', 'jsonb', (col) => col.notNull())
     .addColumn('results_computed_at', 'timestamptz', (col) => col.notNull())
     .addColumn('created_at', 'timestamptz', (col) => col.notNull().defaultTo(sql`now()`))
+    // A value stringified twice, or the wrong one stringified, is still valid `jsonb`.
+    .addCheckConstraint('apartment_results_is_array', sql`jsonb_typeof(results) = 'array'`)
     .execute();
 }

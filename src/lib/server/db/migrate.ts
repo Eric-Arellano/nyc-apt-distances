@@ -11,8 +11,11 @@ export async function migrateToLatest<DB>(
   const migrator = new Migrator({ db, provider: { getMigrations: async () => migrations } });
   const { error, results = [] } = await migrator.migrateToLatest();
   if (error) {
+    // No result has failed when the error came before any migration ran, such as a lost
+    // connection or a landed migration missing from `MIGRATIONS`.
     const failed = results.find((result) => result.status === 'Error');
-    throw new Error(`Migration ${failed?.migrationName ?? '(none)'} failed`, { cause: error });
+    const message = failed ? `Migration ${failed.migrationName} failed` : 'Could not migrate';
+    throw new Error(message, { cause: error });
   }
   return results.map((result) => result.migrationName);
 }

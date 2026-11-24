@@ -32,12 +32,12 @@ describe('migrateToLatest', () => {
 
   describe('when a migration fails', () => {
     const migrations = {
-      '0001-ok': {
+      '001-ok': {
         up: async (db: Kysely<unknown>) => {
           await db.schema.createTable('ok').addColumn('id', 'integer').execute();
         },
       },
-      '0002-broken': {
+      '002-broken': {
         up: async (db: Kysely<unknown>) => {
           await sql`select * from missing_table`.execute(db);
         },
@@ -46,7 +46,7 @@ describe('migrateToLatest', () => {
 
     test('throws, naming the migration', async () => {
       db = createDatabase({ kind: 'pglite' });
-      await expect(migrateToLatest(db, migrations)).rejects.toThrow('Migration 0002-broken failed');
+      await expect(migrateToLatest(db, migrations)).rejects.toThrow('Migration 002-broken failed');
     });
 
     test('rolls back the migrations that ran before it', async () => {

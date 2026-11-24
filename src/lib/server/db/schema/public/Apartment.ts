@@ -9,11 +9,11 @@ export default interface ApartmentTable {
 
   address: ColumnType<string, string, string>;
 
-  results: ColumnType<unknown, unknown, unknown>;
+  results: ColumnType<unknown, string, string>;
 
-  results_computed_at: ColumnType<Date, Date | string, Date | string>;
+  resultsComputedAt: ColumnType<Date, Date | string, Date | string>;
 
-  created_at: ColumnType<Date, Date | string | undefined, Date | string>;
+  createdAt: ColumnType<Date, Date | string | undefined, Date | string>;
 }
 
 export type Apartment = Selectable<ApartmentTable>;

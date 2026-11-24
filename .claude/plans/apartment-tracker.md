@@ -35,7 +35,8 @@ each person, destinations stored in the database, maps.
   *Rejected: Supabase, because branching needs a paid plan and free projects pause after a week
   idle; we need neither Supabase Auth nor Storage.*
 - **The database is reached only from the server, with no RLS**, as in foodservice-insights.
-- **Kysely** builds the queries and runs the migrations; **Kanel** generates the types in
+- **Kysely** builds the queries, in camelCase through its `CamelCasePlugin`, and runs the
+  migrations; **Kanel** generates the types in
   `src/lib/server/db/schema` from the migrations, not from any live database. `npm run db:types`
   migrates a throwaway PGlite and has Kanel read it directly, so no Postgres server or Docker is
   involved. A new migration goes in `src/lib/server/db/migrations/`, listed by hand in its
@@ -47,7 +48,8 @@ each person, destinations stored in the database, maps.
   - Dev: PGlite in a gitignored `.pglite/` in each worktree. `getDatabase()` in
     `src/lib/server/database.ts` applies pending migrations on first use and keeps the instance on
     `globalThis`, so a hot reload can't open the directory twice. `MOCK=1` fakes only Google;
-    saves still go to this database.
+    saves still go to this database. Dev ignores `DATABASE_URL` unless `DEV_USE_DATABASE_URL` is
+    set, so a production URL pulled from Vercel can't reach it.
   - Previews and production: `pg` against Neon's pooled `DATABASE_URL`. The code never tells a
     preview from production: the integration hands each deployment its own branch's URL.
 
@@ -59,13 +61,14 @@ each person, destinations stored in the database, maps.
   branch. Every pending migration runs in one transaction, and a migration that has landed is
   never edited.
 - **`pg` and PGlite bind `jsonb` differently.** `pg` sends a JS array as a Postgres array
-  literal, which `jsonb` rejects; PGlite accepts it. Write `jsonb` values as `JSON.stringify(…)`,
-  the form both accept, or tests on PGlite will pass while Neon fails.
+  literal, which `jsonb` rejects; PGlite accepts it. `npm run db:types` types `jsonb` writes as
+  `string`, so the type checker demands `JSON.stringify(…)`, the form both accept.
 - **Results are stored as a snapshot:** the `DestinationResult[]` the API already returns,
   recorded with the time it was computed. The `apartment` table already exists
-  (`0001-create-apartment`): an identity `id`, `address`, `results` as `jsonb`,
-  `results_computed_at` and `created_at`. Kanel types `results` as `unknown`, so reads need a
-  typed boundary. Destinations stay in code
+  (`001-create-apartment`). Kanel types `results` reads as `unknown`, so reads need a typed
+  boundary. **Open:** whether to also store the coordinates the lookup geocodes but doesn't yet
+  return, since maps would otherwise re-geocode every saved apartment, billed. Destinations stay in
+  code
   (`src/lib/server/destinations.ts`), so a snapshot can go stale. The app shows the compute date,
   flags a snapshot whose destination ids no longer match, and offers a "Recompute" button.
 - **Tracking fields are free-form, except status.** Status is a fixed list, so it can be sorted

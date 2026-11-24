@@ -12,8 +12,6 @@ First, define the following env vars, such as with [direnv](https://direnv.net) 
 
 - `GOOGLE_MAPS_TOKEN`: a Google Cloud API key with the new Routes API and the Geocoding API enabled
 - `SITE_PASSWORD`: whatever you want the site password to be
-- `DATABASE_URL` (optional): a Postgres connection string. Leave it unset to use the local dev
-  database
 
 Then, run `npm install`
 
@@ -37,6 +35,10 @@ Then, run `npm install`
 `npm run dev` keeps its database in `.pglite/`, using [PGlite](https://pglite.dev), so there is no
 Postgres server to install. It applies new migrations on first use. To start over, stop the server
 and delete `.pglite/`. Each test file gets its own database in memory.
+
+`npm run dev` ignores `DATABASE_URL`, so a production URL from `vercel env pull` can't reach it. To
+develop against Postgres anyway, set `DEV_USE_DATABASE_URL=1` and point `DATABASE_URL` at a Neon
+branch of your own, never production's. Migrate it with `npm run db:migrate`.
 
 ### Deploying
 

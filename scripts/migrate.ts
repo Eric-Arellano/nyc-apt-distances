@@ -8,12 +8,15 @@ import { createDatabase } from '#lib/server/db/createDatabase.ts';
 import { migrateToLatest } from '#lib/server/db/migrate.ts';
 
 // Prefer the direct connection: Neon's pooler is PgBouncer, meant for the app's short queries.
-const url = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
+const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 if (!url) throw new Error('DATABASE_URL_UNPOOLED or DATABASE_URL must be set.');
 
 // The host names the Neon branch, so the build log shows which database a deployment migrated.
-// Never log the whole URL: it holds the password.
-console.log(`Migrating ${new URL(url).host}`);
+// Never log the whole URL: it holds the password. Node's invalid-URL error carries its input, so
+// refuse a malformed URL here rather than let `pg` throw that error into the build log.
+const host = URL.parse(url)?.host;
+if (!host) throw new Error('The database URL does not parse.');
+console.log(`Migrating ${host}`);
 const db = createDatabase({ kind: 'postgres', url });
 try {
   const ran = await migrateToLatest(db);

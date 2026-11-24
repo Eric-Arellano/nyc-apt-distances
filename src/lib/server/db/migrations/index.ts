@@ -4,8 +4,8 @@
 // A migration that has landed is never edited: production has already run it. Change the schema
 // with a new one, then run `npm run db:types`.
 import type { Migration } from 'kysely/migration';
-import * as createApartment from './0001-create-apartment.ts';
+import * as createApartment from './001-create-apartment.ts';
 
 export const MIGRATIONS: Record<string, Migration> = {
-  '0001-create-apartment': createApartment,
+  '001-create-apartment': createApartment,
 };

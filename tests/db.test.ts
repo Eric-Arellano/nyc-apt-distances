@@ -9,12 +9,10 @@ describe('createTestDatabase', () => {
 
     const row = await db
       .insertInto('apartment')
-      // `pg` sends a JS array as a Postgres array literal, which `jsonb` rejects, while PGlite
-      // accepts either. Stringifying is the form both take, so tests can't hide the difference.
       .values({
         address: '100 Martine Ave, White Plains, NY 10601',
         results: JSON.stringify(results),
-        results_computed_at: computedAt,
+        resultsComputedAt: computedAt,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -23,8 +21,8 @@ describe('createTestDatabase', () => {
       id: 1,
       address: '100 Martine Ave, White Plains, NY 10601',
       results,
-      results_computed_at: computedAt,
-      created_at: expect.any(Date),
+      resultsComputedAt: computedAt,
+      createdAt: expect.any(Date),
     });
     await db.destroy();
   });
@@ -35,7 +33,7 @@ describe('createTestDatabase', () => {
 
     await first
       .insertInto('apartment')
-      .values({ address: 'a', results: '[]', results_computed_at: new Date() })
+      .values({ address: 'a', results: '[]', resultsComputedAt: new Date() })
       .execute();
 
     expect(await second.selectFrom('apartment').selectAll().execute()).toEqual([]);
