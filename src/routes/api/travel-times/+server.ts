@@ -2,7 +2,7 @@ import { error, type RequestHandler } from '@sveltejs/kit';
 import { DESTINATIONS } from '#lib/server/destinations.ts';
 import { fakeMaps } from '#lib/server/fakeMaps.ts';
 import { requireGmapsToken } from '#lib/server/gmapsToken.ts';
-import { computeTravelTimes, googleMaps } from '#lib/server/travelTimes.ts';
+import { computeTravelTimes, googleMaps, toDestinationResults } from '#lib/server/travelTimes.ts';
 import { MOCK } from '$app/env/private';
 
 export const GET: RequestHandler = async ({ url }) => {
@@ -10,11 +10,10 @@ export const GET: RequestHandler = async ({ url }) => {
   if (!address) {
     throw error(400, '`street-address` parameter is required');
   }
-  return Response.json(
-    await computeTravelTimes(
-      address,
-      DESTINATIONS,
-      MOCK ? fakeMaps : googleMaps(requireGmapsToken()),
-    ),
+  const entries = await computeTravelTimes(
+    address,
+    DESTINATIONS,
+    MOCK ? fakeMaps : googleMaps(requireGmapsToken()),
   );
+  return Response.json(toDestinationResults(entries, DESTINATIONS));
 };
