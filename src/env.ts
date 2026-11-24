@@ -10,4 +10,6 @@ export const variables = defineEnvVars({
     },
   },
   MOCK: { schema: (value) => !!value },
+  // Set by Vercel's Neon integration. Unset under `vite dev`, which then uses PGlite in `.pglite/`.
+  DATABASE_URL: { schema: (value) => value || undefined },
 });

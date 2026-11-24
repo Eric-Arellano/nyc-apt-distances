@@ -12,6 +12,8 @@ First, define the following env vars, such as with [direnv](https://direnv.net) 
 
 - `GOOGLE_MAPS_TOKEN`: a Google Cloud API key with the new Routes API and the Geocoding API enabled
 - `SITE_PASSWORD`: whatever you want the site password to be
+- `DATABASE_URL` (optional): a Postgres connection string. Leave it unset to use the local dev
+  database
 
 Then, run `npm install`
 
@@ -23,8 +25,24 @@ Then, run `npm install`
 - `npm run test`
 - `npm run check`
 - `npm run lint`
+- `npm run db:types`: regenerates the database types in `src/lib/server/db/schema` after you add
+  a migration to `src/lib/server/db/migrations`
+- `npm run db:migrate`: migrates the database at `DATABASE_URL`. Vercel runs this on every
+  deploy, so you rarely need it
 - `node scripts/capture-fixtures.ts`: re-captures the Google responses in `tests/fixtures/google`,
   which bills your key
+
+### The dev database
+
+`npm run dev` keeps its database in `.pglite/`, using [PGlite](https://pglite.dev), so there is no
+Postgres server to install. It applies new migrations on first use. To start over, stop the server
+and delete `.pglite/`. Each test file gets its own database in memory.
+
+### Deploying
+
+The app runs on Vercel with [Neon](https://neon.com) Postgres, through Vercel's Neon integration.
+Production uses Neon's main branch, and each preview deployment gets its own Neon branch. Each
+deploy runs pending migrations against its own branch before it builds, as set in `vercel.json`.
 
 ### Changing destinations and goals
 

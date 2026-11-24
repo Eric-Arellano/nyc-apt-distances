@@ -35,22 +35,37 @@ each person, destinations stored in the database, maps.
   *Rejected: Supabase, because branching needs a paid plan and free projects pause after a week
   idle; we need neither Supabase Auth nor Storage.*
 - **The database is reached only from the server, with no RLS**, as in foodservice-insights.
-- **Kysely** builds the queries and runs the migrations; **Kanel** generates types from the live
-  schema.
-- **One Kysely database, a different driver per environment:**
-  - Tests: PGlite in memory, a fresh migrated database for each test file. No network, no Docker,
-    and worktrees are isolated automatically.
-  - Dev: PGlite saved to a gitignored directory in each worktree.
-  - Previews and production: `pg` against Neon.
+- **Kysely** builds the queries and runs the migrations; **Kanel** generates the types in
+  `src/lib/server/db/schema` from the migrations, not from any live database. `npm run db:types`
+  migrates a throwaway PGlite and has Kanel read it directly, so no Postgres server or Docker is
+  involved. A new migration goes in `src/lib/server/db/migrations/`, listed by hand in its
+  `index.ts` so the same list works under Vite, Vitest and plain Node.
+- **One Kysely database, a different driver per environment,** chosen only in `createDatabase`
+  (`src/lib/server/db/createDatabase.ts`):
+  - Tests: PGlite in memory. `createTestDatabase()` in `tests/db.ts` gives each test file a fresh,
+    migrated one. No network, no Docker, and worktrees are isolated automatically.
+  - Dev: PGlite in a gitignored `.pglite/` in each worktree. `getDatabase()` in
+    `src/lib/server/database.ts` applies pending migrations on first use and keeps the instance on
+    `globalThis`, so a hot reload can't open the directory twice. `MOCK=1` fakes only Google;
+    saves still go to this database.
+  - Previews and production: `pg` against Neon's pooled `DATABASE_URL`. The code never tells a
+    preview from production: the integration hands each deployment its own branch's URL.
 
-  Only the function that creates the database knows which driver it is using. *Rejected: copying
-  foodservice-insights' local Supabase stacks; most of that code exists to work around
-  Supabase-specific problems.*
-- **Migrations run in Vercel's build step,** against whichever Neon branch that deployment uses,
-  so CI doesn't change. Every pending migration runs in one transaction, and a migration that has
-  landed is never edited.
+  *Rejected: copying foodservice-insights' local Supabase stacks; most of that code exists to work
+  around Supabase-specific problems.*
+- **Migrations run in Vercel's build step** (`buildCommand` in `vercel.json`, which runs
+  `scripts/migrate.ts` over `DATABASE_URL_UNPOOLED`), against whichever Neon branch that
+  deployment uses, so CI doesn't change. The script logs the host it migrated, which names the
+  branch. Every pending migration runs in one transaction, and a migration that has landed is
+  never edited.
+- **`pg` and PGlite bind `jsonb` differently.** `pg` sends a JS array as a Postgres array
+  literal, which `jsonb` rejects; PGlite accepts it. Write `jsonb` values as `JSON.stringify(…)`,
+  the form both accept, or tests on PGlite will pass while Neon fails.
 - **Results are stored as a snapshot:** the `DestinationResult[]` the API already returns,
-  recorded with the time it was computed. Destinations stay in code
+  recorded with the time it was computed. The `apartment` table already exists
+  (`0001-create-apartment`): an identity `id`, `address`, `results` as `jsonb`,
+  `results_computed_at` and `created_at`. Kanel types `results` as `unknown`, so reads need a
+  typed boundary. Destinations stay in code
   (`src/lib/server/destinations.ts`), so a snapshot can go stale. The app shows the compute date,
   flags a snapshot whose destination ids no longer match, and offers a "Recompute" button.
 - **Tracking fields are free-form, except status.** Status is a fixed list, so it can be sorted
@@ -68,30 +83,20 @@ each person, destinations stored in the database, maps.
 
 ## PRs
 
-Dependencies: 1 must land before 2, the first PR that stores addresses. 3 and 4 can run in
-parallel after 2. 5 comes after 4.
+Dependencies: 1 is the first PR that stores addresses. 2 and 3 can run in parallel after 1. 4
+comes after 3.
 
-## PR 1: Database foundation
+**Before PR 1 lands, the Neon setup must be done by hand** in the Vercel and Neon dashboards:
+install Vercel's Neon integration, connect it to the project with **Preview** checked under
+"Create database branch for deployment", and confirm on a preview's build log that
+`scripts/migrate.ts` migrated a different host than production's.
 
-- **Neon setup** (done by hand in the Vercel and Neon dashboards): connect the integration and set
-  up branch-per-preview.
-- **Dependencies:** Kysely, `pg`, PGlite, Kanel.
-- **Code:** the function that creates the database for each environment, the migrator and its
-  build-step hook, a test helper that gives each file a fresh PGlite, the Kanel type-generation
-  script, and a first migration.
-- **README:** what someone now runs, such as the env vars and migrate and type-generation
-  commands.
-- **Spikes to settle in this PR's detailed plan:**
-  - Kanel needs the Postgres wire protocol to read the dev database, so try `pglite-socket` with a
-    Docker fallback.
-  - PGlite under `vite dev`: two module instances could open the same directory during a hot
-    reload, so keep one instance on `globalThis`.
-  - How Vercel's build environment tells a preview from production.
-  - How `MOCK=1` combines with a real dev database.
-- Likely 2–3 PRs: dev and test infrastructure first, then the Neon wiring and build-step
-  migrations.
+**Open:** Neon's docs say branch connection strings are "injected via webhook at deployment
+time", but not whether the build step sees them or the stored Preview values, which point at
+production. The database foundation's own preview is the cheap place to find out, since its only
+migration creates an empty table.
 
-## PR 2: Saved apartments
+## PR 1: Saved apartments
 
 - **Save:** a "Save" button on a lookup in `src/routes/+page.svelte` stores the address and its
   results snapshot.
@@ -101,7 +106,7 @@ parallel after 2. 5 comes after 4.
 - **Open:** whether to warn when saving an address that's already saved. Google's geocoding
   normalizes addresses, which could make duplicates detectable.
 
-## PR 3: Tracking fields
+## PR 2: Tracking fields
 
 - **Fields:** label (such as "Unit 4B"), rent, listing URL, status, next step, agent contact, and
   notes.
@@ -112,14 +117,14 @@ parallel after 2. 5 comes after 4.
   foodservice-insights chose the latter, so read its reasoning before deciding; the login here is
   already a form action.
 
-## PR 4: Pipeline list
+## PR 3: Pipeline list
 
 The home page lists every saved apartment, with status, rent, next step, goals met and the best
 time per destination. It's sortable and filterable by status, and links to each apartment page.
 The address lookup stays on the same page. This is the first "compare" view. Ship it and watch how
-your partner uses it before designing PR 5.
+your partner uses it before designing PR 4.
 
-## PR 5: Side-by-side compare
+## PR 4: Side-by-side compare
 
 - **The view:** pick 2–3 apartments; destinations are rows and apartments are columns, with the
   better time highlighted and rent and next step at the top.
@@ -134,7 +139,7 @@ Notes or ratings for each person, CSV export, destinations stored per move.
 
 For every PR: `npm run lint && npm run check && npm test`, plus `MOCK=1 npm run dev` to click
 through UI changes. Also check the PR's Vercel preview against its own Neon branch:
-- the migration ran;
+- the migration ran, and the build log names the preview branch's host, not production's;
 - a saved apartment survives a reload;
 - production data wasn't touched.
 
@@ -142,4 +147,5 @@ Real Google calls happen only to check a change by hand, and the PR says so.
 
 ## Next step
 
-Write a detailed plan for PR 1, the database foundation.
+Finish the Neon setup and settle the **Open:** above on a preview, then write a detailed plan for
+PR 1, saved apartments.
