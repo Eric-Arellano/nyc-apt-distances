@@ -5,7 +5,7 @@ import { computeTravelTimes, fingerprint, type Maps, toDestinationResults } from
 
 const GOAL = { strictness: 'must', idealMinutes: 15, maxMinutes: 25 } as const;
 
-// Our own destinations, so editing the real config doesn't break these tests.
+/** A destination of our own, so editing the real config doesn't break these tests. */
 const FIXED: Destination = {
   id: 'fixed',
   title: 'Fixed address',

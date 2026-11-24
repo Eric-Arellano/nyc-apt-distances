@@ -28,8 +28,10 @@ function resolvePlace(
   return { address, closest: { name } };
 }
 
-// What Google produced for one destination, and nothing that is our own copy. Only this is worth
-// storing: titles and goals can change in code without invalidating it.
+/**
+ * What Google produced for one destination, and nothing that is our own copy. Only this is worth
+ * storing: titles and goals can change in code without invalidating it.
+ */
 export interface TravelTimeEntry {
   id: string;
   fingerprint: string;
@@ -37,8 +39,10 @@ export interface TravelTimeEntry {
   routes: Route[];
 }
 
-// Hashes what the entry's routes depend on. `routes` matches `trips` by position, so a reordered
-// trip list changes it too. Title and goal are left out on purpose.
+/**
+ * Hashes what the entry's routes depend on. `routes` matches `trips` by position, so a reordered
+ * trip list changes it too. Title and goal are left out on purpose.
+ */
 export function fingerprint({ place, trips }: Destination): string {
   return createHash('sha256').update(JSON.stringify({ place, trips })).digest('hex');
 }
@@ -61,7 +65,10 @@ export async function computeTravelTimes(
   );
 }
 
-// Follows `destinations`' order, so an entry whose destination was removed from code is dropped.
+/**
+ * Pairs stored entries with the current destinations, in `destinations`' order. An entry whose
+ * destination was removed from code is dropped.
+ */
 export function toDestinationResults(
   entries: readonly TravelTimeEntry[],
   destinations: readonly Destination[],

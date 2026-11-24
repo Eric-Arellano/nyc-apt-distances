@@ -9,7 +9,7 @@ const ROUTES: Record<Trip['mode'], Route> = {
   transit: { mode: 'transit', timeMinutes: 18, rides: [{ line: 'Harlem', vehicle: 'train' }] },
 };
 
-// Serves `MOCK=1` and tests, so neither spends the Google key.
+/** A `Maps` that serves canned results for `MOCK=1` and tests, so neither spends the Google key. */
 export const fakeMaps: Maps = {
   // 100 Martine Ave, the county office building, so `MOCK=1` picks White Plains candidates.
   geocode: async () => ({ latitude: 41.03036, longitude: -73.769965 }),

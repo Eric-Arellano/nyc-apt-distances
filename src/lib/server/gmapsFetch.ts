@@ -7,8 +7,11 @@ function isTransient(status: number): boolean {
   return status === 429 || status >= 500;
 }
 
-// Retries are safe for POST too: computeRoutes is a read, despite its verb. The final response is
-// returned as is, so callers handle a failure the same way whether or not it was retried.
+/**
+ * Fetches from Google, retrying transient failures. Retries are safe for POST too: computeRoutes is
+ * a read, despite its verb. The final response is returned as is, so callers handle a failure the
+ * same way whether or not it was retried.
+ */
 export async function fetchGoogle(
   url: string | URL,
   init?: RequestInit,

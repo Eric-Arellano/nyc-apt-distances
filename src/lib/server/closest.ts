@@ -9,7 +9,7 @@ function toRadians(degrees: number): number {
   return (degrees * Math.PI) / 180;
 }
 
-// Great-circle distance in kilometres, by the haversine formula.
+/** Great-circle distance in kilometres, by the haversine formula. */
 export function haversineDistance(from: Coordinates, to: Coordinates): number {
   const lat1 = toRadians(from.latitude);
   const lat2 = toRadians(to.latitude);

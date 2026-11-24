@@ -2,8 +2,10 @@ import type { Kysely } from 'kysely';
 import { type Migration, Migrator } from 'kysely/migration';
 import { MIGRATIONS } from './migrations/index.ts';
 
-// Postgres can roll back DDL, so Kysely runs every pending migration in one transaction: a failure
-// leaves the schema as it was.
+/**
+ * Applies every pending migration and returns their names. Postgres can roll back DDL, so Kysely
+ * runs them in one transaction: a failure leaves the schema as it was.
+ */
 export async function migrateToLatest<DB>(
   db: Kysely<DB>,
   migrations: Record<string, Migration> = MIGRATIONS,

@@ -2,7 +2,9 @@
 import type { HTMLButtonAttributes } from 'svelte/elements';
 
 interface Props extends HTMLButtonAttributes {
-  // Required, since a button's default type submits whatever form it sits in.
+  /**
+   * The button's `type`, required since a button's default type submits whatever form it sits in.
+   */
   type: 'submit' | 'button' | 'reset';
 }
 
