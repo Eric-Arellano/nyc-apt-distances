@@ -1,7 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import { type Destination, ORIGIN_COUNTY } from './destinations';
 import { fakeMaps } from './fakeMaps';
-import { computeTravelTimes, type Maps } from './travelTimes';
+import { computeTravelTimes, fingerprint, type Maps, toDestinationResults } from './travelTimes';
 
 const GOAL = { strictness: 'must', idealMinutes: 15, maxMinutes: 25 } as const;
 
@@ -80,8 +80,7 @@ describe('computeTravelTimes', () => {
 
       expect(result).toEqual({
         id: 'fixed',
-        title: 'Fixed address',
-        goal: GOAL,
+        fingerprint: fingerprint(FIXED),
         closest: null,
         routes: [
           { mode: 'walk', timeMinutes: 12, distanceMiles: 0.8 },
@@ -104,5 +103,58 @@ describe('computeTravelTimes', () => {
         trip: { mode: 'walk' },
       });
     });
+  });
+});
+
+describe('fingerprint', () => {
+  test('is the same for the same place and trips', () => {
+    expect(fingerprint({ ...FIXED })).toBe(fingerprint(FIXED));
+  });
+
+  test('ignores title and goal', () => {
+    const reworded = { ...FIXED, title: 'New title', goal: { ...GOAL, maxMinutes: 99 } };
+
+    expect(fingerprint(reworded)).toBe(fingerprint(FIXED));
+  });
+
+  test.each([
+    ['a moved address', { place: { address: '1 Elsewhere Rd, White Plains, NY' } }],
+    ['a changed candidate list', { place: { closestOf: [] } }],
+    ['an added trip', { trips: [...FIXED.trips, { mode: 'drive' }] }],
+    ['reordered trips', { trips: [...FIXED.trips].reverse() }],
+  ] as [string, Partial<Destination>][])('changes with %s', (_, change) => {
+    expect(fingerprint({ ...FIXED, ...change })).not.toBe(fingerprint(FIXED));
+  });
+});
+
+describe('toDestinationResults', () => {
+  test('joins each entry with its destination copy, in the destinations order', async () => {
+    const entries = await computeTravelTimes('1 Main St', DESTINATIONS, fakeMaps);
+
+    const results = toDestinationResults([...entries].reverse(), DESTINATIONS);
+
+    expect(results.map(({ id, title, goal }) => ({ id, title, goal }))).toEqual([
+      { id: 'fixed', title: 'Fixed address', goal: GOAL },
+      { id: 'closest', title: 'Closest park', goal: GOAL },
+    ]);
+    expect(results[0]).toEqual({
+      id: 'fixed',
+      title: 'Fixed address',
+      goal: GOAL,
+      closest: null,
+      routes: entries[0]?.routes,
+    });
+  });
+
+  test('drops an entry whose destination is no longer in code', async () => {
+    const entries = await computeTravelTimes('1 Main St', DESTINATIONS, fakeMaps);
+
+    expect(toDestinationResults(entries, [CLOSEST]).map(({ id }) => id)).toEqual(['closest']);
+  });
+
+  test('skips a destination with no entry', async () => {
+    const entries = await computeTravelTimes('1 Main St', [FIXED], fakeMaps);
+
+    expect(toDestinationResults(entries, DESTINATIONS).map(({ id }) => id)).toEqual(['fixed']);
   });
 });

@@ -69,8 +69,12 @@ each person, destinations stored in the database, maps.
   computed. The `apartment` table already exists (`001-create-apartment`). Each entry holds only
   what Google produced (closest place and routes), keyed by destination id and a fingerprint of
   that destination, so copy such as titles and goals can change in code without touching stored
-  rows. PR 0 sets that up. Kanel types the column's reads as `unknown`, so reads need a typed
-  boundary. **Open:** whether to also store the coordinates the lookup geocodes
+  rows. `computeTravelTimes` in `src/lib/server/travelTimes.ts` already returns exactly that, a
+  `TravelTimeEntry` per destination with its `fingerprint` (a hash of the destination's place and
+  trips, so reordering trips changes it); `toDestinationResults` joins entries with the copy in
+  `DESTINATIONS`, in code order, dropping entries whose destination is gone. The API and the
+  apartment page both go through it. Kanel types the column's reads as `unknown`, so reads need a
+  typed boundary. **Open:** whether to also store the coordinates the lookup geocodes
   but doesn't yet return. Without them, maps and every recompute geocode the address again, billed.
 - **Deleting is a hard delete.** Any table that references `apartment` declares
   `on delete cascade`, so one statement removes an apartment and everything about it.
@@ -91,7 +95,7 @@ each person, destinations stored in the database, maps.
 
 ## PRs
 
-Dependencies: 0 is a prefactor for 1, which is the first PR that stores addresses. 2, 3 and 4 can run in parallel after 1. 5
+Dependencies: 1 is the first PR that stores addresses. 2, 3 and 4 can run in parallel after 1. 5
 comes after 4.
 
 **The Neon setup is done by hand** in the Vercel and Neon dashboards: install Vercel's Neon
@@ -106,15 +110,6 @@ point at production. The `Migrating <host>` line in the foundation preview's bui
 it, and must differ from production's host. If it is production's, the empty `apartment` table
 and Kysely's two tables there must be dropped before the foundation merges, because
 `001-create-apartment` changed after that preview ran.
-
-## PR 0: Separate copy from travel times (prefactor)
-
-`computeTravelTimes` in `src/lib/server/travelTimes.ts` returns, per destination, only its id, a
-fingerprint, the closest place and the routes. A server-side join adds title and goal from
-`DESTINATIONS` to make the `DestinationResult` the cards already render, and the API and, later,
-the apartment page both use it. The fingerprint hashes the destination's place and trips with
-`node:crypto`, so a moved address, a new trip or reordered trips changes it, while a new title or
-goal doesn't. Routes match trips by position, which the fingerprint covers. No behavior changes.
 
 ## PR 1: Saved apartments
 
@@ -176,5 +171,5 @@ Real Google calls happen only to check a change by hand, and the PR says so.
 
 ## Next step
 
-Settle the Neon **Open:** above from the foundation preview's build log, then write detailed plans
-for PR 0 and PR 1, saved apartments.
+Settle the Neon **Open:** above from the foundation preview's build log, then write a detailed plan
+for PR 1, saved apartments.
