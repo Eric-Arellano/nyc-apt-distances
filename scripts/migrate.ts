@@ -1,11 +1,12 @@
 // Runs pending migrations against Neon. vercel.json runs it before every Vercel build, so each
-// preview migrates its own Neon branch and production migrates the main branch.
-//
-//   npm run db:migrate
-//
-// The dev database needs no command: `npm run dev` migrates it on first use.
+// preview migrates its own Neon branch and production migrates the main branch. The dev database
+// needs no command: `npm run dev` migrates it on first use.
 import { createDatabase } from '#lib/server/db/createDatabase.ts';
 import { migrateToLatest } from '#lib/server/db/migrate.ts';
+
+// Run from a checkout, this would apply that branch's unmerged migrations to whatever DATABASE_URL
+// names, which may be production's. Vercel sets VERCEL in its builds.
+if (!process.env.VERCEL) throw new Error('scripts/migrate.ts runs only in a Vercel build.');
 
 // Prefer the direct connection: Neon's pooler is PgBouncer, meant for the app's short queries.
 const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;

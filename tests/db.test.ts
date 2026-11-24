@@ -5,14 +5,14 @@ describe('createTestDatabase', () => {
   test('applies the migrations', async () => {
     const db = await createTestDatabase();
     const computedAt = new Date('2026-11-23T14:00:00Z');
-    const results = [{ id: 'library', label: 'Library' }];
+    const travelTimes = [{ id: 'library', label: 'Library' }];
 
     const row = await db
       .insertInto('apartment')
       .values({
         address: '100 Martine Ave, White Plains, NY 10601',
-        results: JSON.stringify(results),
-        resultsComputedAt: computedAt,
+        travelTimes: JSON.stringify(travelTimes),
+        travelTimesComputedAt: computedAt,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -20,8 +20,8 @@ describe('createTestDatabase', () => {
     expect(row).toEqual({
       id: 1,
       address: '100 Martine Ave, White Plains, NY 10601',
-      results,
-      resultsComputedAt: computedAt,
+      travelTimes,
+      travelTimesComputedAt: computedAt,
       createdAt: expect.any(Date),
     });
     await db.destroy();
@@ -33,7 +33,7 @@ describe('createTestDatabase', () => {
 
     await first
       .insertInto('apartment')
-      .values({ address: 'a', results: '[]', resultsComputedAt: new Date() })
+      .values({ address: 'a', travelTimes: '[]', travelTimesComputedAt: new Date() })
       .execute();
 
     expect(await second.selectFrom('apartment').selectAll().execute()).toEqual([]);

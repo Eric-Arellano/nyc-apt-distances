@@ -25,8 +25,6 @@ Then, run `npm install`
 - `npm run lint`
 - `npm run db:types`: regenerates the database types in `src/lib/server/db/schema` after you add
   a migration to `src/lib/server/db/migrations`
-- `npm run db:migrate`: migrates the database at `DATABASE_URL`. Vercel runs this on every
-  deploy, so you rarely need it
 - `node scripts/capture-fixtures.ts`: re-captures the Google responses in `tests/fixtures/google`,
   which bills your key
 
@@ -36,9 +34,7 @@ Then, run `npm install`
 Postgres server to install. It applies new migrations on first use. To start over, stop the server
 and delete `.pglite/`. Each test file gets its own database in memory.
 
-`npm run dev` ignores `DATABASE_URL`, so a production URL from `vercel env pull` can't reach it. To
-develop against Postgres anyway, set `DEV_USE_DATABASE_URL=1` and point `DATABASE_URL` at a Neon
-branch of your own, never production's. Migrate it with `npm run db:migrate`.
+`npm run dev` ignores `DATABASE_URL`, so a production URL from `vercel env pull` can't reach it. Nothing run locally writes to Neon; check Postgres-specific behavior on a PR's preview instead.
 
 ### Deploying
 

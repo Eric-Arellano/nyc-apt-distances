@@ -9,9 +9,11 @@ export default interface ApartmentTable {
 
   address: ColumnType<string, string, string>;
 
-  results: ColumnType<unknown, string, string>;
+  /** A snapshot of the travel times to each destination, one array entry per destination. */
+  travelTimes: ColumnType<unknown, string, string>;
 
-  resultsComputedAt: ColumnType<Date, Date | string, Date | string>;
+  /** When the travel times were computed. Destinations live in code, so they may have changed since. */
+  travelTimesComputedAt: ColumnType<Date, Date | string, Date | string>;
 
   createdAt: ColumnType<Date, Date | string | undefined, Date | string>;
 }

@@ -13,34 +13,40 @@ afterAll(async () => {
   await db.destroy();
 });
 
-function insertResults(results: string) {
+function insertTravelTimes(travelTimes: string) {
   return db
     .insertInto('apartment')
-    .values({ address: 'a', results, resultsComputedAt: new Date() })
+    .values({ address: 'a', travelTimes, travelTimesComputedAt: new Date() })
     .execute();
 }
 
 describe('apartment', () => {
-  describe('results', () => {
+  describe('travelTimes', () => {
     test('accepts an array', async () => {
-      await expect(insertResults('[]')).resolves.toBeDefined();
+      await expect(insertTravelTimes('[]')).resolves.toBeDefined();
     });
 
     test('reads back keys inside it unchanged', async () => {
-      const results = [{ snake_key: 1, camelKey: { nested_key: 2 } }];
+      const travelTimes = [{ snake_key: 1, camelKey: { nested_key: 2 } }];
       const row = await db
         .insertInto('apartment')
-        .values({ address: 'a', results: JSON.stringify(results), resultsComputedAt: new Date() })
-        .returning('results')
+        .values({
+          address: 'a',
+          travelTimes: JSON.stringify(travelTimes),
+          travelTimesComputedAt: new Date(),
+        })
+        .returning('travelTimes')
         .executeTakeFirstOrThrow();
-      expect(row.results).toEqual(results);
+      expect(row.travelTimes).toEqual(travelTimes);
     });
 
     test.each([
       ['an object', '{}'],
       ['an array stringified twice', JSON.stringify(JSON.stringify([]))],
-    ])('rejects %s', async (_, results) => {
-      await expect(insertResults(results)).rejects.toThrow('apartment_results_is_array');
+    ])('rejects %s', async (_, travelTimes) => {
+      await expect(insertTravelTimes(travelTimes)).rejects.toThrow(
+        'apartment_travel_times_is_array',
+      );
     });
   });
 });

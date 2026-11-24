@@ -21,7 +21,6 @@
     "format": "biome check --write .",
     "lint": "biome ci --error-on-warnings .",
     "test": "svelte-kit sync && vitest run",
-    "db:migrate": "node scripts/migrate.ts",
     "db:types": "node scripts/generate-db-types.ts && biome check --write src/lib/server/db/schema"
   },
   "devDependencies": {
