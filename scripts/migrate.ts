@@ -8,18 +8,14 @@ import { migrateToLatest } from '#lib/server/db/migrate.ts';
 // names, which may be production's. Vercel sets VERCEL in its builds.
 if (!process.env.VERCEL) throw new Error('scripts/migrate.ts runs only in a Vercel build.');
 
-/**
- * The connection to migrate through, preferring the direct one: Neon's pooler is PgBouncer, meant
- * for the app's short queries.
- */
+// The connection to migrate through, preferring the direct one: Neon's pooler is PgBouncer, meant
+// for the app's short queries.
 const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL;
 if (!url) throw new Error('DATABASE_URL_UNPOOLED or DATABASE_URL must be set.');
 
-/**
- * The database host, logged so the build log shows which Neon branch a deployment migrated. Never
- * log the whole URL: it holds the password. Node's invalid-URL error carries its input, so refuse a
- * malformed URL here rather than let `pg` throw that error into the build log.
- */
+// The database host, logged so the build log shows which Neon branch a deployment migrated. Never
+// log the whole URL: it holds the password. Node's invalid-URL error carries its input, so refuse a
+// malformed URL here rather than let `pg` throw that error into the build log.
 const host = URL.parse(url)?.host;
 if (!host) throw new Error('The database URL does not parse.');
 console.log(`Migrating ${host}`);
