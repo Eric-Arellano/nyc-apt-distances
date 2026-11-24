@@ -18,9 +18,10 @@ export function isSitePassword(candidate: string): boolean {
 }
 
 /**
- * A cookie is an HMAC of a known message, so whoever holds one can test password guesses against
- * it offline. scrypt makes each guess cost tens of milliseconds rather than nanoseconds. The salt
- * can be fixed: it only has to rule out precomputed tables, and there is one password.
+ * Derives the key that signs session cookies from the site password. A cookie is an HMAC of a known
+ * message, so whoever holds one can test password guesses against it offline. scrypt makes each
+ * guess cost tens of milliseconds rather than nanoseconds. The salt can be fixed: it only has to
+ * rule out precomputed tables, and there is one password.
  */
 export function deriveSessionKey(password: string): Buffer {
   return scryptSync(password, 'apt-distances site session', 32);
@@ -56,7 +57,7 @@ export function startSession(cookies: Cookies): void {
   );
 }
 
-/** Derived once per server instance, since every request checks a session. */
+/** The session key, derived once per server instance since every request checks a session. */
 let sessionKey: Buffer | undefined;
 function siteSessionKey(): Buffer {
   sessionKey ??= deriveSessionKey(SITE_PASSWORD);

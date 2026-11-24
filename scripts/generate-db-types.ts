@@ -11,8 +11,9 @@ import { createDatabase } from '#lib/server/db/createDatabase.ts';
 import { migrateToLatest } from '#lib/server/db/migrate.ts';
 
 /**
- * kanel-kysely ends Database.ts with `export default Database;` for a type alias, which
- * `verbatimModuleSyntax` rejects because nothing would be left once types are stripped.
+ * Rewrites kanel-kysely's `export default Database;` as a type-only export. Kanel emits it for a
+ * type alias, and `verbatimModuleSyntax` rejects it because nothing would be left once types are
+ * stripped.
  */
 function exportTypeAsDefault(_path: string, lines: string[]): string[] {
   return lines.map((line) =>
@@ -21,8 +22,9 @@ function exportTypeAsDefault(_path: string, lines: string[]): string[] {
 }
 
 /**
- * `pg` sends a JS array as a Postgres array literal, which `jsonb` rejects, while PGlite accepts
- * it, so tests would pass where Neon fails. Typing writes as `string` makes the type checker demand
+ * Types the write side of `json` and `jsonb` columns as `string` rather than `unknown`. `pg` sends
+ * a JS array as a Postgres array literal, which `jsonb` rejects, while PGlite accepts it, so tests
+ * would pass where Neon fails. Requiring `string` makes the type checker demand
  * `JSON.stringify(…)`, the form both accept. Kanel types only `json`, `jsonb` and types it doesn't
  * know as `unknown`; kanel-kysely gives a column one type for reads, inserts and updates.
  */

@@ -66,7 +66,8 @@ export async function computeTravelTimes(
 }
 
 /**
- * Follows `destinations`' order, so an entry whose destination was removed from code is dropped.
+ * Pairs stored entries with the current destinations, in `destinations`' order. An entry whose
+ * destination was removed from code is dropped.
  */
 export function toDestinationResults(
   entries: readonly TravelTimeEntry[],

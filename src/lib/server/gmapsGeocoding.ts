@@ -5,8 +5,9 @@ import { fetchGoogle } from '#lib/server/gmapsFetch.ts';
 const GEOCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
 
 /**
- * A misspelled street comes back as the whole town, marked `partial_match`, rather than as
- * ZERO_RESULTS. Its centre would quietly stand in for the apartment when picking the closest place.
+ * The result types specific enough to be an address. A misspelled street comes back as the whole
+ * town, marked `partial_match`, rather than as ZERO_RESULTS. Its centre would quietly stand in for
+ * the apartment when picking the closest place.
  */
 const SPECIFIC_TYPES = ['street_address', 'premise', 'subpremise', 'establishment'];
 
