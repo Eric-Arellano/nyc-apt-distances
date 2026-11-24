@@ -5,8 +5,9 @@ import type Database from './schema/Database.ts';
 
 export type DatabaseTarget =
   | { kind: 'postgres'; url: string }
-  // Without a directory, PGlite keeps the database in memory.
-  | { kind: 'pglite'; dataDir?: string };
+  // Without a directory, PGlite keeps the database in memory. A `snapshot` is a `dumpDataDir()`
+  // tarball to start from instead of running initdb.
+  | { kind: 'pglite'; dataDir?: string; snapshot?: Blob };
 
 export function createDatabase(target: DatabaseTarget): Kysely<Database> {
   return new Kysely({
@@ -37,7 +38,7 @@ function createDialect(target: DatabaseTarget): Dialect {
         // Imported lazily so production, which never takes this branch, never loads PGlite.
         pglite: async () => {
           const { PGlite } = await import('@electric-sql/pglite');
-          return new PGlite(target.dataDir);
+          return new PGlite({ dataDir: target.dataDir, loadDataDir: target.snapshot });
         },
       });
   }
