@@ -47,7 +47,7 @@ describe('handle', () => {
 
     test.each([
       ['/', '/', '/login'],
-      ['/?address=1+Main+St', '/', '/login?redirectTo=%2F%3Faddress%3D1%2BMain%2BSt'],
+      ['/apartments/1', '/apartments/[id=apartmentId]', '/login?redirectTo=%2Fapartments%2F1'],
       ['/loginx', null, '/login?redirectTo=%2Floginx'],
       // An encoded spelling of `/login` that matched no route stays gated.
       ['/%6Cogin', null, '/login?redirectTo=%2F%256Cogin'],

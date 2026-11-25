@@ -2,19 +2,20 @@
 
 ## Context
 
-Today the app answers one question: "how far is this address from the places we care about?" It
-forgets the address afterwards. Two of us will use it to find an apartment for next summer's move,
-and probably for later moves too, so it needs three things:
+The app answers "how far is this address from the places we care about?", and saves every address
+it looks up with its travel times. Two of us will use it to find an apartment for next summer's
+move, and probably for later moves too, so it needs three things:
 
-- **Share:** send each other an apartment and see the same results.
+- **Share:** send each other an apartment and see the same results. Done: each saved apartment
+  has its own page, and that page's link is what we send.
 - **Compare:** see how apartments stack up. What this means is still undecided, so build cheap
   views and let us react to them.
 - **Track:** rent, listing, agent contact, and where each one is in the process ("did credit
   check, need to send reference"). This replaces the spreadsheet from the last move.
 
-All three depend on one new concept, **a saved apartment**: an address plus its stored travel
-times plus free-form tracking fields. This document is the roadmap of PRs. Each PR gets
-its own detailed plan before work starts.
+All three rest on **a saved apartment**: an address plus its stored travel times, and soon
+free-form tracking fields. This document is the roadmap of the PRs that remain. Each PR gets its
+own detailed plan before work starts.
 
 **Out of scope:** automatically finding listings (no usable listings API exists), accounts for
 each person, destinations stored in the database, maps.
@@ -27,9 +28,23 @@ each person, destinations stored in the database, maps.
   opens it on purpose. Signing in is a form action on `/login` that returns to `redirectTo`, so a
   shared link to an apartment page survives the login, and the session cookie's key is stretched
   from the password with scrypt (`src/lib/server/auth.ts`).
-- **One-off lookups stay in the URL** (`/?address=…`), run in the browser after each navigation by
-  `src/routes/+page.svelte`, which owns the lookup's promise. Every open of such a link spends the
-  Google key again; a saved apartment is what avoids that.
+- **Every lookup saves.** The home page's form action (`src/routes/+page.server.ts`) geocodes the
+  address, computes its travel times, stores the apartment and redirects to its page,
+  `/apartments/[id=apartmentId]`, whose `load` reads only the stored snapshot. So opening a link
+  never spends the Google key again, and no `/api/` route is left. The cost is that a mistaken save
+  stays until deleting lands. *Rejected: a lookup that saves only when asked, because an unsaved
+  lookup's link re-bills Google on every open, and the saved one is what we share anyway.*
+- **Reads are `load` functions; writes are form actions** with `use:enhance`, as signing in already
+  was. A Google failure comes back through `lookupFailure` (`src/lib/server/lookupFailure.ts`) as
+  a failure the form shows in place, keeping what was typed; other HTTP errors, such as a 404, go
+  to the error page. *Rejected: `+server.ts` with `fetch`, which foodservice-insights chose so
+  maintainers new to SvelteKit see one plain mechanism; this app has no such maintainers, and form
+  actions give progressive enhancement and typed `form` results for free. Rejected: remote
+  functions, because Kit 3.1 still marks them experimental and they need the app-wide
+  `experimental.async` flag.*
+- **Apartment URLs carry the integer id**, checked by the `apartmentId` matcher in `src/params.ts`,
+  which hands routes an `ApartmentId`. Links are built with `resolve` from `$app/paths`, never
+  spelled out, so a renamed route fails the type check.
 - **Neon Postgres, through Vercel's Neon integration.** Production uses Neon's main branch, and
   each PR preview gets its own Neon branch, created and deleted by the integration.
   *Rejected: Supabase, because branching needs a paid plan and free projects pause after a week
@@ -66,16 +81,29 @@ each person, destinations stored in the database, maps.
   literal, which `jsonb` rejects; PGlite accepts it. `npm run db:types` types `jsonb` writes as
   `string`, so the type checker demands `JSON.stringify(…)`, the form both accept.
 - **Travel times are stored as a snapshot** in `apartment.travel_times`, with the time it was
-  computed. The `apartment` table already exists (`001-create-apartment`). Each entry holds only
-  what Google produced (closest place and routes), keyed by destination id and a fingerprint of
-  that destination, so copy such as titles and goals can change in code without touching stored
-  rows. `computeTravelTimes` in `src/lib/server/travelTimes.ts` already returns exactly that, a
-  `TravelTimeEntry` per destination with its `fingerprint` (a hash of the destination's place and
-  trips, so reordering trips changes it); `toDestinationResults` joins entries with the copy in
-  `DESTINATIONS`, in code order, dropping entries whose destination is gone. The API and the
-  apartment page both go through it. Kanel types the column's reads as `unknown`, so reads need a
-  typed boundary. **Open:** whether to also store the coordinates the lookup geocodes
-  but doesn't yet return. Without them, maps and every recompute geocode the address again, billed.
+  computed. Each entry holds only what Google produced (closest place and routes), keyed by
+  destination id and a fingerprint of that destination, so copy such as titles and goals can change
+  in code without touching stored rows. `computeTravelTimes` in `src/lib/server/travelTimes.ts`
+  returns a `TravelTimeEntry` per destination with its `fingerprint` (a hash of the destination's
+  place and trips, so reordering trips changes it). It takes the origin already geocoded: callers
+  in `src/lib/server/apartments.ts` geocode first, which is what lets the duplicate check run
+  before any route is billed. `toDestinationResults` joins entries with the copy in
+  `DESTINATIONS`, in code order, and names as `missing` every destination with no entry whose
+  fingerprint still matches. Only `apartments.ts` reads or writes the column; it casts Kanel's
+  `unknown`, and `TravelTimeEntry` carries the rule that a change stored rows don't satisfy needs a
+  migration of them. **Open:** whether to also store the coordinates the lookup geocodes. Without
+  them, maps and every recompute geocode the address again, billed.
+- **A stale snapshot is recomputed whole.** The apartment page lists the missing destinations and
+  offers "Recalculate all travel times", which replaces the whole snapshot, so
+  `travel_times_computed_at` stays true of every entry. The button appears only when something is
+  missing, so nobody re-bills Google by accident. *Rejected: computing only the missing
+  destinations automatically, because it needs a compute time per entry and saves little.*
+- **Duplicates are matched on Google's `place_id`**, stored in `apartment.place_id`. Saving a place
+  already saved costs one geocode and no routes, and the form offers to open the saved apartment
+  or save a separate one. Under `MOCK=1`, `fakeMaps` derives the id from the text, ignoring case
+  and spacing. *Rejected: overwriting the saved one, because the same place yields the same travel
+  times and Recalculate already covers stale ones. A separate apartment is for another unit in the
+  same building, which the tracking fields' label tells apart.*
 - **Deleting is a hard delete.** Any table that references `apartment` declares
   `on delete cascade`, so one statement removes an apartment and everything about it.
 - **Tracking fields are free-form, except status.** Status is a fixed list, so it can be sorted
@@ -83,9 +111,10 @@ each person, destinations stored in the database, maps.
   one shared notes textarea (we type our names inline).
 - **Comparison reuses `goalStatus`** from `src/lib/components/travelTimes/format.ts`. Once views
   other than the destination card need it, it moves somewhere neutral.
-- **UI comes from shadcn-svelte**: AlertDialog for the delete confirmation, Select for status,
-  Textarea and Field for the tracking form, Table for the pipeline. The first bits-ui-backed
-  component (likely PR 2's AlertDialog) must add `'unsafe-inline'` to `style-src` in
+- **UI comes from shadcn-svelte**: Alert for the duplicate and staleness warnings, AlertDialog for
+  the delete confirmation, Select for status, Textarea and Field for the tracking form, Table for
+  the pipeline. Alert is plain markup; the first bits-ui-backed component (likely PR 1's
+  AlertDialog) must add `'unsafe-inline'` to `style-src` in
   `vite.config.ts`, because bits-ui writes `style` attributes during SSR and through
   `setAttribute`, and neither can carry a nonce. `script-src` is what protects the session cookie.
 
@@ -100,8 +129,7 @@ each person, destinations stored in the database, maps.
 
 ## PRs
 
-Dependencies: 1 is the first PR that stores addresses. 2, 3 and 4 can run in parallel after 1. 5
-comes after 4.
+Dependencies: 1, 2 and 3 can run in parallel. 4 comes after 3.
 
 **The Neon setup is done by hand** in the Vercel and Neon dashboards: install Vercel's Neon
 integration and connect it to the project with **Preview** checked under "Create database branch
@@ -116,44 +144,31 @@ it, and must differ from production's host. If it is production's, the empty `ap
 and Kysely's two tables there must be dropped before the foundation merges, because
 `001-create-apartment` changed after that preview ran.
 
-## PR 1: Saved apartments
-
-- **Save:** a "Save" button on a lookup in `src/routes/+page.svelte` stores the address and its
-  travel-times snapshot.
-- **Apartment page:** `/apartments/[id]` renders the stored travel times with no Google call.
-  This is the share link.
-- **Staleness:** the page shows the compute date and drops entries for destinations removed
-  from code. A destination with no entry, or whose fingerprint no longer matches, shows as
-  missing, with a "Recompute" button that replaces the whole snapshot, so
-  `travel_times_computed_at` stays true of every entry. *Rejected: computing only the missing
-  destinations automatically, because it needs a compute time per entry and saves little.*
-- **Open:** whether to warn when saving an address that's already saved. Google's geocoding
-  normalizes addresses, which could make duplicates detectable.
-
-## PR 2: Delete an apartment
+## PR 1: Delete an apartment
 
 A "Delete" button on the apartment page, behind a confirmation, deletes the row and returns home.
-Ship it soon after PR 1: until then, a mistaken save comes out only through Neon's console.
+Ship it first: every lookup saves, so until then a mistyped address that Google still geocodes, or
+an unwanted separate copy, comes out only through Neon's console.
 
-## PR 3: Tracking fields
+## PR 2: Tracking fields
 
-- **Fields:** label (such as "Unit 4B"), rent, listing URL, status, next step, agent contact, and
-  notes.
+- **Fields:** label (such as "Unit 4B", which also tells apart two units saved at one place), rent,
+  listing URL, status, next step, agent contact, and notes.
 - **Display:** the listing URL, phone numbers and emails become links you can tap. The page must
   work on a phone, since it'll be used while touring.
 - **Open:** the status values. Draft: considering, contacted, toured, applied, signed, passed.
-- **Open:** an explicit Save button or autosave, and form actions or `+server.ts` with `fetch`.
-  foodservice-insights chose the latter, so read its reasoning before deciding; the login here is
-  already a form action.
+- **Open:** an explicit Save button or autosave. Either way the write is a form action on the
+  apartment page.
 
-## PR 4: Pipeline list
+## PR 3: Pipeline list
 
-The home page lists every saved apartment, with status, rent, next step, goals met and the best
-time per destination. It's sortable and filterable by status, and links to each apartment page.
-The address lookup stays on the same page. This is the first "compare" view. Ship it and watch how
-your partner uses it before designing PR 5.
+Grows the bare "Saved apartments" list on the home page (`listApartments`, rendered by
+`src/routes/+page.svelte`) into a pipeline: status, rent, next step, goals met and the best time
+per destination, sortable and filterable by status, each row linking to its apartment page. The
+add form stays on the same page. This is the first "compare" view. Ship it and watch how your
+partner uses it before designing PR 4.
 
-## PR 5: Side-by-side compare
+## PR 4: Side-by-side compare
 
 - **The view:** pick 2–3 apartments; destinations are rows and apartments are columns, with the
   better time highlighted and rent and next step at the top.
@@ -176,5 +191,7 @@ Real Google calls happen only to check a change by hand, and the PR says so.
 
 ## Next step
 
-Settle the Neon **Open:** above from the foundation preview's build log, then write a detailed plan
-for PR 1, saved apartments.
+Settle the Neon **Open:** above if it still is, and check on the saved-apartments preview that
+`002-add-apartment-place-id` ran against the preview branch: it adds a `not null` column with no
+default, which works only while production's `apartment` table is empty. Then write a detailed plan
+for PR 1, delete an apartment.
