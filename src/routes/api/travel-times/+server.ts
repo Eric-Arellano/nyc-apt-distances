@@ -11,5 +11,5 @@ export const GET: RequestHandler = async ({ url }) => {
   const maps = getMaps();
   const { coordinates } = await maps.geocode(address, ORIGIN_COUNTY);
   const entries = await computeTravelTimes(address, coordinates, DESTINATIONS, maps);
-  return Response.json(toDestinationResults(entries, DESTINATIONS));
+  return Response.json(toDestinationResults(entries, DESTINATIONS).results);
 };

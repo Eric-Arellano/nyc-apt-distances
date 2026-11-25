@@ -137,30 +137,45 @@ describe('toDestinationResults', () => {
   test('joins each entry with its destination copy, in the destinations order', async () => {
     const entries = await compute('1 Main St', DESTINATIONS);
 
-    const results = toDestinationResults([...entries].reverse(), DESTINATIONS);
+    const { results, missing } = toDestinationResults([...entries].reverse(), DESTINATIONS);
 
-    expect(results.map(({ id, title, goal }) => ({ id, title, goal }))).toEqual([
-      { id: 'fixed', title: 'Fixed address', goal: GOAL },
-      { id: 'closest', title: 'Closest park', goal: GOAL },
+    expect(results).toEqual([
+      {
+        id: 'fixed',
+        title: 'Fixed address',
+        goal: GOAL,
+        closest: null,
+        routes: entries[0]?.routes,
+      },
+      {
+        id: 'closest',
+        title: 'Closest park',
+        goal: GOAL,
+        closest: { name: 'Bronx River Pathway (County Center)' },
+        routes: entries[1]?.routes,
+      },
     ]);
-    expect(results[0]).toEqual({
-      id: 'fixed',
-      title: 'Fixed address',
-      goal: GOAL,
-      closest: null,
-      routes: entries[0]?.routes,
-    });
+    expect(missing).toEqual([]);
   });
 
   test('drops an entry whose destination is no longer in code', async () => {
     const entries = await compute('1 Main St', DESTINATIONS);
 
-    expect(toDestinationResults(entries, [CLOSEST]).map(({ id }) => id)).toEqual(['closest']);
+    expect(toDestinationResults(entries, [CLOSEST])).toEqual({
+      results: [expect.objectContaining({ id: 'closest' })],
+      missing: [],
+    });
   });
 
-  test('skips a destination with no entry', async () => {
-    const entries = await compute('1 Main St', [FIXED]);
+  test.each([
+    ['has no entry', [FIXED]],
+    ['changed its place or trips', [FIXED, { ...CLOSEST, trips: [{ mode: 'bike' }] }]],
+  ] as [string, Destination[]][])('names a destination that %s as missing', async (_, computed) => {
+    const entries = await compute('1 Main St', computed);
 
-    expect(toDestinationResults(entries, DESTINATIONS).map(({ id }) => id)).toEqual(['fixed']);
+    expect(toDestinationResults(entries, DESTINATIONS)).toEqual({
+      results: [expect.objectContaining({ id: 'fixed' })],
+      missing: ['Closest park'],
+    });
   });
 });
