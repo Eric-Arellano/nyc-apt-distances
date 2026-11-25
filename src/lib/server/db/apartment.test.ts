@@ -16,7 +16,7 @@ afterAll(async () => {
 function insertTravelTimes(travelTimes: string) {
   return db
     .insertInto('apartment')
-    .values({ address: 'a', travelTimes, travelTimesComputedAt: new Date() })
+    .values({ address: 'a', placeId: 'a', travelTimes, travelTimesComputedAt: new Date() })
     .execute();
 }
 
@@ -32,6 +32,7 @@ describe('apartment', () => {
         .insertInto('apartment')
         .values({
           address: 'a',
+          placeId: 'a',
           travelTimes: JSON.stringify(travelTimes),
           travelTimesComputedAt: new Date(),
         })
