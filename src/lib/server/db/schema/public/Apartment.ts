@@ -16,6 +16,9 @@ export default interface ApartmentTable {
   travelTimesComputedAt: ColumnType<Date, Date | string, Date | string>;
 
   createdAt: ColumnType<Date, Date | string | undefined, Date | string>;
+
+  /** Google's id for the geocoded address. Saving a place that is already saved asks first. */
+  placeId: ColumnType<string, string, string>;
 }
 
 export type Apartment = Selectable<ApartmentTable>;

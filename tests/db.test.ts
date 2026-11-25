@@ -11,6 +11,7 @@ describe('createTestDatabase', () => {
       .insertInto('apartment')
       .values({
         address: '100 Martine Ave, White Plains, NY 10601',
+        placeId: 'ChIJv6mD9DeUwokRp0fbCIoDwuI',
         travelTimes: JSON.stringify(travelTimes),
         travelTimesComputedAt: computedAt,
       })
@@ -23,6 +24,7 @@ describe('createTestDatabase', () => {
       travelTimes,
       travelTimesComputedAt: computedAt,
       createdAt: expect.any(Date),
+      placeId: 'ChIJv6mD9DeUwokRp0fbCIoDwuI',
     });
     await db.destroy();
   });
@@ -33,7 +35,7 @@ describe('createTestDatabase', () => {
 
     await first
       .insertInto('apartment')
-      .values({ address: 'a', travelTimes: '[]', travelTimesComputedAt: new Date() })
+      .values({ address: 'a', placeId: 'a', travelTimes: '[]', travelTimesComputedAt: new Date() })
       .execute();
 
     expect(await second.selectFrom('apartment').selectAll().execute()).toEqual([]);
