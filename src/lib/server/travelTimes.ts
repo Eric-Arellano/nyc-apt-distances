@@ -67,14 +67,24 @@ export async function computeTravelTimes(
 
 /**
  * Pairs stored entries with the current destinations, in `destinations`' order. An entry whose
- * destination was removed from code is dropped.
+ * destination was removed from code is dropped. A destination with no entry, or whose entry was
+ * computed for a different place or trips, is `missing`, by title.
  */
 export function toDestinationResults(
   entries: readonly TravelTimeEntry[],
   destinations: readonly Destination[],
-): DestinationResult[] {
-  return destinations.flatMap(({ id, title, goal }) => {
-    const entry = entries.find((candidate) => candidate.id === id);
-    return entry ? [{ id, title, goal, closest: entry.closest, routes: entry.routes }] : [];
-  });
+): { results: DestinationResult[]; missing: string[] } {
+  const current = destinations.map((destination) => ({
+    destination,
+    entry: entries.find(
+      (candidate) =>
+        candidate.id === destination.id && candidate.fingerprint === fingerprint(destination),
+    ),
+  }));
+  return {
+    results: current.flatMap(({ destination: { id, title, goal }, entry }) =>
+      entry ? [{ id, title, goal, closest: entry.closest, routes: entry.routes }] : [],
+    ),
+    missing: current.filter(({ entry }) => !entry).map(({ destination }) => destination.title),
+  };
 }
