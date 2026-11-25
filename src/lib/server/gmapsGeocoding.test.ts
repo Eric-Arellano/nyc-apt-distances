@@ -39,9 +39,12 @@ function thrownBy(fn: () => unknown): unknown {
 // `geocode.json` is in Westchester County.
 describe('parseGeocodeResponse', () => {
   const county = 'Westchester County';
-  const location = { latitude: 41.03035999999999, longitude: -73.7699654 };
+  const location = {
+    placeId: 'ChIJv6mD9DeUwokRp0fbCIoDwuI',
+    coordinates: { latitude: 41.03035999999999, longitude: -73.7699654 },
+  };
 
-  test('reads the location', () => {
+  test('reads the place and its location', () => {
     expect(parseGeocodeResponse(geocodeResponse, county)).toEqual(location);
   });
 

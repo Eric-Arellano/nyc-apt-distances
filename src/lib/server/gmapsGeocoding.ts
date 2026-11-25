@@ -14,6 +14,7 @@ const SPECIFIC_TYPES = ['street_address', 'premise', 'subpremise', 'establishmen
 export interface GeocodeResponse {
   status: string;
   results: {
+    place_id: string;
     formatted_address: string;
     types: string[];
     address_components: { long_name: string; types: string[] }[];
@@ -21,10 +22,15 @@ export interface GeocodeResponse {
   }[];
 }
 
+export interface GeocodedAddress {
+  placeId: string;
+  coordinates: Coordinates;
+}
+
 export function parseGeocodeResponse(
   response: GeocodeResponse,
   expectedCounty: string,
-): Coordinates {
+): GeocodedAddress {
   const { status, results } = response;
   if (status === 'ZERO_RESULTS') {
     throw error(400, 'Google could not find that address.');
@@ -47,10 +53,7 @@ export function parseGeocodeResponse(
     );
   }
   const { lat, lng } = result.geometry.location;
-  return {
-    latitude: lat,
-    longitude: lng,
-  };
+  return { placeId: result.place_id, coordinates: { latitude: lat, longitude: lng } };
 }
 
 export async function fetchGeocode(key: string, address: string): Promise<GeocodeResponse> {
@@ -69,6 +72,6 @@ export async function geocode(
   key: string,
   address: string,
   expectedCounty: string,
-): Promise<Coordinates> {
+): Promise<GeocodedAddress> {
   return parseGeocodeResponse(await fetchGeocode(key, address), expectedCounty);
 }
