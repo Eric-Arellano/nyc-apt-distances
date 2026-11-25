@@ -1,12 +1,76 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn-svelte/tailwind.css";
 
-/* The site is dark-only, so native controls and scrollbars should be too. */
+/* `app.html` puts `.dark` on `<html>` so shadcn's `dark:` classes always apply. */
+@custom-variant dark (&:is(.dark *));
+
+/* shadcn-svelte's theme tokens. The site is dark-only, so there is one set, taken from Tailwind's
+   gray and blue palettes (named beside each value). shadcn's light set and its sidebar and chart
+   tokens are left out until something uses them. */
 :root {
   color-scheme: dark;
+  --background: oklch(0.13 0.028 261.692); /* gray-950 */
+  --foreground: oklch(0.967 0.003 264.542); /* gray-100 */
+  --card: oklch(0.21 0.034 264.665); /* gray-900 */
+  --card-foreground: oklch(0.967 0.003 264.542); /* gray-100 */
+  --popover: oklch(0.21 0.034 264.665); /* gray-900 */
+  --popover-foreground: oklch(0.967 0.003 264.542); /* gray-100 */
+  --primary: oklch(0.546 0.245 262.881); /* blue-600 */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.278 0.033 256.848); /* gray-800 */
+  --secondary-foreground: oklch(0.967 0.003 264.542); /* gray-100 */
+  --muted: oklch(0.278 0.033 256.848); /* gray-800 */
+  --muted-foreground: oklch(0.707 0.022 261.325); /* gray-400 */
+  --accent: oklch(0.278 0.033 256.848); /* gray-800 */
+  --accent-foreground: oklch(0.967 0.003 264.542); /* gray-100 */
+  --destructive: oklch(0.704 0.191 22.216); /* red-400 */
+  --border: oklch(0.278 0.033 256.848); /* gray-800 */
+  --input: oklch(0.373 0.034 259.733); /* gray-700 */
+  --ring: oklch(0.707 0.165 254.624); /* blue-400 */
+  --radius: 0.625rem;
 }
 
-body {
-  @apply bg-gray-950 text-gray-100;
+@theme inline {
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  /* Tailwind's preflight gives buttons the default cursor, and shadcn's Button doesn't override it. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 body > div:first-child {

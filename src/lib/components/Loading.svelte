@@ -1,4 +1,6 @@
 <script lang="ts">
+import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
+
 interface Props {
   message: string;
 }
@@ -6,7 +8,7 @@ interface Props {
 const { message }: Props = $props();
 </script>
 
-<div class="flex items-center justify-center">
-  <div class="h-10 w-10 animate-spin rounded-full border-4 border-blue-900 border-t-blue-400"></div>
-  <span class="ml-3 text-lg text-gray-400">{message}</span>
+<div class="flex items-center justify-center gap-3">
+  <LoaderCircleIcon aria-hidden="true" class="size-10 animate-spin text-primary" />
+  <span class="text-lg text-muted-foreground">{message}</span>
 </div>
