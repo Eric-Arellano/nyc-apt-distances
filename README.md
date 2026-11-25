@@ -46,6 +46,19 @@ deploy runs pending migrations against its own branch before it builds, as set i
 
 They live in `src/lib/server/destinations.ts`.
 
+### Adding a UI component
+
+Styling is Tailwind plus [shadcn-svelte](https://www.shadcn-svelte.com), whose components are
+copied into `src/lib/components/ui/` so we own them. Nothing hand-written goes there. Add one with
+the CLI, then run `npm run format`:
+
+```sh
+npx shadcn-svelte add <component>
+```
+
+The CLI may add dependencies to `package.json`, and theme colors to `src/app.css` in its own
+neutral or light palette. Check both diffs before running `npm install`.
+
 ## Interesting parts of this project
 
 ### Computing the nearest place

@@ -67,6 +67,10 @@
           }
         }
       }
+    },
+    {
+      "includes": ["src/lib/components/ui/**", "src/lib/utils/shadcn.ts"],
+      "linter": { "rules": { "suspicious": { "noExplicitAny": "off" } } }
     }
   ]
 }

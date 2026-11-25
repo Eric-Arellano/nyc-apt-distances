@@ -83,6 +83,11 @@ each person, destinations stored in the database, maps.
   one shared notes textarea (we type our names inline).
 - **Comparison reuses `goalStatus`** from `src/lib/components/travelTimes/format.ts`. Once views
   other than the destination card need it, it moves somewhere neutral.
+- **UI comes from shadcn-svelte**: AlertDialog for the delete confirmation, Select for status,
+  Textarea and Field for the tracking form, Table for the pipeline. The first bits-ui-backed
+  component (likely PR 2's AlertDialog) must add `'unsafe-inline'` to `style-src` in
+  `vite.config.ts`, because bits-ui writes `style` attributes during SSR and through
+  `setAttribute`, and neither can carry a nonce. `script-src` is what protects the session cookie.
 
 ## Privacy, standing rules
 
