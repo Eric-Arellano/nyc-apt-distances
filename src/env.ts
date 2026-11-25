@@ -1,7 +1,7 @@
 import { defineEnvVars } from '@sveltejs/kit/env';
 
 export const variables = defineEnvVars({
-  // Optional so `MOCK=1` runs without it; `requireGmapsToken` throws once a request needs Google.
+  // Optional so `MOCK=1` runs without it; `getMaps` throws once a request needs Google.
   GOOGLE_MAPS_TOKEN: { schema: (value) => value || undefined },
   SITE_PASSWORD: {
     schema: (value) => {

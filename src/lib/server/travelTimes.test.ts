@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest';
-import { type Destination, ORIGIN_COUNTY } from './destinations';
+import type { Destination } from './destinations';
 import { fakeMaps } from './fakeMaps';
 import { computeTravelTimes, fingerprint, type Maps, toDestinationResults } from './travelTimes';
 
@@ -39,24 +39,30 @@ const CLOSEST: Destination = {
 
 const DESTINATIONS = [FIXED, CLOSEST];
 
+// Downtown White Plains, nearer the pathway than the dam.
+const POINT = { latitude: 41.03036, longitude: -73.769965 };
+
+function compute(origin: string, destinations: Destination[], maps: Maps = fakeMaps) {
+  return computeTravelTimes(origin, POINT, destinations, maps);
+}
+
 function spyMaps() {
   return { geocode: vi.fn(fakeMaps.geocode), computeRoute: vi.fn(fakeMaps.computeRoute) };
 }
 
 describe('computeTravelTimes', () => {
   test('returns every destination in the order given', async () => {
-    const results = await computeTravelTimes('1 Main St', [CLOSEST, FIXED], fakeMaps);
+    const results = await compute('1 Main St', [CLOSEST, FIXED]);
 
     expect(results.map((result) => result.id)).toEqual(['closest', 'fixed']);
   });
 
-  test('geocodes within the origin county and routes each trip from the address as typed', async () => {
+  test('routes each trip from the address as typed', async () => {
     const maps = spyMaps();
     const origin = '1 Main St, White Plains';
 
-    await computeTravelTimes(origin, DESTINATIONS, maps);
+    await compute(origin, DESTINATIONS, maps);
 
-    expect(maps.geocode).toHaveBeenCalledExactlyOnceWith(origin, ORIGIN_COUNTY);
     expect(maps.computeRoute).toHaveBeenCalledTimes(3);
     expect(maps.computeRoute.mock.calls.every(([options]) => options.origin === origin)).toBe(true);
   });
@@ -69,14 +75,14 @@ describe('computeTravelTimes', () => {
       },
     };
 
-    await expect(computeTravelTimes('1 Main St', DESTINATIONS, maps)).rejects.toThrow(
+    await expect(compute('1 Main St', DESTINATIONS, maps)).rejects.toThrow(
       'computeRoutes returned 500',
     );
   });
 
   describe('for a fixed address', () => {
     test('keeps trip order and names no place', async () => {
-      const [result] = await computeTravelTimes('1 Main St', [FIXED], fakeMaps);
+      const [result] = await compute('1 Main St', [FIXED]);
 
       expect(result).toEqual({
         id: 'fixed',
@@ -94,7 +100,7 @@ describe('computeTravelTimes', () => {
     test('routes to the candidate nearest the origin and names it', async () => {
       const maps = spyMaps();
 
-      const [result] = await computeTravelTimes('1 Main St', [CLOSEST], maps);
+      const [result] = await compute('1 Main St', [CLOSEST], maps);
 
       expect(result?.closest).toEqual({ name: 'Bronx River Pathway (County Center)' });
       expect(maps.computeRoute).toHaveBeenCalledExactlyOnceWith({
@@ -129,7 +135,7 @@ describe('fingerprint', () => {
 
 describe('toDestinationResults', () => {
   test('joins each entry with its destination copy, in the destinations order', async () => {
-    const entries = await computeTravelTimes('1 Main St', DESTINATIONS, fakeMaps);
+    const entries = await compute('1 Main St', DESTINATIONS);
 
     const results = toDestinationResults([...entries].reverse(), DESTINATIONS);
 
@@ -147,13 +153,13 @@ describe('toDestinationResults', () => {
   });
 
   test('drops an entry whose destination is no longer in code', async () => {
-    const entries = await computeTravelTimes('1 Main St', DESTINATIONS, fakeMaps);
+    const entries = await compute('1 Main St', DESTINATIONS);
 
     expect(toDestinationResults(entries, [CLOSEST]).map(({ id }) => id)).toEqual(['closest']);
   });
 
   test('skips a destination with no entry', async () => {
-    const entries = await computeTravelTimes('1 Main St', [FIXED], fakeMaps);
+    const entries = await compute('1 Main St', [FIXED]);
 
     expect(toDestinationResults(entries, DESTINATIONS).map(({ id }) => id)).toEqual(['fixed']);
   });

@@ -11,7 +11,11 @@ const ROUTES: Record<Trip['mode'], Route> = {
 
 /** A `Maps` that serves canned results for `MOCK=1` and tests, so neither spends the Google key. */
 export const fakeMaps: Maps = {
-  // 100 Martine Ave, the county office building, so `MOCK=1` picks White Plains candidates.
-  geocode: async () => ({ latitude: 41.03036, longitude: -73.769965 }),
+  geocode: async (address) => ({
+    // Ignores case and spacing, so `MOCK=1` finds a saved apartment again as Google would.
+    placeId: `fake:${address.trim().replace(/\s+/g, ' ').toLowerCase()}`,
+    // 100 Martine Ave, the county office building, so `MOCK=1` picks White Plains candidates.
+    coordinates: { latitude: 41.03036, longitude: -73.769965 },
+  }),
   computeRoute: async ({ trip }) => ROUTES[trip.mode],
 };

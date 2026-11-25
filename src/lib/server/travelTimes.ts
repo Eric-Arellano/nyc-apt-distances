@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
 import type { DestinationResult, Place, Route } from '#lib/types.ts';
 import { type Coordinates, closest } from './closest';
-import { type Destination, ORIGIN_COUNTY } from './destinations';
-import { geocode } from './gmapsGeocoding';
+import type { Destination } from './destinations';
+import { type GeocodedAddress, geocode } from './gmapsGeocoding';
 import { computeRoute, type RouteOptions } from './gmapsRouting';
 
 export interface Maps {
-  geocode(address: string, expectedCounty: string): Promise<Coordinates>;
+  geocode(address: string, expectedCounty: string): Promise<GeocodedAddress>;
   computeRoute(options: RouteOptions): Promise<Route>;
 }
 
@@ -47,13 +47,13 @@ export function fingerprint({ place, trips }: Destination): string {
   return createHash('sha256').update(JSON.stringify({ place, trips })).digest('hex');
 }
 
+// Routes start from `origin` as typed; `originPoint`, its geocode, only picks the closest places.
 export async function computeTravelTimes(
   origin: string,
+  originPoint: Coordinates,
   destinations: readonly Destination[],
-  maps: Maps,
+  maps: Pick<Maps, 'computeRoute'>,
 ): Promise<TravelTimeEntry[]> {
-  const originPoint = await maps.geocode(origin, ORIGIN_COUNTY);
-
   return await Promise.all(
     destinations.map(async (destination) => {
       const { address, closest } = resolvePlace(destination.place, originPoint);
