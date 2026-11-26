@@ -1,12 +1,11 @@
 import { isHttpError } from '@sveltejs/kit';
 import { loginPath } from '#lib/loginRedirect.ts';
-import type { DestinationResult } from '#lib/types.ts';
 import { goto } from '$app/navigation';
-import { getTravelTimes } from './travelTimes.remote';
 
-export async function lookUpTravelTimes(address: string): Promise<DestinationResult[]> {
+/** Awaits a remote function call in the browser, turning SvelteKit's `HttpError` into `Error`. */
+export async function awaitRemote<T>(call: PromiseLike<T>): Promise<T> {
   try {
-    return await getTravelTimes(address);
+    return await call;
   } catch (thrown) {
     if (!isHttpError(thrown)) throw thrown;
 
@@ -15,7 +14,7 @@ export async function lookUpTravelTimes(address: string): Promise<DestinationRes
       await goto(loginPath(new URL(location.href)));
       throw new Error('Your session has expired.');
     }
-    // An `HttpError` has no `message` of its own, and an `error(400, …)` body is written for the user.
+    // An `HttpError` has no `message` of its own, and an `error(400, …)` body is for the user.
     throw new Error(thrown.body.message);
   }
 }

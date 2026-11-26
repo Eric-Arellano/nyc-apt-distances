@@ -2,7 +2,8 @@
 import AddressInput from '#lib/components/address/AddressInput.svelte';
 import Card from '#lib/components/Card.svelte';
 import TravelTimes from '#lib/components/travelTimes/TravelTimes.svelte';
-import { lookUpTravelTimes } from '#lib/travelTimes.ts';
+import { awaitRemote } from '#lib/awaitRemote.ts';
+import { getTravelTimes } from '#lib/travelTimes.remote.ts';
 import type { DestinationResult } from '#lib/types.ts';
 import { afterNavigate } from '$app/navigation';
 import { page } from '$app/state';
@@ -20,7 +21,7 @@ afterNavigate(({ to }) => {
   }
 
   busy = true;
-  const lookup = lookUpTravelTimes(address).finally(() => {
+  const lookup = awaitRemote(getTravelTimes(address)).finally(() => {
     // Back or forward during a lookup starts another, and only the latest may clear `busy`.
     if (task === lookup) busy = false;
   });

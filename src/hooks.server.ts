@@ -14,10 +14,10 @@ const OPEN_ROUTES = new Set(['/login']);
 export const handle: Handle = async ({ event, resolve }) => {
   if (hasSession(event.cookies)) return resolve(event);
 
-  // Kit sets a `form` or `command` call's route id from the `x-sveltekit-pathname` header the
-  // client sends, so a forged header could name `/login`. No remote call is open, whatever route
-  // it claims. A 401 rather than a redirect, since a `query` call's URL is its endpoint, not the
-  // page to return to.
+  // SvelteKit sets a `form` or `command` call's route id from the `x-sveltekit-pathname` header
+  // the client sends, so a forged header could name `/login`. No remote call is open, whatever
+  // route it claims. A 401 rather than a redirect, since a `query` call's URL is its endpoint, not
+  // the page to return to.
   if (event.isRemoteRequest) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }

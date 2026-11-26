@@ -29,9 +29,10 @@ each person, destinations stored in the database, maps.
   login, and the session cookie's key is stretched from the password with scrypt
   (`src/lib/server/auth.ts`).
 - **The browser reaches the server through remote functions** (`*.remote.ts`), experimental in
-  Kit 3.1 and accepted as such. Writes are `form` or `command` functions, not form actions. Signing
-  in stays a form action, because no remote call may be open. *Rejected: form actions with
-  `use:enhance`, and `+server.ts` with `fetch`.*
+  SvelteKit 3.1 and accepted as such. Writes are `form` or `command` functions, not form actions.
+  Signing in stays a form action, because no remote call may be open. The browser awaits each call
+  through `src/lib/awaitRemote.ts`, which sends an expired session to the login page. *Rejected:
+  form actions with `use:enhance`, and `+server.ts` with `fetch`.*
 - **One-off lookups stay in the URL** (`/?address=…`), run in the browser after each navigation by
   `src/routes/+page.svelte`, which owns the lookup's promise. Every open of such a link spends the
   Google key again; a saved apartment is what avoids that.

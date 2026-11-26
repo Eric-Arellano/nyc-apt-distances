@@ -10,7 +10,7 @@ export default defineConfig({
     sveltekit({
       adapter: adapter(),
       // Remote functions are how the browser reaches the server. Both flags are experimental in
-      // Kit 3.1, and remote functions need Svelte's async mode.
+      // SvelteKit 3.1, and remote functions need Svelte's async mode.
       experimental: { remoteFunctions: true },
       compilerOptions: { experimental: { async: true } },
       csp: {
