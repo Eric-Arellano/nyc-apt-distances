@@ -9,6 +9,10 @@ export default defineConfig({
     tailwindcss(),
     sveltekit({
       adapter: adapter(),
+      // Remote functions are how the browser reaches the server. Both flags are experimental in
+      // Kit 3.1, and remote functions need Svelte's async mode.
+      experimental: { remoteFunctions: true },
+      compilerOptions: { experimental: { async: true } },
       csp: {
         directives: {
           'script-src': ['self'],

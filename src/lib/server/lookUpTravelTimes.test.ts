@@ -1,17 +1,16 @@
-import type { RequestEvent } from '@sveltejs/kit';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { DESTINATIONS } from '#lib/server/destinations.ts';
-import type { DestinationResult } from '#lib/types.ts';
 import bike from '#tests/fixtures/google/bike.json';
 import drive from '#tests/fixtures/google/drive.json';
 import geocode from '#tests/fixtures/google/geocode.json';
 import geocodeZeroResults from '#tests/fixtures/google/geocode-zero-results.json';
 import transit from '#tests/fixtures/google/transit-transfer.json';
 import walk from '#tests/fixtures/google/walk.json';
-import { GET } from './+server';
+import { DESTINATIONS } from './destinations';
+import { fakeMaps } from './fakeMaps';
+import { lookUpTravelTimes } from './lookUpTravelTimes';
+import { googleMaps, type Maps } from './travelTimes';
 
-const env = vi.hoisted(() => ({ MOCK: false, GOOGLE_MAPS_TOKEN: 'test-key' }));
-vi.mock('$app/env/private', () => env);
+const GOOGLE = googleMaps('test-key');
 
 const ROUTE_FIXTURES: Record<string, unknown> = {
   WALK: walk,
@@ -26,17 +25,12 @@ async function fakeGoogle(url: URL | string, init?: RequestInit) {
   return Response.json(ROUTE_FIXTURES[travelMode]);
 }
 
-function get(search: string) {
-  const url = new URL(`https://example.com/api/travel-times${search}`);
-  return GET({ url } as unknown as RequestEvent) as Promise<Response>;
-}
-
-async function destinationIds(response: Response) {
-  const results: DestinationResult[] = await response.json();
+async function destinationIds(maps: Maps) {
+  const results = await lookUpTravelTimes('1 Main St', maps);
   return results.map(({ id }) => id);
 }
 
-describe('GET', () => {
+describe('lookUpTravelTimes', () => {
   const fetchMock = vi.fn(fakeGoogle);
 
   beforeEach(() => {
@@ -49,44 +43,33 @@ describe('GET', () => {
   });
 
   test.each([
-    ['missing', ''],
-    ['empty', '?street-address='],
-  ])('refuses a %s address without calling Google', async (_, search) => {
-    await expect(get(search)).rejects.toMatchObject({ status: 400 });
+    ['an empty address', ''],
+    ['a missing address', undefined],
+    ['a non-string', { address: '1 Main St' }],
+  ])('refuses %s without calling Google', async (_, address) => {
+    await expect(lookUpTravelTimes(address, GOOGLE)).rejects.toMatchObject({ status: 400 });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  describe('with MOCK off', () => {
-    beforeEach(() => {
-      env.MOCK = false;
-    });
-
+  describe('with Google', () => {
     test('answers from Google', async () => {
-      const response = await get('?street-address=1%20Main%20St');
-
-      expect(await destinationIds(response)).toEqual(DESTINATIONS.map(({ id }) => id));
+      expect(await destinationIds(GOOGLE)).toEqual(DESTINATIONS.map(({ id }) => id));
       expect(fetchMock).toHaveBeenCalled();
     });
 
     test('refuses an address Google cannot find', async () => {
       fetchMock.mockImplementationOnce(async () => Response.json(geocodeZeroResults));
 
-      await expect(get('?street-address=nowhere')).rejects.toEqual({
+      await expect(lookUpTravelTimes('nowhere', GOOGLE)).rejects.toEqual({
         status: 400,
         body: { message: 'Google could not find that address.', status: 400 },
       });
     });
   });
 
-  describe('with MOCK on', () => {
-    beforeEach(() => {
-      env.MOCK = true;
-    });
-
+  describe('with the fake maps', () => {
     test('answers without calling Google', async () => {
-      const response = await get('?street-address=1%20Main%20St');
-
-      expect(await destinationIds(response)).toEqual(DESTINATIONS.map(({ id }) => id));
+      expect(await destinationIds(fakeMaps)).toEqual(DESTINATIONS.map(({ id }) => id));
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });

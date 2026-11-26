@@ -15,7 +15,7 @@ one of those two facts.
   change or capture a fixture, and say when you did. `MOCK=1 npm run dev` serves canned travel
   times without calling Google.
 - **Keep every route behind the site password.** Only the `/login` route may be open in
-  `src/hooks.server.ts`: each `/api/` request spends the Google key, and pages will hold
+  `src/hooks.server.ts`: each remote function call spends the Google key, and pages will hold
   apartments and agent contacts.
 - **No secrets, and no absolute home paths**, in code, config or fixtures. The Google key and site
   password live in `.envrc`, which is never read or committed. Google's Geocoding API takes its

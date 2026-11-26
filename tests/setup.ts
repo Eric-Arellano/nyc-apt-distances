@@ -7,3 +7,8 @@ beforeEach(() => {
     throw new Error(`fetch(${String(input)}) was called without a mock`);
   });
 });
+
+// Svelte's async mode makes `tick()` wait for a frame, and testing-library ticks after every test,
+// but neither Node nor jsdom has `requestAnimationFrame`. `tick()` races it against a timeout, so
+// any stand-in works.
+globalThis.requestAnimationFrame ??= (callback) => Number(setTimeout(callback));
