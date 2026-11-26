@@ -1,0 +1,36 @@
+# Vercel's Neon integration deletes a preview's branch only once Vercel deletes the deployment,
+# too late for Neon's free-plan branch limit. Needs var NEON_PROJECT_ID and secret NEON_API_KEY.
+#
+# *Rejected: neondatabase/delete-branch-action, because it installs an unpinned `neonctl@v2`.*
+name: Delete Neon preview branch
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions: {}
+
+jobs:
+  delete:
+    name: Delete Neon preview branch
+    # Forks get no secrets, and no Neon branch.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+          # Via env, since a branch name interpolated into the script could inject commands.
+          BRANCH: preview/${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          api="https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID/branches"
+          auth="Authorization: Bearer $NEON_API_KEY"
+          id=$(curl -fsS -H "$auth" "$api" | jq -r --arg name "$BRANCH" '.branches[] | select(.name == $name) | .id')
+          if [ -z "$id" ]; then
+            echo "No Neon branch named $BRANCH"
+            exit 0
+          fi
+          curl -fsS -X DELETE -H "$auth" "$api/$id" > /dev/null
+          echo "Deleted $BRANCH"
