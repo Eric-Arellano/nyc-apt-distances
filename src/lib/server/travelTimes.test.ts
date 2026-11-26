@@ -1,7 +1,8 @@
 import { describe, expect, test, vi } from 'vitest';
 import type { Destination } from './destinations';
 import { fakeMaps } from './fakeMaps';
-import { computeTravelTimes, fingerprint, type Maps, toDestinationResults } from './travelTimes';
+import type { Maps } from './maps';
+import { computeTravelTimes, fingerprint, toDestinationResults } from './travelTimes';
 
 const GOAL = { strictness: 'must', idealMinutes: 15, maxMinutes: 25 } as const;
 

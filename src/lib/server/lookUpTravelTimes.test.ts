@@ -8,7 +8,7 @@ import walk from '#tests/fixtures/google/walk.json';
 import { DESTINATIONS } from './destinations';
 import { fakeMaps } from './fakeMaps';
 import { lookUpTravelTimes } from './lookUpTravelTimes';
-import { googleMaps, type Maps } from './travelTimes';
+import { googleMaps, type Maps } from './maps';
 
 const GOOGLE = googleMaps('test-key');
 

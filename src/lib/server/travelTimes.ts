@@ -2,20 +2,7 @@ import { createHash } from 'node:crypto';
 import type { DestinationResult, Place, Route } from '#lib/types.ts';
 import { type Coordinates, closest } from './closest';
 import type { Destination } from './destinations';
-import { type GeocodedAddress, geocode } from './gmapsGeocoding';
-import { computeRoute, type RouteOptions } from './gmapsRouting';
-
-export interface Maps {
-  geocode(address: string, expectedCounty: string): Promise<GeocodedAddress>;
-  computeRoute(options: RouteOptions): Promise<Route>;
-}
-
-export function googleMaps(key: string): Maps {
-  return {
-    geocode: (address, expectedCounty) => geocode(key, address, expectedCounty),
-    computeRoute: (options) => computeRoute(key, options),
-  };
-}
+import type { Maps } from './maps';
 
 function resolvePlace(
   place: Destination['place'],
