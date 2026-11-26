@@ -33,6 +33,9 @@ each person, destinations stored in the database, maps.
   Signing in stays a form action, because no remote call may be open. The browser awaits each call
   through `src/lib/awaitRemote.ts`, which sends an expired session to the login page. *Rejected:
   form actions with `use:enhance`, and `+server.ts` with `fetch`.*
+- **Pages read through `load` functions**, as `/apartments/[id=apartmentId]` does, so the page
+  renders on the server and an unknown id is a real 404. Remote `query` functions are for reads the
+  browser starts after the page has loaded.
 - **One-off lookups stay in the URL** (`/?address=…`), run in the browser after each navigation by
   `src/routes/+page.svelte`, which owns the lookup's promise. Every open of such a link spends the
   Google key again; a saved apartment is what avoids that.
@@ -125,17 +128,19 @@ and Kysely's two tables there must be dropped before the foundation merges, beca
 
 ## PR 1: Saved apartments
 
-- **Save:** a "Save" button on a lookup in `src/routes/+page.svelte` stores the address and its
-  travel-times snapshot.
-- **Apartment page:** `/apartments/[id]` renders the stored travel times with no Google call.
-  This is the share link.
-- **Staleness:** the page shows the compute date and drops entries for destinations removed
-  from code. A destination with no entry, or whose fingerprint no longer matches, shows as
-  missing, with a "Recompute" button that replaces the whole snapshot, so
+Lands as three stacked PRs, each reviewable on its own:
+
+- **1a. Apartment page:** `/apartments/[id]` renders the stored travel times with no Google call.
+  This is the share link. It shows the compute date and drops entries for destinations removed
+  from code. A destination with no entry, or whose fingerprint no longer matches, is listed as
+  missing. Nothing creates an apartment yet, so it ships dark.
+- **1b. Save:** adding an address on the home page stores it with its travel-times snapshot and
+  opens its page.
+  **Open:** whether to warn when saving an address that's already saved. Google's geocoding
+  normalizes addresses, which could make duplicates detectable.
+- **1c. Recompute:** a "Recompute" button beside the missing list replaces the whole snapshot, so
   `travel_times_computed_at` stays true of every entry. *Rejected: computing only the missing
   destinations automatically, because it needs a compute time per entry and saves little.*
-- **Open:** whether to warn when saving an address that's already saved. Google's geocoding
-  normalizes addresses, which could make duplicates detectable.
 
 ## PR 2: Delete an apartment
 
@@ -181,5 +186,4 @@ Real Google calls happen only to check a change by hand, and the PR says so.
 
 ## Next step
 
-Settle the Neon **Open:** above from the foundation preview's build log, then write a detailed plan
-for PR 1, saved apartments.
+Settle the Neon **Open:** above from the foundation preview's build log, then land PRs 1a–1c.

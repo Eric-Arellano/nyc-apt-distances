@@ -17,7 +17,8 @@ function resolvePlace(
 
 /**
  * What Google produced for one destination, and nothing that is our own copy. Only this is worth
- * storing: titles and goals can change in code without invalidating it.
+ * storing: titles and goals can change in code without invalidating it. It is stored as is in
+ * `apartment.travel_times`, so a change that stored rows don't satisfy needs a migration of them.
  */
 export interface TravelTimeEntry {
   id: string;
