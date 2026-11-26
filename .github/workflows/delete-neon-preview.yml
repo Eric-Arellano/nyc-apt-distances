@@ -4,8 +4,6 @@
 # when its PR closes keeps us under the limit.
 #
 # Needs the repo variable NEON_PROJECT_ID and the repo secret NEON_API_KEY.
-#
-# *Rejected: neondatabase/delete-branch-action, because two curl calls don't justify a dependency.*
 name: Delete Neon preview branch
 
 on:
@@ -17,24 +15,15 @@ permissions: {}
 jobs:
   delete:
     name: Delete Neon preview branch
-    # PRs from forks get no secrets, and get no Neon branch either.
+    # Fork PRs get no secrets and no Neon branch. The check is also a security boundary: the action
+    # interpolates `branch` straight into a shell script, so a crafted branch name would run with
+    # the API key. Only branches pushed by someone with write access may reach it.
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - env:
-          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
-          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
-          # Through env, not interpolated into the script, because a branch name is user input.
-          BRANCH: preview/${{ github.head_ref }}
-        run: |
-          set -euo pipefail
-          api="https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID/branches"
-          auth="Authorization: Bearer $NEON_API_KEY"
-          id=$(curl -fsS -H "$auth" "$api" | jq -r --arg name "$BRANCH" '.branches[] | select(.name == $name) | .id')
-          if [ -z "$id" ]; then
-            echo "No Neon branch named $BRANCH"
-            exit 0
-          fi
-          curl -fsS -X DELETE -H "$auth" "$api/$id" > /dev/null
-          echo "Deleted $BRANCH"
+      - uses: neondatabase/delete-branch-action@4468d825d5a88ef4012f1705a82f02ec3072f776 # v3.2.1
+        with:
+          project_id: ${{ vars.NEON_PROJECT_ID }}
+          branch: preview/${{ github.head_ref }}
+          api_key: ${{ secrets.NEON_API_KEY }}
