@@ -39,7 +39,7 @@ and delete `.pglite/`. Each test file gets its own database in memory.
 ### Deploying
 
 The app runs on Vercel with [Neon](https://neon.com) Postgres, through Vercel's Neon integration.
-Production uses Neon's main branch, and each preview deployment gets its own Neon branch. Each
+Production uses Neon's main branch, and each preview deployment gets its own Neon branch, deleted when its PR closes. Each
 deploy runs pending migrations against its own branch before it builds, as set in `vercel.json`.
 
 ### Changing destinations and goals

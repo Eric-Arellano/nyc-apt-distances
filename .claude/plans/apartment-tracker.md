@@ -36,7 +36,8 @@ each person, destinations stored in the database, maps.
   `src/routes/+page.svelte`, which owns the lookup's promise. Every open of such a link spends the
   Google key again; a saved apartment is what avoids that.
 - **Neon Postgres, through Vercel's Neon integration.** Production uses Neon's main branch, and
-  each PR preview gets its own Neon branch, created and deleted by the integration.
+  each PR preview gets its own Neon branch, created by the integration and deleted by
+  `.github/workflows/delete-neon-preview.yml` when the PR closes.
   *Rejected: Supabase, because branching needs a paid plan and free projects pause after a week
   idle; we need neither Supabase Auth nor Storage.*
 - **The database is reached only from the server, with no RLS**, as in foodservice-insights.
