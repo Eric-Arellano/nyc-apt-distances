@@ -23,10 +23,16 @@ each person, destinations stored in the database, maps.
 
 - **Auth stays the one shared site password.** Two people don't need accounts. Every route is
   gated by default except the `/login` route, matched by route id in `src/hooks.server.ts`: pages
-  redirect to `/login?redirectTo=…` and `/api/` returns 401. A new route is private unless someone
-  opens it on purpose. Signing in is a form action on `/login` that returns to `redirectTo`, so a
-  shared link to an apartment page survives the login, and the session cookie's key is stretched
-  from the password with scrypt (`src/lib/server/auth.ts`).
+  redirect to `/login?redirectTo=…` and every remote function call returns 401, whatever route it
+  claims. A new route is private unless someone opens it on purpose. Signing in is a form action
+  on `/login` that returns to `redirectTo`, so a shared link to an apartment page survives the
+  login, and the session cookie's key is stretched from the password with scrypt
+  (`src/lib/server/auth.ts`).
+- **The browser reaches the server through remote functions** (`*.remote.ts`), experimental in
+  SvelteKit 3.1 and accepted as such. Writes are `form` or `command` functions, not form actions.
+  Signing in stays a form action, because no remote call may be open. The browser awaits each call
+  through `src/lib/awaitRemote.ts`, which sends an expired session to the login page. *Rejected:
+  form actions with `use:enhance`, and `+server.ts` with `fetch`.*
 - **One-off lookups stay in the URL** (`/?address=…`), run in the browser after each navigation by
   `src/routes/+page.svelte`, which owns the lookup's promise. Every open of such a link spends the
   Google key again; a saved apartment is what avoids that.
@@ -143,9 +149,7 @@ Ship it soon after PR 1: until then, a mistaken save comes out only through Neon
 - **Display:** the listing URL, phone numbers and emails become links you can tap. The page must
   work on a phone, since it'll be used while touring.
 - **Open:** the status values. Draft: considering, contacted, toured, applied, signed, passed.
-- **Open:** an explicit Save button or autosave, and form actions or `+server.ts` with `fetch`.
-  foodservice-insights chose the latter, so read its reasoning before deciding; the login here is
-  already a form action.
+- **Open:** an explicit Save button or autosave.
 
 ## PR 4: Pipeline list
 

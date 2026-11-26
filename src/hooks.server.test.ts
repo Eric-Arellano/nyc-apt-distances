@@ -18,11 +18,36 @@ beforeEach(() => {
  * when nothing did.
  */
 async function request(path: string, routeId: string | null, session?: string) {
+  return run({ path, routeId, session, isRemoteRequest: false });
+}
+
+/** Runs a remote function call through `handle`, claiming to come from the page `routeId`. */
+async function remoteCall(routeId: string | null, session?: string) {
+  return run({
+    path: '/_app/remote/abc123/getTravelTimes',
+    routeId,
+    session,
+    isRemoteRequest: true,
+  });
+}
+
+async function run({
+  path,
+  routeId,
+  session,
+  isRemoteRequest,
+}: {
+  path: string;
+  routeId: string | null;
+  session: string | undefined;
+  isRemoteRequest: boolean;
+}) {
   const resolve = vi.fn(async () => new Response('resolved'));
   const event = {
     url: new URL(path, 'https://example.com'),
     route: { id: routeId },
     cookies: { get: () => session } as unknown as Cookies,
+    isRemoteRequest,
   } as RequestEvent;
   try {
     const response = await handle({ event, resolve });
@@ -36,10 +61,12 @@ async function request(path: string, routeId: string | null, session?: string) {
 describe('handle', () => {
   describe('without a session', () => {
     test.each([
-      ['/api/travel-times', '/api/travel-times'],
-      ['/api/nothing', null],
-    ])('refuses %s with a 401', async (path, routeId) => {
-      const { resolve, status } = await request(path, routeId);
+      ['the home page', '/'],
+      // A `form` or `command` call names its page in a header the client controls.
+      ['the login page', '/login'],
+      ['no page', null],
+    ])('refuses a remote call from %s with a 401', async (_, routeId) => {
+      const { resolve, status } = await remoteCall(routeId);
 
       expect(status).toBe(401);
       expect(resolve).not.toHaveBeenCalled();
@@ -67,22 +94,29 @@ describe('handle', () => {
   });
 
   test('refuses a forged session', async () => {
-    const { resolve, status } = await request(
-      '/api/travel-times',
-      '/api/travel-times',
-      '9999999999.forged',
-    );
+    const { resolve, status } = await remoteCall('/', '9999999999.forged');
 
     expect(status).toBe(401);
     expect(resolve).not.toHaveBeenCalled();
   });
 
-  test.each(['/', '/api/travel-times'])('allows %s with a live session', async (path) => {
-    const session = signSession(KEY, Math.floor(Date.now() / 1000) + 60);
+  describe('with a live session', () => {
+    function session() {
+      return signSession(KEY, Math.floor(Date.now() / 1000) + 60);
+    }
 
-    const { resolve, status } = await request(path, path, session);
+    test('allows a page', async () => {
+      const { resolve, status } = await request('/', '/', session());
 
-    expect(status).toBe(200);
-    expect(resolve).toHaveBeenCalledOnce();
+      expect(status).toBe(200);
+      expect(resolve).toHaveBeenCalledOnce();
+    });
+
+    test('allows a remote call', async () => {
+      const { resolve, status } = await remoteCall('/', session());
+
+      expect(status).toBe(200);
+      expect(resolve).toHaveBeenCalledOnce();
+    });
   });
 });
