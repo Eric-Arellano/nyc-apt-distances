@@ -24,7 +24,7 @@ async function request(path: string, routeId: string | null, session?: string) {
 /** Runs a remote function call through `handle`, claiming to come from the page `routeId`. */
 async function remoteCall(routeId: string | null, session?: string) {
   return run({
-    path: '/_app/remote/abc123/getTravelTimes',
+    path: '/_app/remote/abc123/addApartment',
     routeId,
     session,
     isRemoteRequest: true,

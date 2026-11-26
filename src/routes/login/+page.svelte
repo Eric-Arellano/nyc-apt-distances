@@ -12,7 +12,7 @@ let pending = $state(false);
 </script>
 
 <svelte:head>
-  <title>Sign in · White Plains apartment travel times</title>
+  <title>Sign in · White Plains apartments</title>
 </svelte:head>
 
 <div class="flex min-h-screen items-center justify-center px-4">
