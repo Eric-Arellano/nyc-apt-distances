@@ -1,6 +1,6 @@
 import * as v from 'valibot';
+import { getMaps } from '#lib/server/getMaps.ts';
 import { lookUpTravelTimes } from '#lib/server/lookUpTravelTimes.ts';
-import { getMaps } from '#lib/server/maps.ts';
 import { query } from '$app/server';
 
 const Address = v.pipe(v.string(), v.trim(), v.nonEmpty());

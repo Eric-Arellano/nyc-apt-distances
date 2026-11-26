@@ -1,10 +1,15 @@
-import { GOOGLE_MAPS_TOKEN, MOCK } from '$app/env/private';
-import { fakeMaps } from './fakeMaps';
-import { googleMaps, type Maps } from './travelTimes';
+import type { Route } from '#lib/types.ts';
+import { type GeocodedAddress, geocode } from './gmapsGeocoding';
+import { computeRoute, type RouteOptions } from './gmapsRouting';
 
-// `MOCK=1` fakes only Google; saves still reach the database.
-export function getMaps(): Maps {
-  if (MOCK) return fakeMaps;
-  if (!GOOGLE_MAPS_TOKEN) throw new Error('GOOGLE_MAPS_TOKEN must be set as an env var.');
-  return googleMaps(GOOGLE_MAPS_TOKEN);
+export interface Maps {
+  geocode(address: string, expectedCounty: string): Promise<GeocodedAddress>;
+  computeRoute(options: RouteOptions): Promise<Route>;
+}
+
+export function googleMaps(key: string): Maps {
+  return {
+    geocode: (address, expectedCounty) => geocode(key, address, expectedCounty),
+    computeRoute: (options) => computeRoute(key, options),
+  };
 }
