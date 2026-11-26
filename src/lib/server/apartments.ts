@@ -1,3 +1,4 @@
+import { error } from '@sveltejs/kit';
 import type { Kysely } from 'kysely';
 import type { DestinationResult } from '#lib/types.ts';
 import type { Coordinates } from './closest';
@@ -57,6 +58,23 @@ export async function saveApartment(
     .returning('id')
     .executeTakeFirstOrThrow();
   return { kind: 'saved', id };
+}
+
+// Replaces the whole snapshot, so `travelTimesComputedAt` stays true of every entry.
+export async function recomputeApartment(db: Db, maps: Maps, id: ApartmentId): Promise<void> {
+  const row = await db
+    .selectFrom('apartment')
+    .select('address')
+    .where('id', '=', id)
+    .executeTakeFirst();
+  if (!row) error(404, 'No saved apartment has that link.');
+
+  const { placeId, coordinates } = await maps.geocode(row.address, ORIGIN_COUNTY);
+  await db
+    .updateTable('apartment')
+    .set({ placeId, ...(await computeSnapshot(row.address, coordinates, maps)) })
+    .where('id', '=', id)
+    .execute();
 }
 
 export async function getApartment(db: Db, id: ApartmentId): Promise<ApartmentView | undefined> {
