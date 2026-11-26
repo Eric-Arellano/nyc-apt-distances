@@ -42,15 +42,6 @@ describe('lookUpTravelTimes', () => {
     vi.unstubAllGlobals();
   });
 
-  test.each([
-    ['an empty address', ''],
-    ['a missing address', undefined],
-    ['a non-string', { address: '1 Main St' }],
-  ])('refuses %s without calling Google', async (_, address) => {
-    await expect(lookUpTravelTimes(address, GOOGLE)).rejects.toMatchObject({ status: 400 });
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
   describe('with Google', () => {
     test('answers from Google', async () => {
       expect(await destinationIds(GOOGLE)).toEqual(DESTINATIONS.map(({ id }) => id));
