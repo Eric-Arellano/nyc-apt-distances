@@ -1,13 +1,12 @@
 <script lang="ts">
 import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
-import Trash2Icon from '@lucide/svelte/icons/trash-2';
-import { recomputeTravelTimes, removeApartment } from '#lib/apartments.remote.ts';
+import { recomputeTravelTimes } from '#lib/apartments.remote.ts';
 import Card from '#lib/components/Card.svelte';
+import DeleteApartment from '#lib/components/DeleteApartment.svelte';
 import ErrorMessage from '#lib/components/ErrorMessage.svelte';
 import DestinationList from '#lib/components/travelTimes/DestinationList.svelte';
 import * as Alert from '#lib/components/ui/alert/index.ts';
-import * as AlertDialog from '#lib/components/ui/alert-dialog/index.ts';
-import { Button, buttonVariants } from '#lib/components/ui/button/index.ts';
+import { Button } from '#lib/components/ui/button/index.ts';
 import { formatDate } from '#lib/formatDate.ts';
 import { signInOnExpiredSession } from '#lib/signInOnExpiredSession.ts';
 import { resolve } from '$app/paths';
@@ -19,7 +18,6 @@ const { data }: PageProps = $props();
 
 const isRecalculating = $derived(recomputeTravelTimes.pending > 0);
 const firstFormError = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
-const isDeleting = $derived(removeApartment.pending > 0);
 </script>
 
 <svelte:head>
@@ -35,7 +33,10 @@ const isDeleting = $derived(removeApartment.pending > 0);
       <ArrowLeftIcon aria-hidden="true" class="size-4" />
       All apartments
     </a>
-    <h1 class="text-3xl font-bold">{data.address}</h1>
+    <div class="flex items-start justify-between gap-2">
+      <h1 class="text-3xl font-bold">{data.address}</h1>
+      <DeleteApartment id={data.id} address={data.address} />
+    </div>
     <p class="mb-6 text-muted-foreground">
       Travel times calculated {formatDate(data.travelTimesComputedAt)}
     </p>
@@ -67,34 +68,5 @@ const isDeleting = $derived(removeApartment.pending > 0);
         <DestinationList destinations={data.results} />
       </Card>
     {/if}
-
-    <!-- Only here, not in the list: a mistaken save is noticed on this page, where saving lands,
-         and an apartment we turn down is better kept with its history than deleted. -->
-    <AlertDialog.Root>
-      <AlertDialog.Trigger class={buttonVariants({ variant: 'destructive' })}>
-        <Trash2Icon aria-hidden="true" />
-        Delete apartment
-      </AlertDialog.Trigger>
-      <AlertDialog.Content>
-        <AlertDialog.Header>
-          <AlertDialog.Title>Delete this apartment?</AlertDialog.Title>
-          <AlertDialog.Description>
-            {data.address}
-            and everything saved about it will be deleted for everyone. This can't be undone.
-          </AlertDialog.Description>
-        </AlertDialog.Header>
-        <form {...removeApartment.enhance(signInOnExpiredSession)}>
-          <input {...removeApartment.fields.id.as('hidden', String(data.id))}>
-          <AlertDialog.Footer>
-            <!-- bits-ui leaves `type` unset, which inside a form would make Cancel delete too. -->
-            <AlertDialog.Cancel type="button" disabled={isDeleting}>Cancel</AlertDialog.Cancel>
-            <!-- Unlike Cancel, Action leaves the dialog open, so it can show the delete pending. -->
-            <AlertDialog.Action type="submit" variant="destructive" disabled={isDeleting}>
-              {isDeleting ? 'Deleting…' : 'Delete'}
-            </AlertDialog.Action>
-          </AlertDialog.Footer>
-        </form>
-      </AlertDialog.Content>
-    </AlertDialog.Root>
   </div>
 </div>

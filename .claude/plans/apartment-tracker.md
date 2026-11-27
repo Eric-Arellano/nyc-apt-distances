@@ -38,7 +38,8 @@ each person, destinations stored in the database, maps.
   it or save a separate one, for another unit in the same building, which the tracking fields'
   label tells apart.
 - **Neon Postgres, through Vercel's Neon integration**, reached only from the server, with no RLS.
-  Production uses Neon's main branch; each PR preview gets its own branch. Nothing run locally
+  Production uses Neon's main branch; each PR preview gets its own branch, which starts as a copy
+  of production's data and keeps its writes to itself, as #117's preview showed. Nothing run locally
   writes to Neon (`src/lib/server/database.ts` holds the reasoning), so Postgres-specific behavior
   is checked on a PR's preview.
 - **Kysely** builds the queries in camelCase and runs the migrations; **Kanel** generates the types
@@ -76,12 +77,6 @@ each person, destinations stored in the database, maps.
 - A deleted apartment survives in any preview branched before the delete, until that branch is
   deleted, and in Neon's restore window.
 
-**Open:** whether a preview's build step migrates its own Neon branch or production. Neon's docs
-say branch connection strings are "injected via webhook at deployment time", but not whether the
-build step sees them or the stored Preview values, which point at production. Any preview's build
-log answers it: its `Migrating <host>` line must differ from production's. If it doesn't, a preview
-whose PR adds a migration would run it against production before review.
-
 ## PRs
 
 Each comes after the one before: the pipeline lists PR 1's fields, and PR 3 waits on watching the
@@ -92,7 +87,9 @@ pipeline in use.
 - **Fields:** label (such as "Unit 4B"), rent, listing URL, status, next step, agent contact, and
   notes.
 - **Display:** the listing URL, phone numbers and emails become links you can tap. The page must
-  work on a phone, since it'll be used while touring.
+  work on a phone, since it'll be used while touring. The header holds the address with Delete's
+  trash icon beside it; label and status read naturally under the address, and the rest fits a
+  card above Travel times.
 - **Open:** the status values. Draft: considering, contacted, toured, applied, signed, passed.
 - **Open:** an explicit Save button or autosave.
 
@@ -128,4 +125,4 @@ Real Google calls happen only to check a change by hand, and the PR says so.
 
 ## Next step
 
-Settle the Neon **Open:** from a preview's build log, then start PR 1.
+Start PR 1.
