@@ -29,7 +29,7 @@ const TINTS: Record<GoalStatus, string> = {
 };
 const ALIGN = { start: 'items-start', center: 'items-center', end: 'items-end' } as const;
 const MISSING: TimeCell = { kind: 'missing' };
-// Separates one destination's columns from the one before.
+// Separates rent from status, and each destination's columns from the one before.
 const GROUP_RULE = 'border-l border-l-gray-700';
 
 const sorted = $derived(sortRows(rows, sort));
@@ -117,7 +117,7 @@ function cellTint(cell: TimeCell, dim: boolean): string | undefined {
       {/if}
     </td>
     <td class="truncate">{STATUS_LABELS[rowStatus]}</td>
-    <td class="text-right">{rent === null ? '' : formatDollars(rent)}</td>
+    <td class={['text-right', GROUP_RULE]}>{rent === null ? '' : formatDollars(rent)}</td>
     {#each columns as column (column.key)}
       {@const cell = apartment.times[column.key] ?? MISSING}
       <td
@@ -134,11 +134,11 @@ function cellTint(cell: TimeCell, dim: boolean): string | undefined {
 <div class="-mx-(--card-spacing) overflow-x-auto">
   <table
     class="w-full table-fixed border-separate border-spacing-0 text-sm tabular-nums [--apt-col:--spacing(34)] sm:[--apt-col:--spacing(48)]"
-    style:min-width="calc(var(--apt-col) + {12.25 + 4.5 * columns.length}rem)"
+    style:min-width="calc(var(--apt-col) + {11.25 + 4.5 * columns.length}rem)"
   >
     <colgroup>
       <col class="w-(--apt-col)">
-      <col class="w-28">
+      <col class="w-24">
       <col class="w-21">
       {#each columns as column (column.key)}
         <col class="w-18">
@@ -157,7 +157,7 @@ function cellTint(cell: TimeCell, dim: boolean): string | undefined {
         <th scope="col" rowspan="2" aria-sort={ariaSort('status')}>
           {@render sortButton('status', ['Status'], 'start')}
         </th>
-        <th scope="col" rowspan="2" class="text-right" aria-sort={ariaSort('rent')}>
+        <th scope="col" rowspan="2" class={['text-right', GROUP_RULE]} aria-sort={ariaSort('rent')}>
           {@render sortButton('rent', ['Rent /mo'], 'end')}
         </th>
         {#each groups as group (group.title)}
@@ -225,13 +225,6 @@ function cellTint(cell: TimeCell, dim: boolean): string | undefined {
   </table>
 </div>
 
-<div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
-  <span><span class="swatch bg-green-600"></span>Within the ideal time</span>
-  <span><span class="swatch bg-yellow-600"></span>Within the limit</span>
-  <span><span class="swatch bg-red-600"></span>Over the limit</span>
-  <span>Minutes each way. Every trip, drives included, is on each apartment's page.</span>
-</div>
-
 <style>
 table {
   --row-hover: color-mix(in oklab, var(--color-card), var(--color-muted));
@@ -257,13 +250,5 @@ thead th[aria-sort] {
 tbody tr.apartment:hover,
 tbody tr.apartment:hover .frozen {
   background: var(--row-hover);
-}
-.swatch {
-  display: inline-block;
-  width: 0.9rem;
-  height: 0.9rem;
-  margin-right: 0.3rem;
-  border-radius: 3px;
-  vertical-align: -2px;
 }
 </style>

@@ -43,8 +43,8 @@ each person, destinations stored in the database, maps.
   `timeCell` (`src/lib/server/comparison.ts`) picks a trip out of the results this way.
 - **The table's look is the one to match**: goal tints are Tailwind fills (`bg-green-600/30`,
   `bg-yellow-600/30`, `bg-red-600/30`) in `ComparisonTable.svelte`, a "None" for no route is red
-  only when the trip has a goal, and the legend says what the colors mean. When a second view
-  needs the tints, move them somewhere both import rather than copying them.
+  only when the trip has a goal, and there is no legend, since the colors read on their own.
+  When a second view needs the tints, move them somewhere both import rather than copying them.
 - **Helpers already written**: `streetPart` (`src/lib/comparison.ts`) for a short apartment name,
   `withUnit` for the full one, `formatDollars` (`src/lib/apartmentDetails.ts`) for `$150`, and
   `goalText` for a goal in words.
@@ -101,8 +101,9 @@ address again, billed).
 For every PR: `npm run lint && npm run check && npm test`, plus `MOCK=1 npm run dev` to click
 through UI changes, at phone width too. `MOCK=1` gives every apartment the same times, so a
 comparison view is better judged against made-up apartments with varied times, seeded into the
-`.pglite/` of a scratch worktree so the dev database is left alone. Then check the PR's Vercel preview, whose Neon branch
-holds a copy of our real apartments, which is the first time the views meet real data.
+`.pglite/` of a scratch worktree so the dev database is left alone. Then check the PR's Vercel
+preview, whose Neon branch holds a copy of our real apartments, which is the first time the views
+meet real data.
 
 Real Google calls happen only to check a change by hand, and the PR says so.
 

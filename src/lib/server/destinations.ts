@@ -134,7 +134,7 @@ export const COMPARISON_GROUPS: readonly ComparisonGroup[] = [
   { destinationId: 'grocery', shortTitle: 'Grocery', columns: [{ tripIndex: 0, icon: '🚶' }] },
   {
     destinationId: 'bet-am-shalom',
-    shortTitle: 'BAS',
+    shortTitle: 'Bet Am Shalom', // Three columns leave room for the whole name.
     // No drive: driving there is always reasonable, so it never tells apartments apart.
     columns: [
       { tripIndex: 0, icon: '🚶' },

@@ -73,10 +73,6 @@ async function changeSort(key: string) {
           />
         {:else if firstFormError}
           <ErrorMessage message={firstFormError.message} />
-        {:else}
-          <p class="text-muted-foreground">
-            Saves it with its travel times, so its link opens without recalculating.
-          </p>
         {/if}
       </form>
     </Card>
