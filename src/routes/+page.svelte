@@ -3,13 +3,15 @@ import { addApartment } from '#lib/apartments.remote.ts';
 import AddressInput from '#lib/components/address/AddressInput.svelte';
 import DuplicateWarning from '#lib/components/apartment/DuplicateWarning.svelte';
 import Card from '#lib/components/Card.svelte';
+import ComparisonTable from '#lib/components/comparison/ComparisonTable.svelte';
 import ErrorMessage from '#lib/components/ErrorMessage.svelte';
 import Loading from '#lib/components/Loading.svelte';
-import { formatDate } from '#lib/formatDate.ts';
-import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
+import { FIXED_SORT_KEYS, nextSort, parseSort, sortSearch } from '#lib/comparison.ts';
 import { submitOrSignIn } from '#lib/signInOnExpiredSession.ts';
-import { parseUnit, withUnit } from '#lib/unit.ts';
+import { parseUnit } from '#lib/unit.ts';
+import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
+import { page } from '$app/state';
 import type { PageProps } from './$types';
 
 const { data }: PageProps = $props();
@@ -32,8 +34,17 @@ const enhanceAdd = addApartment.enhance(async (form) => {
   if ((await submitOrSignIn(form)) && !form.result) form.fields.set({ address: '', unit: '' });
 });
 
-function apartmentPath(id: ApartmentId) {
-  return resolve('/apartments/[id=apartmentId]', { id });
+// In the URL, so it survives going to an apartment and back, and a sorted link can be shared.
+const sort = $derived(
+  parseSort(page.url.searchParams, [
+    ...FIXED_SORT_KEYS,
+    ...data.groups.flatMap(({ columns }) => columns.map(({ key }) => key)),
+  ]),
+);
+
+// Replaces the history entry, so Back leaves the page rather than undoing sorts one by one.
+async function changeSort(key: string) {
+  await goto(`${resolve('/')}${sortSearch(nextSort(sort, key))}`, { replace: true, reset: false });
 }
 </script>
 
@@ -72,21 +83,7 @@ function apartmentPath(id: ApartmentId) {
 
     {#if data.apartments.length > 0}
       <Card title="Saved apartments">
-        <ul class="divide-y divide-border">
-          {#each data.apartments as apartment (apartment.id)}
-            <li>
-              <a
-                href={apartmentPath(apartment.id)}
-                class="flex items-baseline justify-between gap-4 py-3 hover:text-primary"
-              >
-                <span>{withUnit(apartment.address, apartment.unit)}</span>
-                <span class="shrink-0 text-sm text-muted-foreground">
-                  {formatDate(apartment.createdAt)}
-                </span>
-              </a>
-            </li>
-          {/each}
-        </ul>
+        <ComparisonTable groups={data.groups} rows={data.apartments} {sort} onsort={changeSort} />
       </Card>
     {/if}
   </div>

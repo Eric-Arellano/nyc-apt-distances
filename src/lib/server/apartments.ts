@@ -1,8 +1,10 @@
 import { error } from '@sveltejs/kit';
 import type { Kysely } from 'kysely';
 import { type ApartmentDetails, changedDetails } from '#lib/apartmentDetails.ts';
+import type { ApartmentRow } from '#lib/comparison.ts';
 import type { DestinationResult } from '#lib/types.ts';
 import type { Coordinates } from './closest';
+import { TABLE_GROUPS, timeCell } from './comparison';
 import type Database from './db/schema/Database.ts';
 import type { ApartmentId } from './db/schema/public/Apartment.ts';
 import type ApartmentStatus from './db/schema/public/ApartmentStatus.ts';
@@ -161,6 +163,17 @@ export async function getApartment(db: Db, id: ApartmentId): Promise<ApartmentVi
   };
 }
 
-export async function listApartments(db: Db): Promise<ApartmentSummary[]> {
-  return await db.selectFrom('apartment').select(SUMMARY_COLUMNS).orderBy('id', 'desc').execute();
+const TABLE_COLUMNS = TABLE_GROUPS.flatMap(({ columns }) => columns);
+
+export async function listApartments(db: Db): Promise<ApartmentRow[]> {
+  const rows = await db
+    .selectFrom('apartment')
+    .select(['id', 'address', 'unit', 'status', 'rent', 'nextStep', 'travelTimes'])
+    .orderBy('id', 'desc')
+    .execute();
+  return rows.map(({ travelTimes, ...row }) => {
+    const { results } = toDestinationResults(travelTimes as TravelTimeEntry[], DESTINATIONS);
+    const times = TABLE_COLUMNS.map((column) => [column.key, timeCell(results, column)]);
+    return { ...row, times: Object.fromEntries(times) };
+  });
 }

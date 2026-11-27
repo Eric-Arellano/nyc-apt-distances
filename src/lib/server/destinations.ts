@@ -110,31 +110,38 @@ export const DESTINATIONS: readonly Destination[] = [
 ];
 
 /**
- * The comparison table's time columns, grouped under each destination's short name, in display
- * order. A trip is named by its position in the destination's `trips`, since mode alone cannot
- * tell Bet Am Shalom's two buses apart.
+ * The trips the comparison table gives a column, grouped under their destination, in display
+ * order. Each is named by its position in the destination's `trips`, since mode alone cannot tell
+ * Bet Am Shalom's two buses apart. Unlike `trips`, this list is free to change.
  */
 export interface ComparisonGroup {
   destinationId: string;
-  shortTitle: string; // The full title is the header's tooltip.
-  columns: readonly { tripIndex: number; label?: string }[];
+  shortTitle: string; // What we call it anyway. The full title is the header's tooltip.
+  columns: readonly { tripIndex: number; icon: string; label?: string }[];
 }
 
 export const COMPARISON_GROUPS: readonly ComparisonGroup[] = [
   {
     destinationId: 'metro-north',
     shortTitle: 'Station',
-    columns: [{ tripIndex: 0 }, { tripIndex: 1 }],
+    columns: [
+      { tripIndex: 0, icon: '🚶' },
+      { tripIndex: 1, icon: '🚴' },
+    ],
   },
-  { destinationId: 'hebrew-institute', shortTitle: 'HI', columns: [{ tripIndex: 0 }] },
-  { destinationId: 'park', shortTitle: 'Park', columns: [{ tripIndex: 0 }] },
-  { destinationId: 'grocery', shortTitle: 'Grocery', columns: [{ tripIndex: 0 }] },
+  { destinationId: 'hebrew-institute', shortTitle: 'HI', columns: [{ tripIndex: 0, icon: '🚶' }] },
+  { destinationId: 'park', shortTitle: 'Park', columns: [{ tripIndex: 0, icon: '🚶' }] },
+  { destinationId: 'grocery', shortTitle: 'Grocery', columns: [{ tripIndex: 0, icon: '🚶' }] },
   {
     destinationId: 'bet-am-shalom',
     shortTitle: 'BAS',
     // No drive: driving there is always reasonable, so it never tells apartments apart.
-    columns: [{ tripIndex: 0 }, { tripIndex: 1, label: 'Fri' }, { tripIndex: 2, label: 'Sat' }],
+    columns: [
+      { tripIndex: 0, icon: '🚶' },
+      { tripIndex: 1, icon: '🚌', label: 'Fri' },
+      { tripIndex: 2, icon: '🚌', label: 'Sat' },
+    ],
   },
-  { destinationId: 'cbst', shortTitle: 'CBST', columns: [{ tripIndex: 0 }] },
-  { destinationId: 'florham-park', shortTitle: 'Florham', columns: [{ tripIndex: 0 }] },
+  { destinationId: 'cbst', shortTitle: 'CBST', columns: [{ tripIndex: 0, icon: '🚆' }] },
+  { destinationId: 'florham-park', shortTitle: 'Florham', columns: [{ tripIndex: 0, icon: '🚗' }] },
 ];
