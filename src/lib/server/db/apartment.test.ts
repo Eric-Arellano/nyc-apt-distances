@@ -50,4 +50,21 @@ describe('apartment', () => {
       );
     });
   });
+
+  describe('rent', () => {
+    test('rejects zero', async () => {
+      const insert = db
+        .insertInto('apartment')
+        .values({
+          address: 'a',
+          placeId: 'a',
+          travelTimes: '[]',
+          travelTimesComputedAt: new Date(),
+          rent: 0,
+        })
+        .execute();
+
+      await expect(insert).rejects.toThrow('apartment_rent_check');
+    });
+  });
 });

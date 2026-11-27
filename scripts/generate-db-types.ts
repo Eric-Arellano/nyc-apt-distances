@@ -11,13 +11,13 @@ import { createDatabase } from '#lib/server/db/createDatabase.ts';
 import { migrateToLatest } from '#lib/server/db/migrate.ts';
 
 /**
- * Rewrites kanel-kysely's `export default Database;` as a type-only export. Kanel emits it for a
- * type alias, and `verbatimModuleSyntax` rejects it because nothing would be left once types are
- * stripped.
+ * Rewrites a line such as `export default Database;` as a type-only export. Kanel and kanel-kysely
+ * emit it for a type alias, such as an enum's union, and `verbatimModuleSyntax` rejects it because
+ * nothing would be left once types are stripped. Kanel emits nothing but types.
  */
 function exportTypeAsDefault(_path: string, lines: string[]): string[] {
   return lines.map((line) =>
-    line === 'export default Database;' ? 'export type { Database as default };' : line,
+    line.replace(/^export default (\w+);$/, 'export type { $1 as default };'),
   );
 }
 

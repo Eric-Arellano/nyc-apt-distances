@@ -1,4 +1,5 @@
 import type { ColumnType, Insertable, Selectable, Updateable } from 'kysely';
+import type { default as ApartmentStatus } from './ApartmentStatus.ts';
 
 /** Identifier type for public.apartment */
 export type ApartmentId = number & { __brand: 'public.apartment' };
@@ -22,6 +23,20 @@ export default interface ApartmentTable {
 
   /** Such as "4B", without a word like "Unit" or "Apt", which the page adds. */
   unit: ColumnType<string | null, string | null, string | null>;
+
+  status: ColumnType<ApartmentStatus, ApartmentStatus | undefined, ApartmentStatus>;
+
+  /** Monthly rent in whole dollars. */
+  rent: ColumnType<number | null, number | null, number | null>;
+
+  /** Always http or https, checked on save, since the page renders it as a link. */
+  listingUrl: ColumnType<string | null, string | null, string | null>;
+
+  nextStep: ColumnType<string | null, string | null, string | null>;
+
+  agentContact: ColumnType<string | null, string | null, string | null>;
+
+  notes: ColumnType<string | null, string | null, string | null>;
 }
 
 export type Apartment = Selectable<ApartmentTable>;

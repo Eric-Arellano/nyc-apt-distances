@@ -1,11 +1,19 @@
 import { redirect } from '@sveltejs/kit';
 import * as v from 'valibot';
+import { ApartmentDetailsSchema } from '#lib/apartmentDetails.ts';
 import { isValidAddress } from '#lib/components/address/addressUtils.ts';
-import { deleteApartment, recomputeApartment, saveApartment } from '#lib/server/apartments.ts';
+import {
+  deleteApartment,
+  recomputeApartment,
+  saveApartment,
+  setApartmentStatus,
+  updateApartmentDetails,
+} from '#lib/server/apartments.ts';
 import { getDatabase } from '#lib/server/database.ts';
 import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
 import { getMaps } from '#lib/server/getMaps.ts';
 import { showBadRequestInForm } from '#lib/server/showBadRequestInForm.ts';
+import { STATUSES } from '#lib/status.ts';
 import { UnitSchema } from '#lib/unit.ts';
 import { resolve } from '$app/paths';
 import { form } from '$app/server';
@@ -47,6 +55,25 @@ export const recomputeTravelTimes = form(SavedApartment, async ({ id }) => {
   const db = await getDatabase();
   await showBadRequestInForm(recomputeApartment(db, getMaps(), id));
 });
+
+export const saveDetails = form(
+  // `original` is what the form opened with, in hidden fields, so only what changed is written.
+  v.object({
+    ...SavedApartment.entries,
+    edited: ApartmentDetailsSchema,
+    original: ApartmentDetailsSchema,
+  }),
+  async ({ id, ...edit }) => {
+    await updateApartmentDetails(await getDatabase(), id, edit);
+  },
+);
+
+export const changeStatus = form(
+  v.object({ ...SavedApartment.entries, status: v.picklist(STATUSES) }),
+  async ({ id, status }) => {
+    await setApartmentStatus(await getDatabase(), id, status);
+  },
+);
 
 export const removeApartment = form(SavedApartment, async ({ id }) => {
   await deleteApartment(await getDatabase(), id);

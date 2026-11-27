@@ -5,7 +5,7 @@ describe('createTestDatabase', () => {
   test('applies the migrations', async () => {
     const db = await createTestDatabase();
     const computedAt = new Date('2026-11-23T14:00:00Z');
-    const travelTimes = [{ id: 'library', label: 'Library' }];
+    const travelTimes = [{ id: 'library', unit: 'Library' }];
 
     const row = await db
       .insertInto('apartment')
@@ -26,6 +26,12 @@ describe('createTestDatabase', () => {
       createdAt: expect.any(Date),
       placeId: 'ChIJv6mD9DeUwokRp0fbCIoDwuI',
       unit: null,
+      status: 'interested',
+      rent: null,
+      listingUrl: null,
+      nextStep: null,
+      agentContact: null,
+      notes: null,
     });
     await db.destroy();
   });
