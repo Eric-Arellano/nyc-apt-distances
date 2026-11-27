@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, test, vi } from 'vitest';
 import type { Destination } from './destinations';
 import { fakeMaps } from './fakeMaps';
@@ -10,15 +11,16 @@ const GOAL = { strictness: 'must', idealMinutes: 15, maxMinutes: 25 } as const;
 const FIXED: Destination = {
   id: 'fixed',
   title: 'Fixed address',
-  goal: GOAL,
   place: { address: '20 Greenridge Ave, White Plains, NY 10605' },
-  trips: [{ mode: 'walk' }, { mode: 'bike' }],
+  trips: [
+    { trip: { mode: 'walk' }, goal: GOAL },
+    { trip: { mode: 'bike' }, label: 'Bike' },
+  ],
 };
 
 const CLOSEST: Destination = {
   id: 'closest',
   title: 'Closest park',
-  goal: GOAL,
   place: {
     closestOf: [
       {
@@ -35,7 +37,7 @@ const CLOSEST: Destination = {
       },
     ],
   },
-  trips: [{ mode: 'walk' }],
+  trips: [{ trip: { mode: 'walk' }, goal: GOAL }],
 };
 
 const DESTINATIONS = [FIXED, CLOSEST];
@@ -118,16 +120,29 @@ describe('fingerprint', () => {
     expect(fingerprint({ ...FIXED })).toBe(fingerprint(FIXED));
   });
 
-  test('ignores title and goal', () => {
-    const reworded = { ...FIXED, title: 'New title', goal: { ...GOAL, maxMinutes: 99 } };
+  test('ignores title, goals and labels', () => {
+    const reworded = {
+      ...FIXED,
+      title: 'New title',
+      trips: FIXED.trips.map(({ trip }) => ({ trip, goal: { ...GOAL, maxMinutes: 99 } })),
+    };
 
     expect(fingerprint(reworded)).toBe(fingerprint(FIXED));
+  });
+
+  // Saved apartments were fingerprinted before trips carried goals; matching keeps them current.
+  test('hashes the same as a bare list of trips', () => {
+    expect(fingerprint(FIXED)).toBe(
+      createHash('sha256')
+        .update(JSON.stringify({ place: FIXED.place, trips: [{ mode: 'walk' }, { mode: 'bike' }] }))
+        .digest('hex'),
+    );
   });
 
   test.each([
     ['a moved address', { place: { address: '1 Elsewhere Rd, White Plains, NY' } }],
     ['a changed candidate list', { place: { closestOf: [] } }],
-    ['an added trip', { trips: [...FIXED.trips, { mode: 'drive' }] }],
+    ['an added trip', { trips: [...FIXED.trips, { trip: { mode: 'drive' } }] }],
     ['reordered trips', { trips: [...FIXED.trips].reverse() }],
   ] as [string, Partial<Destination>][])('changes with %s', (_, change) => {
     expect(fingerprint({ ...FIXED, ...change })).not.toBe(fingerprint(FIXED));
@@ -144,16 +159,17 @@ describe('toDestinationResults', () => {
       {
         id: 'fixed',
         title: 'Fixed address',
-        goal: GOAL,
         closest: null,
-        routes: entries[0]?.routes,
+        trips: [
+          { goal: GOAL, route: { mode: 'walk', timeMinutes: 12, distanceMiles: 0.8 } },
+          { label: 'Bike', route: { mode: 'bike', timeMinutes: 4, distanceMiles: 1.5 } },
+        ],
       },
       {
         id: 'closest',
         title: 'Closest park',
-        goal: GOAL,
         closest: { name: 'Bronx River Pathway (County Center)' },
-        routes: entries[1]?.routes,
+        trips: [{ goal: GOAL, route: entries[1]?.routes[0] }],
       },
     ]);
     expect(missing).toEqual([]);
@@ -170,7 +186,7 @@ describe('toDestinationResults', () => {
 
   test.each([
     ['has no entry', [FIXED]],
-    ['changed its place or trips', [FIXED, { ...CLOSEST, trips: [{ mode: 'bike' }] }]],
+    ['changed its place or trips', [FIXED, { ...CLOSEST, trips: [{ trip: { mode: 'bike' } }] }]],
   ] as [string, Destination[]][])('names a destination that %s as missing', async (_, computed) => {
     const entries = await compute('1 Main St', computed);
 

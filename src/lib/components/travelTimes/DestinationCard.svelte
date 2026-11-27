@@ -1,6 +1,7 @@
 <script lang="ts">
+import { goalStatus } from '#lib/goalStatus.ts';
 import type { DestinationResult, GoalStatus } from '#lib/types.ts';
-import { formatRoute, goalStatus, goalText } from './format';
+import { formatRoute, goalText } from './format';
 
 const STATUS_CLASSES: Record<GoalStatus, string> = {
   met: 'border-green-600 bg-green-950/50',
@@ -8,19 +9,25 @@ const STATUS_CLASSES: Record<GoalStatus, string> = {
   unmet: 'border-red-600 bg-red-950/50',
 };
 
-const { title, goal, closest, routes }: DestinationResult = $props();
-
-const status = $derived(goalStatus(routes, goal));
+const { title, closest, trips }: DestinationResult = $props();
 </script>
 
-<li data-status={status} class="rounded-lg border-2 p-4 {STATUS_CLASSES[status]}">
-  <h3 class="mb-2 text-lg font-semibold">{title}</h3>
-  <p class="mb-3 text-base text-muted-foreground italic">{goalText(goal, routes)}</p>
+<li class="rounded-lg border p-4">
+  <h3 class="mb-3 text-lg font-semibold">{title}</h3>
 
   <ul class="space-y-2 text-base">
-    {#each routes as route (route)}
-      <li class="rounded-md bg-card p-2 shadow-sm">
-        {formatRoute(route, closest)}
+    {#each trips as { route, goal, label }, index (index)}
+      {@const status = goal && goalStatus(route, goal)}
+      <li
+        data-status={status}
+        class="rounded-md border-l-4 p-2 {status
+          ? STATUS_CLASSES[status]
+          : 'border-transparent bg-card shadow-sm'}"
+      >
+        {formatRoute(route, { place: closest, label })}
+        {#if goal}
+          <p class="text-sm text-muted-foreground italic">{goalText(goal)}</p>
+        {/if}
       </li>
     {/each}
   </ul>

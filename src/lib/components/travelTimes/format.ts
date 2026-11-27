@@ -1,56 +1,50 @@
-import type { Goal, GoalStatus, Place, Ride, Route } from '#lib/types.ts';
+import type { Goal, Place, Ride, Route } from '#lib/types.ts';
 
-export function goalStatus(routes: readonly Route[], goal: Goal): GoalStatus {
-  // With no available route this is `Infinity`, so the goal is unmet.
-  const minTime = Math.min(
-    ...routes.flatMap((route) => (route.mode === 'unavailable' ? [] : [route.timeMinutes])),
-  );
-  if (minTime <= goal.idealMinutes) {
-    return 'met';
-  }
-  if (minTime <= goal.maxMinutes) {
-    return 'partial';
-  }
-  return 'unmet';
-}
-
-export function goalText(goal: Goal, routes: readonly Route[]): string {
-  const { strictness, idealMinutes, maxMinutes } = goal;
-  const limit = routes.every(
-    (route) => (route.mode === 'unavailable' ? route.tripMode : route.mode) === 'walk',
-  )
-    ? `a ${maxMinutes}-minute walk`
-    : `${maxMinutes} minutes`;
-  return `${strictness === 'must' ? 'Must' : 'Should'} be within ${limit}; ideally within ${idealMinutes} minutes`;
+export function goalText({ strictness, idealMinutes, maxMinutes }: Goal): string {
+  const limit = `${strictness === 'must' ? 'Must' : 'Should'} be within ${maxMinutes} minutes`;
+  return idealMinutes === undefined ? limit : `${limit}; ideally within ${idealMinutes} minutes`;
 }
 
 /**
- * Formats a transit route's time and rides. Bee-Line lines are numbers, so a bus is named as one
+ * Describes a transit route's time and rides. Bee-Line lines are numbers, so a bus is named as one
  * rather than passing for a subway line.
  */
-function formatTransit(timeMinutes: number, rides: readonly Ride[]): string {
-  if (rides.length === 0) return `🚆 ${timeMinutes} minutes by walking`;
-  const emoji = rides.every(({ vehicle }) => vehicle === 'bus') ? '🚌' : '🚆';
+function describeTransit(timeMinutes: number, rides: readonly Ride[]): [string, string] {
+  if (rides.length === 0) return ['🚆', `${timeMinutes} minutes by walking`];
+  const icon = rides.every(({ vehicle }) => vehicle === 'bus') ? '🚌' : '🚆';
   const lines = rides.map(({ line, vehicle }) => (vehicle === 'bus' ? `${line} bus` : line));
-  return `${emoji} ${timeMinutes} minutes on the ${lines.join(' -> ')}`;
+  return [icon, `${timeMinutes} minutes on the ${lines.join(' -> ')}`];
 }
 
-export function formatRoute(route: Route, place?: Place | null): string {
+const NO_ROUTE: Record<Extract<Route, { mode: 'unavailable' }>['tripMode'], [string, string]> = {
+  walk: ['🚶', 'No walking route'],
+  bike: ['🚴', 'No bike route'],
+  transit: ['🚆', 'No transit route'],
+  drive: ['🚗', 'No driving route'],
+};
+
+function describeRoute(route: Route, place: Place | null | undefined): [string, string] {
   switch (route.mode) {
     case 'transit':
-      return formatTransit(route.timeMinutes, route.rides);
+      return describeTransit(route.timeMinutes, route.rides);
     case 'bike':
-      return `🚴 ${route.timeMinutes} minutes (${route.distanceMiles} miles)`;
+      return ['🚴', `${route.timeMinutes} minutes (${route.distanceMiles} miles)`];
     case 'drive':
-      return `🚗 ${route.timeMinutes} minutes (${route.distanceMiles} miles)`;
+      return ['🚗', `${route.timeMinutes} minutes (${route.distanceMiles} miles)`];
     case 'walk':
-      return `🚶 ${route.timeMinutes} minutes${place ? ` to ${place.name}` : ''} (${route.distanceMiles} miles)`;
+      return [
+        '🚶',
+        `${route.timeMinutes} minutes${place ? ` to ${place.name}` : ''} (${route.distanceMiles} miles)`,
+      ];
     case 'unavailable':
-      return {
-        walk: '🚶 No walking route',
-        bike: '🚴 No bike route',
-        transit: '🚆 No transit route',
-        drive: '🚗 No driving route',
-      }[route.tripMode];
+      return NO_ROUTE[route.tripMode];
   }
+}
+
+export function formatRoute(
+  route: Route,
+  { place, label }: { place?: Place | null; label?: string | undefined } = {},
+): string {
+  const [icon, text] = describeRoute(route, place);
+  return label ? `${icon} ${label}: ${text}` : `${icon} ${text}`;
 }
