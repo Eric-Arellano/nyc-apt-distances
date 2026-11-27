@@ -1,6 +1,8 @@
 <script lang="ts">
 import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 import { recomputeTravelTimes } from '#lib/apartments.remote.ts';
+import DetailsCard from '#lib/components/apartment/DetailsCard.svelte';
+import StatusSelect from '#lib/components/apartment/StatusSelect.svelte';
 import Card from '#lib/components/Card.svelte';
 import DeleteApartment from '#lib/components/DeleteApartment.svelte';
 import ErrorMessage from '#lib/components/ErrorMessage.svelte';
@@ -17,12 +19,13 @@ const LIST_FORMAT = new Intl.ListFormat('en-US');
 
 const { data }: PageProps = $props();
 
+const unit = $derived(data.details.unit && formatUnit(data.details.unit));
 const isRecalculating = $derived(recomputeTravelTimes.pending > 0);
 const firstFormError = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
 </script>
 
 <svelte:head>
-  <title>{withUnit(data.address, data.unit)} · White Plains apartments</title>
+  <title>{withUnit(data.address, data.details.unit)} · White Plains apartments</title>
 </svelte:head>
 
 <div class="min-h-screen py-8">
@@ -38,12 +41,14 @@ const firstFormError = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
       <h1 class="text-3xl font-bold">{data.address}</h1>
       <DeleteApartment id={data.id} address={data.address} />
     </div>
-    {#if data.unit}
-      <p class="mt-2 text-lg">{formatUnit(data.unit)}</p>
-    {/if}
-    <p class="mb-6 text-muted-foreground">
-      Travel times calculated {formatDate(data.travelTimesComputedAt)}
-    </p>
+    <div class="mt-2 mb-6 flex flex-wrap items-center gap-x-3 gap-y-2">
+      {#if unit}
+        <p class="text-lg">{unit}</p>
+      {/if}
+      <StatusSelect id={data.id} status={data.status} />
+    </div>
+
+    <DetailsCard id={data.id} details={data.details} />
 
     {#if data.missing.length > 0}
       <Alert.Root role="status" class="mb-4 border-yellow-600 bg-yellow-950/50 text-base">
@@ -68,7 +73,7 @@ const firstFormError = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
     {/if}
 
     {#if data.results.length > 0}
-      <Card title="Travel times">
+      <Card title="Travel times" description="Calculated {formatDate(data.travelTimesComputedAt)}">
         <DestinationList destinations={data.results} />
       </Card>
     {/if}

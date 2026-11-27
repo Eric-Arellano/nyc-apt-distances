@@ -1,5 +1,7 @@
 import type { Kysely } from 'kysely';
+import * as v from 'valibot';
 import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
+import { type ApartmentDetails, ApartmentDetailsSchema } from '#lib/apartmentDetails.ts';
 import { createTestDatabase } from '#tests/db.ts';
 import bike from '#tests/fixtures/google/bike.json';
 import drive from '#tests/fixtures/google/drive.json';
@@ -14,6 +16,8 @@ import {
   recomputeApartment,
   type SaveOutcome,
   saveApartment,
+  setApartmentStatus,
+  updateApartmentDetails,
 } from './apartments';
 import type Database from './db/schema/Database.ts';
 import type { ApartmentId } from './db/schema/public/Apartment.ts';
@@ -35,6 +39,15 @@ afterAll(async () => {
 beforeEach(async () => {
   await db.deleteFrom('apartment').execute();
 });
+
+const NO_DETAILS: ApartmentDetails = {
+  unit: null,
+  rent: null,
+  listingUrl: null,
+  nextStep: null,
+  agentContact: null,
+  notes: null,
+};
 
 const ROUTE_FIXTURES: Record<string, unknown> = {
   WALK: walk,
@@ -90,7 +103,8 @@ describe('getApartment', () => {
     expect(await getApartment(db, id)).toEqual({
       id,
       address: '1 Main St',
-      unit: null,
+      status: 'interested',
+      details: NO_DETAILS,
       travelTimesComputedAt: computedAt,
       results: toDestinationResults(entries, DESTINATIONS).results,
       missing: [],
@@ -122,7 +136,8 @@ describe('saveApartment', () => {
     expect(await getApartment(db, id)).toEqual({
       id,
       address: '1 Main St',
-      unit: null,
+      status: 'interested',
+      details: NO_DETAILS,
       travelTimesComputedAt: expect.any(Date),
       results: toDestinationResults(await freshEntries('1 Main St'), DESTINATIONS).results,
       missing: [],
@@ -195,7 +210,7 @@ describe('saveApartment', () => {
 
       const second = await save('1 Main St', { unit: '5A' });
 
-      expect((await getApartment(db, second))?.unit).toBe('5A');
+      expect((await getApartment(db, second))?.details.unit).toBe('5A');
     });
 
     test("copies the building's travel times rather than routing again", async () => {
@@ -275,6 +290,91 @@ describe('recomputeApartment', () => {
 
   test('refuses an unknown id with a 404', async () => {
     await expect(recomputeApartment(db, fakeMaps, 404 as ApartmentId)).rejects.toEqual({
+      status: 404,
+      body: { message: 'No saved apartment has that link.', status: 404 },
+    });
+  });
+});
+
+describe('updateApartmentDetails', () => {
+  test('stores the edited details, read back as they were saved', async () => {
+    const id = await save('1 Main St');
+    const edited = v.parse(ApartmentDetailsSchema, {
+      unit: ' Apt. 4B ',
+      rent: '$2,850',
+      listingUrl: 'example.com/listing/1',
+      nextStep: 'Send reference',
+      agentContact: '',
+      notes: 'Big kitchen\r\n— E',
+    });
+
+    await updateApartmentDetails(db, id, { edited, original: NO_DETAILS });
+
+    expect((await getApartment(db, id))?.details).toEqual({
+      unit: '4B',
+      rent: 2850,
+      listingUrl: 'https://example.com/listing/1',
+      nextStep: 'Send reference',
+      agentContact: null,
+      notes: 'Big kitchen\n— E',
+    } satisfies ApartmentDetails);
+  });
+
+  test('clears a field emptied in the form', async () => {
+    const id = await save('1 Main St');
+    const withNotes = { ...NO_DETAILS, notes: 'Noisy street' };
+    await updateApartmentDetails(db, id, { edited: withNotes, original: NO_DETAILS });
+
+    await updateApartmentDetails(db, id, { edited: NO_DETAILS, original: withNotes });
+
+    expect((await getApartment(db, id))?.details).toEqual(NO_DETAILS);
+  });
+
+  describe('when someone else saved since the form opened', () => {
+    test('keeps what they changed and this edit did not', async () => {
+      const id = await save('1 Main St');
+      await updateApartmentDetails(db, id, {
+        edited: { ...NO_DETAILS, notes: 'Their note' },
+        original: NO_DETAILS,
+      });
+
+      await updateApartmentDetails(db, id, {
+        edited: { ...NO_DETAILS, rent: 2850 },
+        original: NO_DETAILS,
+      });
+
+      expect((await getApartment(db, id))?.details).toEqual({
+        ...NO_DETAILS,
+        rent: 2850,
+        notes: 'Their note',
+      });
+    });
+  });
+
+  test('refuses an unknown id with a 404', async () => {
+    await expect(
+      updateApartmentDetails(db, 404 as ApartmentId, {
+        edited: { ...NO_DETAILS, rent: 2850 },
+        original: NO_DETAILS,
+      }),
+    ).rejects.toEqual({
+      status: 404,
+      body: { message: 'No saved apartment has that link.', status: 404 },
+    });
+  });
+});
+
+describe('setApartmentStatus', () => {
+  test('stores the status', async () => {
+    const id = await save('1 Main St');
+
+    await setApartmentStatus(db, id, 'visited');
+
+    expect((await getApartment(db, id))?.status).toBe('visited');
+  });
+
+  test('refuses an unknown id with a 404', async () => {
+    await expect(setApartmentStatus(db, 404 as ApartmentId, 'visited')).rejects.toEqual({
       status: 404,
       body: { message: 'No saved apartment has that link.', status: 404 },
     });
