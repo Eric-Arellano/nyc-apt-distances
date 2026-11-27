@@ -13,16 +13,21 @@ type Db = Kysely<Database>;
 export interface ApartmentSummary {
   id: ApartmentId;
   address: string;
+  unit: string | null;
   createdAt: Date;
 }
 
 export type SaveOutcome =
   | { kind: 'saved'; id: ApartmentId }
-  | { kind: 'duplicate'; existing: ApartmentSummary };
+  // Every apartment in the building that could be this one, oldest first.
+  | { kind: 'duplicate'; existing: ApartmentSummary[] };
+
+const SUMMARY_COLUMNS = ['id', 'address', 'unit', 'createdAt'] as const;
 
 export interface ApartmentView {
   id: ApartmentId;
   address: string;
+  unit: string | null;
   travelTimesComputedAt: Date;
   results: DestinationResult[];
   missing: string[]; // Titles of destinations the snapshot has no current entry for.
@@ -33,28 +38,52 @@ async function computeSnapshot(address: string, coordinates: Coordinates, maps: 
   return { travelTimes: JSON.stringify(entries), travelTimesComputedAt: new Date() };
 }
 
+// A missing unit could be any unit, since most lookups are typed without one.
+function couldBeSameUnit(a: string | null, b: string | null): boolean {
+  return a === null || b === null || a.toLowerCase() === b.toLowerCase();
+}
+
 export async function saveApartment(
   db: Db,
   maps: Maps,
-  address: string,
-  { allowDuplicate }: { allowDuplicate: boolean },
+  {
+    address,
+    unit,
+    allowDuplicate,
+  }: { address: string; unit: string | null; allowDuplicate: boolean },
 ): Promise<SaveOutcome> {
   const { placeId, coordinates } = await maps.geocode(address, ORIGIN_COUNTY);
 
+  // The unit isn't geocoded, so every unit in a building shares its `place_id`; the unit tells
+  // them apart.
+  const building = await db
+    .selectFrom('apartment')
+    .select([...SUMMARY_COLUMNS, 'travelTimes', 'travelTimesComputedAt'])
+    .where('placeId', '=', placeId)
+    .orderBy('id')
+    .execute();
+
   // Checked before routing, so finding a saved apartment again costs one geocode, not every route.
   if (!allowDuplicate) {
-    const existing = await db
-      .selectFrom('apartment')
-      .select(['id', 'address', 'createdAt'])
-      .where('placeId', '=', placeId)
-      .orderBy('id')
-      .executeTakeFirst();
-    if (existing) return { kind: 'duplicate', existing };
+    const existing = building
+      .filter((saved) => couldBeSameUnit(saved.unit, unit))
+      .map(({ travelTimes, travelTimesComputedAt, ...summary }) => summary);
+    if (existing.length > 0) return { kind: 'duplicate', existing };
   }
+
+  // Every unit in a building has the same travel times, so another unit copies the newest snapshot,
+  // stale or not, rather than paying for every route again. Its page offers to recalculate.
+  const neighbor = building.at(-1);
+  const snapshot = neighbor
+    ? {
+        travelTimes: JSON.stringify(neighbor.travelTimes),
+        travelTimesComputedAt: neighbor.travelTimesComputedAt,
+      }
+    : await computeSnapshot(address, coordinates, maps);
 
   const { id } = await db
     .insertInto('apartment')
-    .values({ address, placeId, ...(await computeSnapshot(address, coordinates, maps)) })
+    .values({ address, unit, placeId, ...snapshot })
     .returning('id')
     .executeTakeFirstOrThrow();
   return { kind: 'saved', id };
@@ -85,7 +114,7 @@ export async function deleteApartment(db: Db, id: ApartmentId): Promise<void> {
 export async function getApartment(db: Db, id: ApartmentId): Promise<ApartmentView | undefined> {
   const row = await db
     .selectFrom('apartment')
-    .select(['id', 'address', 'travelTimes', 'travelTimesComputedAt'])
+    .select(['id', 'address', 'unit', 'travelTimes', 'travelTimesComputedAt'])
     .where('id', '=', id)
     .executeTakeFirst();
   if (!row) return undefined;
@@ -96,9 +125,5 @@ export async function getApartment(db: Db, id: ApartmentId): Promise<ApartmentVi
 }
 
 export async function listApartments(db: Db): Promise<ApartmentSummary[]> {
-  return await db
-    .selectFrom('apartment')
-    .select(['id', 'address', 'createdAt'])
-    .orderBy('id', 'desc')
-    .execute();
+  return await db.selectFrom('apartment').select(SUMMARY_COLUMNS).orderBy('id', 'desc').execute();
 }

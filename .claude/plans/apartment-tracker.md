@@ -34,9 +34,11 @@ each person, destinations stored in the database, maps.
 - **Every lookup saves**, so opening a link never spends the Google key again. A mistaken save is
   deleted from its page. *Rejected: a lookup that saves only when asked, because an unsaved
   lookup's link re-bills Google on every open, and the saved one is what we share anyway.*
-- **Duplicates are matched on Google's `place_id`.** Saving a place already saved offers to open
-  it or save a separate one, for another unit in the same building, which the tracking fields'
-  label tells apart.
+- **Duplicates are matched on Google's `place_id` and the unit**, which the add form asks for
+  beside the address because buildings with several apartments we're considering are common. A
+  different unit saves without asking; a missing unit on either side could be any unit, so it
+  offers the saved ones to open, or to save a separate apartment. Another unit copies the
+  building's travel times instead of routing again.
 - **Neon Postgres, through Vercel's Neon integration**, reached only from the server, with no RLS.
   Production uses Neon's main branch; each PR preview gets its own branch, which starts as a copy
   of production's data and keeps its writes to itself, as #117's preview showed. Nothing run locally
@@ -61,7 +63,7 @@ each person, destinations stored in the database, maps.
   about it. *Rejected: a delete in the list's rows, because a mistake is noticed on the page saving
   lands on, and an apartment we turn down is better marked passed than deleted with its history.*
 - **Tracking fields are free-form, except status.** Status is a fixed list, so it can be sorted
-  and filtered. Everything else is text: label, rent, listing URL, next step, agent contact, and
+  and filtered. Everything else is text: rent, listing URL, next step, agent contact, and
   one shared notes textarea (we type our names inline).
 - **Comparison reuses `goalStatus`** from `src/lib/components/travelTimes/format.ts`. Once views
   other than the destination card need it, it moves somewhere neutral.
@@ -84,11 +86,10 @@ pipeline in use.
 
 ## PR 1: Tracking fields
 
-- **Fields:** label (such as "Unit 4B"), rent, listing URL, status, next step, agent contact, and
-  notes.
+- **Fields:** rent, listing URL, status, next step, agent contact, and notes.
 - **Display:** the listing URL, phone numbers and emails become links you can tap. The page must
   work on a phone, since it'll be used while touring. The header holds the address with Delete's
-  trash icon beside it; label and status read naturally under the address, and the rest fits a
+  trash icon beside it; unit and status read naturally under the address, and the rest fits a
   card above Travel times.
 - **Open:** the status values. Draft: considering, contacted, toured, applied, signed, passed.
 - **Open:** an explicit Save button or autosave.

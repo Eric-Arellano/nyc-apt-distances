@@ -1,14 +1,14 @@
 <script lang="ts">
 import { addApartment } from '#lib/apartments.remote.ts';
 import AddressInput from '#lib/components/address/AddressInput.svelte';
+import DuplicateWarning from '#lib/components/apartment/DuplicateWarning.svelte';
 import Card from '#lib/components/Card.svelte';
 import ErrorMessage from '#lib/components/ErrorMessage.svelte';
 import Loading from '#lib/components/Loading.svelte';
-import * as Alert from '#lib/components/ui/alert/index.ts';
-import { Button } from '#lib/components/ui/button/index.ts';
 import { formatDate } from '#lib/formatDate.ts';
 import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
 import { submitOrSignIn } from '#lib/signInOnExpiredSession.ts';
+import { parseUnit, withUnit } from '#lib/unit.ts';
 import { resolve } from '$app/paths';
 import type { PageProps } from './$types';
 
@@ -16,19 +16,20 @@ const { data }: PageProps = $props();
 
 const pending = $derived(addApartment.pending > 0);
 const firstFormError = $derived(addApartment.fields.allIssues()?.[0]);
-// Answers only the address it was sent for, so editing the address drops it, and "Save as a
+// Answers only the address and unit it was sent for, so editing either drops it, and "Save as a
 // separate apartment" can't resubmit a different one with the check skipped.
 const duplicate = $derived.by(() => {
-  const result = addApartment.result;
-  return result?.address === addApartment.fields.address.value()?.trim()
-    ? result?.duplicate
-    : undefined;
+  const { result, fields } = addApartment;
+  const isSameSubmission =
+    result?.address === fields.address.value()?.trim() &&
+    result?.unit === parseUnit(fields.unit.value() ?? '');
+  return isSameSubmission ? result : undefined;
 });
 
 // A save redirects to its page and leaves no result. The form's state outlives the page, so the
 // saved address would otherwise be back in the input on returning here.
 const enhanceAdd = addApartment.enhance(async (form) => {
-  if ((await submitOrSignIn(form)) && !form.result) form.fields.address.set('');
+  if ((await submitOrSignIn(form)) && !form.result) form.fields.set({ address: '', unit: '' });
 });
 
 function apartmentPath(id: ApartmentId) {
@@ -46,26 +47,19 @@ function apartmentPath(id: ApartmentId) {
 
     <Card title="Add an apartment">
       <form {...enhanceAdd} class="flex flex-col gap-4">
-        <AddressInput field={addApartment.fields.address} busy={pending} />
+        <AddressInput
+          field={addApartment.fields.address}
+          unit={addApartment.fields.unit}
+          busy={pending}
+        />
         {#if pending}
           <Loading message="Calculating travel times…" />
         {:else if duplicate}
-          <Alert.Root role="status" class="border-yellow-600 bg-yellow-950/50 text-base">
-            <Alert.Title>Already saved</Alert.Title>
-            <Alert.Description class="text-base">
-              <p>{duplicate.address}, added {formatDate(duplicate.createdAt)}.</p>
-              <div class="mt-3 flex flex-col gap-2 sm:flex-row">
-                <!-- Alert underlines its links, which a button shouldn't be. -->
-                <Button href={apartmentPath(duplicate.id)} class="no-underline!">
-                  Open saved apartment
-                </Button>
-                <Button variant="outline" {...addApartment.fields.duplicate.as('submit', 'allow')}>
-                  Save as a separate apartment
-                </Button>
-              </div>
-              <p class="mt-2 text-sm">Such as another unit in the same building.</p>
-            </Alert.Description>
-          </Alert.Root>
+          <DuplicateWarning
+            existing={duplicate.duplicate}
+            unit={duplicate.unit}
+            allowDuplicate={addApartment.fields.duplicate}
+          />
         {:else if firstFormError}
           <ErrorMessage message={firstFormError.message} />
         {:else}
@@ -85,7 +79,7 @@ function apartmentPath(id: ApartmentId) {
                 href={apartmentPath(apartment.id)}
                 class="flex items-baseline justify-between gap-4 py-3 hover:text-primary"
               >
-                <span>{apartment.address}</span>
+                <span>{withUnit(apartment.address, apartment.unit)}</span>
                 <span class="shrink-0 text-sm text-muted-foreground">
                   {formatDate(apartment.createdAt)}
                 </span>

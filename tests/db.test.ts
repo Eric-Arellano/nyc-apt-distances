@@ -25,6 +25,7 @@ describe('createTestDatabase', () => {
       travelTimesComputedAt: computedAt,
       createdAt: expect.any(Date),
       placeId: 'ChIJv6mD9DeUwokRp0fbCIoDwuI',
+      unit: null,
     });
     await db.destroy();
   });

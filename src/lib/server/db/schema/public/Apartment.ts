@@ -19,6 +19,9 @@ export default interface ApartmentTable {
 
   /** Google's id for the geocoded address. Saving a place that is already saved asks first. */
   placeId: ColumnType<string, string, string>;
+
+  /** Such as "4B", without a word like "Unit" or "Apt", which the page adds. */
+  unit: ColumnType<string | null, string | null, string | null>;
 }
 
 export type Apartment = Selectable<ApartmentTable>;

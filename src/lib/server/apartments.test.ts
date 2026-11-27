@@ -53,8 +53,11 @@ function spyMaps() {
   return { geocode: vi.fn(fakeMaps.geocode), computeRoute: vi.fn(fakeMaps.computeRoute) };
 }
 
-async function save(address: string, allowDuplicate = false): Promise<ApartmentId> {
-  const outcome = await saveApartment(db, fakeMaps, address, { allowDuplicate });
+async function save(
+  address: string,
+  { unit = null, allowDuplicate = false }: { unit?: string | null; allowDuplicate?: boolean } = {},
+): Promise<ApartmentId> {
+  const outcome = await saveApartment(db, fakeMaps, { address, unit, allowDuplicate });
   if (outcome.kind !== 'saved') throw new Error(`Expected a save, got ${outcome.kind}`);
   return outcome.id;
 }
@@ -87,6 +90,7 @@ describe('getApartment', () => {
     expect(await getApartment(db, id)).toEqual({
       id,
       address: '1 Main St',
+      unit: null,
       travelTimesComputedAt: computedAt,
       results: toDestinationResults(entries, DESTINATIONS).results,
       missing: [],
@@ -118,6 +122,7 @@ describe('saveApartment', () => {
     expect(await getApartment(db, id)).toEqual({
       id,
       address: '1 Main St',
+      unit: null,
       travelTimesComputedAt: expect.any(Date),
       results: toDestinationResults(await freshEntries('1 Main St'), DESTINATIONS).results,
       missing: [],
@@ -131,7 +136,11 @@ describe('saveApartment', () => {
       const fetchMock = vi.fn(fakeGoogle);
       vi.stubGlobal('fetch', fetchMock);
 
-      const outcome = await saveApartment(db, GOOGLE, '1 Main St', { allowDuplicate: false });
+      const outcome = await saveApartment(db, GOOGLE, {
+        address: '1 Main St',
+        unit: null,
+        allowDuplicate: false,
+      });
 
       expect(outcome).toEqual({ kind: 'saved', id: expect.any(Number) });
       expect(fetchMock).toHaveBeenCalled();
@@ -140,12 +149,16 @@ describe('saveApartment', () => {
     test('refuses an address Google cannot find, saving nothing', async () => {
       vi.stubGlobal('fetch', async () => Response.json(geocodeZeroResults));
 
-      await expect(saveApartment(db, GOOGLE, 'nowhere', { allowDuplicate: false })).rejects.toEqual(
-        {
-          status: 400,
-          body: { message: 'Google could not find that address.', status: 400 },
-        },
-      );
+      const saving = saveApartment(db, GOOGLE, {
+        address: 'nowhere',
+        unit: null,
+        allowDuplicate: false,
+      });
+
+      await expect(saving).rejects.toEqual({
+        status: 400,
+        body: { message: 'Google could not find that address.', status: 400 },
+      });
       expect(await listApartments(db)).toEqual([]);
     });
   });
@@ -155,11 +168,15 @@ describe('saveApartment', () => {
       const id = await save('1 Main St');
       const maps = spyMaps();
 
-      const outcome = await saveApartment(db, maps, '1 main st ', { allowDuplicate: false });
+      const outcome = await saveApartment(db, maps, {
+        address: '1 main st ',
+        unit: null,
+        allowDuplicate: false,
+      });
 
       expect(outcome).toEqual({
         kind: 'duplicate',
-        existing: { id, address: '1 Main St', createdAt: expect.any(Date) },
+        existing: [{ id, address: '1 Main St', unit: null, createdAt: expect.any(Date) }],
       } satisfies SaveOutcome);
       expect(maps.geocode).toHaveBeenCalledExactlyOnceWith('1 main st ', ORIGIN_COUNTY);
       expect(maps.computeRoute).not.toHaveBeenCalled();
@@ -168,9 +185,75 @@ describe('saveApartment', () => {
     test('saves a second apartment when asked to', async () => {
       const first = await save('1 Main St');
 
-      const second = await save('1 Main St', true);
+      const second = await save('1 Main St', { allowDuplicate: true });
 
       expect((await listApartments(db)).map(({ id }) => id)).toEqual([second, first]);
+    });
+
+    test('saves another unit without asking', async () => {
+      await save('1 Main St', { unit: '4B' });
+
+      const second = await save('1 Main St', { unit: '5A' });
+
+      expect((await getApartment(db, second))?.unit).toBe('5A');
+    });
+
+    test("copies the building's travel times rather than routing again", async () => {
+      const first = await save('1 Main St', { unit: '4B' });
+      const maps = spyMaps();
+
+      const outcome = await saveApartment(db, maps, {
+        address: '1 Main St',
+        unit: '5A',
+        allowDuplicate: false,
+      });
+
+      if (outcome.kind !== 'saved') throw new Error(`Expected a save, got ${outcome.kind}`);
+      const [copy, original] = await Promise.all([
+        getApartment(db, outcome.id),
+        getApartment(db, first),
+      ]);
+      expect(copy?.travelTimesComputedAt).toEqual(original?.travelTimesComputedAt);
+      expect(copy?.results).toEqual(original?.results);
+      expect(maps.computeRoute).not.toHaveBeenCalled();
+    });
+
+    test.each([
+      ['the same unit', '4B', '4B'],
+      ['the same unit in another case', '4B', '4b'],
+      ['no unit for the new one', '4B', null],
+      ['no unit for the saved one', null, '4B'],
+      ['no unit for either', null, null],
+    ])('asks about %s', async (_, savedUnit, unit) => {
+      await save('1 Main St', { unit: savedUnit });
+
+      const outcome = await saveApartment(db, fakeMaps, {
+        address: '1 Main St',
+        unit,
+        allowDuplicate: false,
+      });
+
+      expect(outcome.kind).toBe('duplicate');
+    });
+
+    test('lists only the units that could be this one, oldest first', async () => {
+      const unitless = await save('1 Main St');
+      await save('1 Main St', { unit: '5A', allowDuplicate: true });
+      const same = await save('1 Main St', { unit: '4B', allowDuplicate: true });
+
+      const outcome = await saveApartment(db, fakeMaps, {
+        address: '1 Main St',
+        unit: '4B',
+        allowDuplicate: false,
+      });
+
+      expect(outcome).toEqual({
+        kind: 'duplicate',
+        existing: [
+          { id: unitless, address: '1 Main St', unit: null, createdAt: expect.any(Date) },
+          { id: same, address: '1 Main St', unit: '4B', createdAt: expect.any(Date) },
+        ],
+      } satisfies SaveOutcome);
     });
   });
 });
@@ -218,12 +301,12 @@ describe('deleteApartment', () => {
 
 describe('listApartments', () => {
   test('lists the newest first', async () => {
-    const first = await save('1 Main St');
+    const first = await save('1 Main St', { unit: '4B' });
     const second = await save('2 Main St');
 
     expect(await listApartments(db)).toEqual([
-      { id: second, address: '2 Main St', createdAt: expect.any(Date) },
-      { id: first, address: '1 Main St', createdAt: expect.any(Date) },
+      { id: second, address: '2 Main St', unit: null, createdAt: expect.any(Date) },
+      { id: first, address: '1 Main St', unit: '4B', createdAt: expect.any(Date) },
     ]);
   });
 

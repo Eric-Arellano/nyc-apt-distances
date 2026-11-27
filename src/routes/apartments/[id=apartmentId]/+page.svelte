@@ -9,6 +9,7 @@ import * as Alert from '#lib/components/ui/alert/index.ts';
 import { Button } from '#lib/components/ui/button/index.ts';
 import { formatDate } from '#lib/formatDate.ts';
 import { signInOnExpiredSession } from '#lib/signInOnExpiredSession.ts';
+import { formatUnit, withUnit } from '#lib/unit.ts';
 import { resolve } from '$app/paths';
 import type { PageProps } from './$types';
 
@@ -21,7 +22,7 @@ const firstFormError = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
 </script>
 
 <svelte:head>
-  <title>{data.address} · White Plains apartments</title>
+  <title>{withUnit(data.address, data.unit)} · White Plains apartments</title>
 </svelte:head>
 
 <div class="min-h-screen py-8">
@@ -37,6 +38,9 @@ const firstFormError = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
       <h1 class="text-3xl font-bold">{data.address}</h1>
       <DeleteApartment id={data.id} address={data.address} />
     </div>
+    {#if data.unit}
+      <p class="mt-2 text-lg">{formatUnit(data.unit)}</p>
+    {/if}
     <p class="mb-6 text-muted-foreground">
       Travel times calculated {formatDate(data.travelTimesComputedAt)}
     </p>
