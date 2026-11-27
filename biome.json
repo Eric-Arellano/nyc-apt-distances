@@ -70,7 +70,12 @@
     },
     {
       "includes": ["src/lib/components/ui/**", "src/lib/utils/shadcn.ts"],
-      "linter": { "rules": { "suspicious": { "noExplicitAny": "off" } } }
+      "linter": {
+        "rules": {
+          "a11y": { "useSemanticElements": "off" },
+          "suspicious": { "noExplicitAny": "off", "noShadowRestrictedNames": "off" }
+        }
+      }
     }
   ]
 }

@@ -6,8 +6,10 @@
 import type { Migration } from 'kysely/migration';
 import * as createApartment from './001-create-apartment.ts';
 import * as addApartmentPlaceId from './002-add-apartment-place-id.ts';
+import * as addApartmentUnit from './003-add-apartment-unit.ts';
 
 export const MIGRATIONS: Record<string, Migration> = {
   '001-create-apartment': createApartment,
   '002-add-apartment-place-id': addApartmentPlaceId,
+  '003-add-apartment-unit': addApartmentUnit,
 };
