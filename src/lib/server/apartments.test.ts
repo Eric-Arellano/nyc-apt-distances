@@ -8,6 +8,7 @@ import geocodeZeroResults from '#tests/fixtures/google/geocode-zero-results.json
 import transit from '#tests/fixtures/google/transit-transfer.json';
 import walk from '#tests/fixtures/google/walk.json';
 import {
+  deleteApartment,
   getApartment,
   listApartments,
   recomputeApartment,
@@ -194,6 +195,24 @@ describe('recomputeApartment', () => {
       status: 404,
       body: { message: 'No saved apartment has that link.', status: 404 },
     });
+  });
+});
+
+describe('deleteApartment', () => {
+  test('deletes only that apartment', async () => {
+    const kept = await save('1 Main St');
+    const deleted = await save('2 Main St');
+
+    await deleteApartment(db, deleted);
+
+    expect((await listApartments(db)).map(({ id }) => id)).toEqual([kept]);
+  });
+
+  test('succeeds for an apartment already deleted', async () => {
+    const id = await save('1 Main St');
+    await deleteApartment(db, id);
+
+    await expect(deleteApartment(db, id)).resolves.toBeUndefined();
   });
 });
 

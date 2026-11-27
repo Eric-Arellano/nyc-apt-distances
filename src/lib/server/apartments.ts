@@ -77,6 +77,11 @@ export async function recomputeApartment(db: Db, maps: Maps, id: ApartmentId): P
     .execute();
 }
 
+// Deleting an apartment already gone succeeds, since the other person may have just deleted it.
+export async function deleteApartment(db: Db, id: ApartmentId): Promise<void> {
+  await db.deleteFrom('apartment').where('id', '=', id).execute();
+}
+
 export async function getApartment(db: Db, id: ApartmentId): Promise<ApartmentView | undefined> {
   const row = await db
     .selectFrom('apartment')

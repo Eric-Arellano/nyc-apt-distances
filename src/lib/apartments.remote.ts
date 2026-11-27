@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { isValidAddress } from '#lib/components/address/addressUtils.ts';
-import { recomputeApartment, saveApartment } from '#lib/server/apartments.ts';
+import { deleteApartment, recomputeApartment, saveApartment } from '#lib/server/apartments.ts';
 import { getDatabase } from '#lib/server/database.ts';
 import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
 import { getMaps } from '#lib/server/getMaps.ts';
@@ -31,17 +31,21 @@ export const addApartment = form(NewApartment, async ({ address, duplicate }) =>
   redirect(303, resolve('/apartments/[id=apartmentId]', { id: outcome.id }));
 });
 
-export const recomputeTravelTimes = form(
-  v.object({
-    // A hidden field, since a `form` call's `params` come from a header the client sets anyway.
-    id: v.pipe(
-      v.string(),
-      v.transform(parseApartmentId),
-      v.custom<ApartmentId>((id) => id !== undefined),
-    ),
-  }),
-  async ({ id }) => {
-    const db = await getDatabase();
-    await showBadRequestInForm(recomputeApartment(db, getMaps(), id));
-  },
-);
+const SavedApartment = v.object({
+  // A hidden field, since a `form` call's `params` come from a header the client sets anyway.
+  id: v.pipe(
+    v.string(),
+    v.transform(parseApartmentId),
+    v.custom<ApartmentId>((id) => id !== undefined),
+  ),
+});
+
+export const recomputeTravelTimes = form(SavedApartment, async ({ id }) => {
+  const db = await getDatabase();
+  await showBadRequestInForm(recomputeApartment(db, getMaps(), id));
+});
+
+export const removeApartment = form(SavedApartment, async ({ id }) => {
+  await deleteApartment(await getDatabase(), id);
+  redirect(303, resolve('/'));
+});

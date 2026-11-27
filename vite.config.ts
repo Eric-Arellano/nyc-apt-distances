@@ -16,7 +16,9 @@ export default defineConfig({
       csp: {
         directives: {
           'script-src': ['self'],
-          'style-src': ['self'],
+          // bits-ui writes `style` attributes during SSR and through `setAttribute`, and neither
+          // can carry a nonce. `script-src` is what protects the session cookie.
+          'style-src': ['self', 'unsafe-inline'],
           'img-src': ['self'],
           'connect-src': ['self'],
           'frame-ancestors': ['none'],
