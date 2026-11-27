@@ -15,8 +15,8 @@ const LIST_FORMAT = new Intl.ListFormat('en-US');
 
 const { data }: PageProps = $props();
 
-const pending = $derived(recomputeTravelTimes.pending > 0);
-const issue = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
+const isRecalculating = $derived(recomputeTravelTimes.pending > 0);
+const firstFormError = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
 </script>
 
 <svelte:head>
@@ -48,12 +48,12 @@ const issue = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
           </p>
           <form {...recomputeTravelTimes.enhance(signInOnExpiredSession)} class="mt-3">
             <input {...recomputeTravelTimes.fields.id.as('hidden', String(data.id))}>
-            <Button type="submit" disabled={pending}>
-              {pending ? 'Recalculating…' : 'Recalculate all travel times'}
+            <Button type="submit" disabled={isRecalculating}>
+              {isRecalculating ? 'Recalculating…' : 'Recalculate all travel times'}
             </Button>
           </form>
-          {#if issue && !pending}
-            <ErrorMessage message={issue.message} />
+          {#if firstFormError && !isRecalculating}
+            <ErrorMessage message={firstFormError.message} />
           {/if}
         </Alert.Description>
       </Alert.Root>

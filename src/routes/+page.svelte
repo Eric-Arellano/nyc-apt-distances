@@ -15,7 +15,7 @@ import type { PageProps } from './$types';
 const { data }: PageProps = $props();
 
 const pending = $derived(addApartment.pending > 0);
-const issue = $derived(addApartment.fields.allIssues()?.[0]);
+const firstFormError = $derived(addApartment.fields.allIssues()?.[0]);
 // Answers only the address it was sent for, so editing the address drops it, and "Save as a
 // separate apartment" can't resubmit a different one with the check skipped.
 const duplicate = $derived.by(() => {
@@ -60,8 +60,8 @@ function apartmentPath(id: ApartmentId) {
               <p class="mt-2 text-sm">Such as another unit in the same building.</p>
             </Alert.Description>
           </Alert.Root>
-        {:else if issue}
-          <ErrorMessage message={issue.message} />
+        {:else if firstFormError}
+          <ErrorMessage message={firstFormError.message} />
         {:else}
           <p class="text-muted-foreground">
             Saves it with its travel times, so its link opens without recalculating.

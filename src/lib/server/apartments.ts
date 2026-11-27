@@ -60,19 +60,19 @@ export async function saveApartment(
   return { kind: 'saved', id };
 }
 
-// Replaces the whole snapshot, so `travelTimesComputedAt` stays true of every entry.
+/** Replaces the whole snapshot, so `travelTimesComputedAt` stays true of every entry. */
 export async function recomputeApartment(db: Db, maps: Maps, id: ApartmentId): Promise<void> {
-  const row = await db
+  const saved = await db
     .selectFrom('apartment')
     .select('address')
     .where('id', '=', id)
     .executeTakeFirst();
-  if (!row) error(404, 'No saved apartment has that link.');
+  if (!saved) error(404, 'No saved apartment has that link.');
 
-  const { placeId, coordinates } = await maps.geocode(row.address, ORIGIN_COUNTY);
+  const { placeId, coordinates } = await maps.geocode(saved.address, ORIGIN_COUNTY);
   await db
     .updateTable('apartment')
-    .set({ placeId, ...(await computeSnapshot(row.address, coordinates, maps)) })
+    .set({ placeId, ...(await computeSnapshot(saved.address, coordinates, maps)) })
     .where('id', '=', id)
     .execute();
 }
