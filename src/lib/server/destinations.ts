@@ -108,3 +108,33 @@ export const DESTINATIONS: readonly Destination[] = [
     ],
   },
 ];
+
+/**
+ * The comparison table's time columns, grouped under each destination's short name, in display
+ * order. A trip is named by its position in the destination's `trips`, since mode alone cannot
+ * tell Bet Am Shalom's two buses apart.
+ */
+export interface ComparisonGroup {
+  destinationId: string;
+  shortTitle: string; // The full title is the header's tooltip.
+  columns: readonly { tripIndex: number; label?: string }[];
+}
+
+export const COMPARISON_GROUPS: readonly ComparisonGroup[] = [
+  {
+    destinationId: 'metro-north',
+    shortTitle: 'Station',
+    columns: [{ tripIndex: 0 }, { tripIndex: 1 }],
+  },
+  { destinationId: 'hebrew-institute', shortTitle: 'HI', columns: [{ tripIndex: 0 }] },
+  { destinationId: 'park', shortTitle: 'Park', columns: [{ tripIndex: 0 }] },
+  { destinationId: 'grocery', shortTitle: 'Grocery', columns: [{ tripIndex: 0 }] },
+  {
+    destinationId: 'bet-am-shalom',
+    shortTitle: 'BAS',
+    // No drive: driving there is always reasonable, so it never tells apartments apart.
+    columns: [{ tripIndex: 0 }, { tripIndex: 1, label: 'Fri' }, { tripIndex: 2, label: 'Sat' }],
+  },
+  { destinationId: 'cbst', shortTitle: 'CBST', columns: [{ tripIndex: 0 }] },
+  { destinationId: 'florham-park', shortTitle: 'Florham', columns: [{ tripIndex: 0 }] },
+];
