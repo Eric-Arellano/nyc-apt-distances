@@ -60,9 +60,10 @@ const DESTINATIONS: DestinationResult[] = [
 const EXPECTED_CARDS = [
   {
     title: 'Metro-North station',
+    closest: 'Closest: White Plains',
     trips: [
       {
-        text: '🚶 19 minutes to White Plains (0.9 miles)',
+        text: '🚶 19 minutes (0.9 miles)',
         goal: 'Should be within 25 minutes; ideally within 15 minutes',
         status: 'partial',
       },
@@ -75,6 +76,7 @@ const EXPECTED_CARDS = [
   },
   {
     title: 'Bet Am Shalom',
+    closest: undefined,
     trips: [
       {
         text: '🚶 52 minutes (2.6 miles)',
@@ -96,6 +98,7 @@ const EXPECTED_CARDS = [
   },
   {
     title: 'Congregation Beit Simchat Torah',
+    closest: undefined,
     trips: [{ text: '🚆 80 minutes by walking', goal: undefined, status: undefined }],
   },
 ];
@@ -104,6 +107,7 @@ function renderedCards(destinations: DestinationResult[]) {
   const { container } = render(DestinationList, { destinations });
   return [...container.querySelectorAll<HTMLElement>(':scope > ul > li')].map((card) => ({
     title: card.querySelector('h3')?.textContent,
+    closest: card.querySelector(':scope > p')?.textContent,
     trips: within(card)
       .getAllByRole('listitem')
       .map((trip) => {

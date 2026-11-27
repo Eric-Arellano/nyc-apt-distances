@@ -32,12 +32,6 @@ describe('formatRoute', () => {
     expect(formatRoute({ mode: 'walk', timeMinutes: 4, distanceMiles: 2.1 })).toEqual(
       '🚶 4 minutes (2.1 miles)',
     );
-    expect(
-      formatRoute(
-        { mode: 'walk', timeMinutes: 10, distanceMiles: 0.5 },
-        { place: { name: 'Saxon Woods Park' } },
-      ),
-    ).toEqual('🚶 10 minutes to Saxon Woods Park (0.5 miles)');
   });
 
   describe('transit', () => {
@@ -78,15 +72,15 @@ describe('formatRoute', () => {
         timeMinutes: 14,
         rides: [{ line: '60', vehicle: 'bus' }],
       } as const;
-      expect(formatRoute(route, { label: 'Friday 6:15 pm' })).toEqual(
+      expect(formatRoute(route, 'Friday 6:15 pm')).toEqual(
         '🚌 Friday 6:15 pm: 14 minutes on the 60 bus',
       );
     });
 
     test('labels a missing route too', () => {
-      expect(
-        formatRoute({ mode: 'unavailable', tripMode: 'transit' }, { label: 'Saturday 9:30 am' }),
-      ).toEqual('🚆 Saturday 9:30 am: No transit route');
+      expect(formatRoute({ mode: 'unavailable', tripMode: 'transit' }, 'Saturday 9:30 am')).toEqual(
+        '🚆 Saturday 9:30 am: No transit route',
+      );
     });
   });
 

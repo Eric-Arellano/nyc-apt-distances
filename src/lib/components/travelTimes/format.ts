@@ -1,4 +1,4 @@
-import type { Goal, Place, Ride, Route } from '#lib/types.ts';
+import type { Goal, Ride, Route } from '#lib/types.ts';
 
 export function goalText({ strictness, idealMinutes, maxMinutes }: Goal): string {
   const limit = `${strictness === 'must' ? 'Must' : 'Should'} be within ${maxMinutes} minutes`;
@@ -23,7 +23,7 @@ const NO_ROUTE: Record<Extract<Route, { mode: 'unavailable' }>['tripMode'], [str
   drive: ['🚗', 'No driving route'],
 };
 
-function describeRoute(route: Route, place: Place | null | undefined): [string, string] {
+function describeRoute(route: Route): [string, string] {
   switch (route.mode) {
     case 'transit':
       return describeTransit(route.timeMinutes, route.rides);
@@ -32,19 +32,13 @@ function describeRoute(route: Route, place: Place | null | undefined): [string, 
     case 'drive':
       return ['🚗', `${route.timeMinutes} minutes (${route.distanceMiles} miles)`];
     case 'walk':
-      return [
-        '🚶',
-        `${route.timeMinutes} minutes${place ? ` to ${place.name}` : ''} (${route.distanceMiles} miles)`,
-      ];
+      return ['🚶', `${route.timeMinutes} minutes (${route.distanceMiles} miles)`];
     case 'unavailable':
       return NO_ROUTE[route.tripMode];
   }
 }
 
-export function formatRoute(
-  route: Route,
-  { place, label }: { place?: Place | null; label?: string | undefined } = {},
-): string {
-  const [icon, text] = describeRoute(route, place);
+export function formatRoute(route: Route, label?: string): string {
+  const [icon, text] = describeRoute(route);
   return label ? `${icon} ${label}: ${text}` : `${icon} ${text}`;
 }

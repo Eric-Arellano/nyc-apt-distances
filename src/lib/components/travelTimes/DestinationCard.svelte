@@ -13,9 +13,12 @@ const { title, closest, trips }: DestinationResult = $props();
 </script>
 
 <li class="rounded-lg border p-4">
-  <h3 class="mb-3 text-lg font-semibold">{title}</h3>
+  <h3 class="text-lg font-semibold">{title}</h3>
+  {#if closest}
+    <p class="text-base text-muted-foreground">Closest: {closest.name}</p>
+  {/if}
 
-  <ul class="space-y-2 text-base">
+  <ul class="mt-3 space-y-2 text-base">
     {#each trips as { route, goal, label }, index (index)}
       {@const status = goal && goalStatus(route, goal)}
       <li
@@ -24,7 +27,7 @@ const { title, closest, trips }: DestinationResult = $props();
           ? STATUS_CLASSES[status]
           : 'border-transparent bg-card shadow-sm'}"
       >
-        {formatRoute(route, { place: closest, label })}
+        {formatRoute(route, label)}
         {#if goal}
           <p class="text-sm text-muted-foreground italic">{goalText(goal)}</p>
         {/if}
