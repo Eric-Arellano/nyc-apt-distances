@@ -46,8 +46,8 @@ function spyMaps() {
   return { geocode: vi.fn(fakeMaps.geocode), computeRoute: vi.fn(fakeMaps.computeRoute) };
 }
 
-async function save(address: string): Promise<ApartmentId> {
-  const outcome = await saveApartment(db, fakeMaps, address);
+async function save(address: string, allowDuplicate = false): Promise<ApartmentId> {
+  const outcome = await saveApartment(db, fakeMaps, address, { allowDuplicate });
   if (outcome.kind !== 'saved') throw new Error(`Expected a save, got ${outcome.kind}`);
   return outcome.id;
 }
@@ -124,7 +124,7 @@ describe('saveApartment', () => {
       const fetchMock = vi.fn(fakeGoogle);
       vi.stubGlobal('fetch', fetchMock);
 
-      const outcome = await saveApartment(db, GOOGLE, '1 Main St');
+      const outcome = await saveApartment(db, GOOGLE, '1 Main St', { allowDuplicate: false });
 
       expect(outcome).toEqual({ kind: 'saved', id: expect.any(Number) });
       expect(fetchMock).toHaveBeenCalled();
@@ -133,10 +133,12 @@ describe('saveApartment', () => {
     test('refuses an address Google cannot find, saving nothing', async () => {
       vi.stubGlobal('fetch', async () => Response.json(geocodeZeroResults));
 
-      await expect(saveApartment(db, GOOGLE, 'nowhere')).rejects.toEqual({
-        status: 400,
-        body: { message: 'Google could not find that address.', status: 400 },
-      });
+      await expect(saveApartment(db, GOOGLE, 'nowhere', { allowDuplicate: false })).rejects.toEqual(
+        {
+          status: 400,
+          body: { message: 'Google could not find that address.', status: 400 },
+        },
+      );
       expect(await listApartments(db)).toEqual([]);
     });
   });
@@ -146,7 +148,7 @@ describe('saveApartment', () => {
       const id = await save('1 Main St');
       const maps = spyMaps();
 
-      const outcome = await saveApartment(db, maps, '1 main st ');
+      const outcome = await saveApartment(db, maps, '1 main st ', { allowDuplicate: false });
 
       expect(outcome).toEqual({
         kind: 'duplicate',
@@ -154,6 +156,14 @@ describe('saveApartment', () => {
       } satisfies SaveOutcome);
       expect(maps.geocode).toHaveBeenCalledExactlyOnceWith('1 main st ', ORIGIN_COUNTY);
       expect(maps.computeRoute).not.toHaveBeenCalled();
+    });
+
+    test('saves a second apartment when asked to', async () => {
+      const first = await save('1 Main St');
+
+      const second = await save('1 Main St', true);
+
+      expect((await listApartments(db)).map(({ id }) => id)).toEqual([second, first]);
     });
   });
 });

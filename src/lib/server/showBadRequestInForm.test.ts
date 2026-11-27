@@ -1,6 +1,6 @@
 import { error, isValidationError } from '@sveltejs/kit';
 import { describe, expect, test } from 'vitest';
-import { showFailureInForm } from './showFailureInForm';
+import { showBadRequestInForm } from './showBadRequestInForm';
 
 async function failingWith(status: number, message: string): Promise<never> {
   error(status, message);
@@ -9,20 +9,20 @@ async function failingWith(status: number, message: string): Promise<never> {
 /** The issues `work` failed with, or what else it threw. */
 async function issuesOf(work: Promise<unknown>) {
   try {
-    await showFailureInForm(work);
+    await showBadRequestInForm(work);
   } catch (thrown) {
     return isValidationError(thrown) ? thrown.issues : thrown;
   }
   throw new Error('Expected the work to fail');
 }
 
-describe('showFailureInForm', () => {
+describe('showBadRequestInForm', () => {
   test("returns the work's value", async () => {
-    expect(await showFailureInForm(Promise.resolve(1))).toBe(1);
+    expect(await showBadRequestInForm(Promise.resolve(1))).toBe(1);
   });
 
-  describe('when Google rejects the address', () => {
-    test("shows geocoding's message", async () => {
+  describe('when the work throws a 400', () => {
+    test('shows its message as an issue', async () => {
       expect(await issuesOf(failingWith(400, 'Google could not find that address.'))).toEqual([
         { message: 'Google could not find that address.' },
       ]);
@@ -30,19 +30,17 @@ describe('showFailureInForm', () => {
   });
 
   describe('when the work fails otherwise', () => {
-    test('asks to try again', async () => {
-      expect(await issuesOf(Promise.reject(new Error('Google answered 403')))).toEqual([
-        { message: 'Couldn’t compute travel times. Try again in a minute.' },
-      ]);
-    });
-  });
-
-  describe('when the work throws another HTTP error', () => {
-    test('rethrows it, for the error page', async () => {
+    test('rethrows another HTTP error, for the error page', async () => {
       expect(await issuesOf(failingWith(404, 'No saved apartment has that link.'))).toEqual({
         status: 404,
         body: { message: 'No saved apartment has that link.', status: 404 },
       });
+    });
+
+    test('rethrows an unexpected error, for the error page', async () => {
+      const failure = new Error('Geocoding returned 403');
+
+      expect(await issuesOf(Promise.reject(failure))).toBe(failure);
     });
   });
 });

@@ -32,17 +32,24 @@ async function computeSnapshot(address: string, coordinates: Coordinates, maps: 
   return { travelTimes: JSON.stringify(entries), travelTimesComputedAt: new Date() };
 }
 
-export async function saveApartment(db: Db, maps: Maps, address: string): Promise<SaveOutcome> {
+export async function saveApartment(
+  db: Db,
+  maps: Maps,
+  address: string,
+  { allowDuplicate }: { allowDuplicate: boolean },
+): Promise<SaveOutcome> {
   const { placeId, coordinates } = await maps.geocode(address, ORIGIN_COUNTY);
 
   // Checked before routing, so finding a saved apartment again costs one geocode, not every route.
-  const existing = await db
-    .selectFrom('apartment')
-    .select(['id', 'address', 'createdAt'])
-    .where('placeId', '=', placeId)
-    .orderBy('id')
-    .executeTakeFirst();
-  if (existing) return { kind: 'duplicate', existing };
+  if (!allowDuplicate) {
+    const existing = await db
+      .selectFrom('apartment')
+      .select(['id', 'address', 'createdAt'])
+      .where('placeId', '=', placeId)
+      .orderBy('id')
+      .executeTakeFirst();
+    if (existing) return { kind: 'duplicate', existing };
+  }
 
   const { id } = await db
     .insertInto('apartment')

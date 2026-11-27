@@ -31,9 +31,10 @@ each person, destinations stored in the database, maps.
 - **The browser reaches the server through remote functions** (`*.remote.ts`), experimental in
   SvelteKit 3.1 and accepted as such. Writes are `form` or `command` functions, not form actions.
   Signing in stays a form action, because no remote call may be open. Every remote form enhances
-  with `signInOnExpiredSession` (`src/lib/signInOnExpiredSession.ts`), and a form handler that
-  calls Google wraps it in `showFailureInForm` (`src/lib/server/showFailureInForm.ts`), so a failed
-  lookup shows in place while other HTTP errors, such as a 404, go to the error page.
+  with `signInOnExpiredSession` (`src/lib/signInOnExpiredSession.ts`), which sends an expired
+  session to the login page and never resets the form. An address geocoding rejects comes back
+  through `showBadRequestInForm` (`src/lib/server/showBadRequestInForm.ts`) as an issue the form
+  shows in place; any other failure goes to the error page, after `fetchGoogle`'s retries.
   *Rejected: form actions with `use:enhance`, and `+server.ts` with `fetch`.*
 - **Pages read through `load` functions**, as `/apartments/[id=apartmentId]` does, so the page
   renders on the server and an unknown id is a real 404. Remote `query` functions are for reads the
@@ -47,10 +48,11 @@ each person, destinations stored in the database, maps.
   which hands routes an `ApartmentId`. Links are built with `resolve` from `$app/paths`, never
   spelled out, so a renamed route fails the type check.
 - **Duplicates are matched on Google's `place_id`**, stored in `apartment.place_id`. Saving a place
-  already saved costs one geocode and no routes, and the form offers to open the saved apartment.
-  Under `MOCK=1`, `fakeMaps` derives the id from the text, ignoring case and spacing. *Rejected: overwriting the saved one, because the same place yields the same travel
-  times.* Saving another unit in the same building waits for PR 3's label, since until then two
-  saves of one place are indistinguishable.
+  already saved costs one geocode and no routes, and the form offers to open the saved apartment
+  or save a separate one. Under `MOCK=1`, `fakeMaps` derives the id from the text, ignoring case
+  and spacing. *Rejected: overwriting the saved one, because the same place yields the same travel
+  times. A separate apartment is for another unit in the same building, which the tracking
+  fields' label tells apart.*
 - **Neon Postgres, through Vercel's Neon integration.** Production uses Neon's main branch, and
   each PR preview gets its own Neon branch, created by the integration and deleted by
   `.github/workflows/delete-neon-preview.yml` when the PR closes.
@@ -159,8 +161,6 @@ Ship it soon after PR 1: until then, a mistaken save comes out only through Neon
 
 ## PR 3: Tracking fields
 
-- **Another unit in a saved building:** the duplicate prompt gains "Save as a separate
-  apartment", which skips the `place_id` check. The label is what tells the two apart.
 - **Fields:** label (such as "Unit 4B"), rent, listing URL, status, next step, agent contact, and
   notes.
 - **Display:** the listing URL, phone numbers and emails become links you can tap. The page must

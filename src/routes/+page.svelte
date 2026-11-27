@@ -16,7 +16,8 @@ const { data }: PageProps = $props();
 
 const pending = $derived(addApartment.pending > 0);
 const issue = $derived(addApartment.fields.allIssues()?.[0]);
-// Answers only the address it was sent for, so editing the address drops it.
+// Answers only the address it was sent for, so editing the address drops it, and "Save as a
+// separate apartment" can't resubmit a different one with the check skipped.
 const duplicate = $derived.by(() => {
   const result = addApartment.result;
   return result?.address === addApartment.fields.address.value()?.trim()
@@ -47,10 +48,16 @@ function apartmentPath(id: ApartmentId) {
             <Alert.Title>Already saved</Alert.Title>
             <Alert.Description class="text-base">
               <p>{duplicate.address}, added {formatDate(duplicate.createdAt)}.</p>
-              <!-- Alert underlines its links, which a button shouldn't be. -->
-              <Button href={apartmentPath(duplicate.id)} class="mt-3 no-underline!">
-                Open saved apartment
-              </Button>
+              <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                <!-- Alert underlines its links, which a button shouldn't be. -->
+                <Button href={apartmentPath(duplicate.id)} class="no-underline!">
+                  Open saved apartment
+                </Button>
+                <Button variant="outline" {...addApartment.fields.duplicate.as('submit', 'allow')}>
+                  Save as a separate apartment
+                </Button>
+              </div>
+              <p class="mt-2 text-sm">Such as another unit in the same building.</p>
             </Alert.Description>
           </Alert.Root>
         {:else if issue}
