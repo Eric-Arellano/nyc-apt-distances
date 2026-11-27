@@ -1,5 +1,5 @@
 import type { Goal } from '#lib/types.ts';
-import { type Candidates, PARKS, STATIONS, SUPERMARKETS } from './candidateLocations';
+import { type Candidates, PARKS, SUPERMARKETS } from './candidateLocations';
 import type { Trip } from './gmapsRouting';
 import { DayOfWeek } from './weeklyTime';
 
@@ -31,8 +31,8 @@ const WALK: Trip = { mode: 'walk' };
 export const DESTINATIONS: readonly Destination[] = [
   {
     id: 'metro-north',
-    title: 'Metro-North station',
-    place: { closestOf: STATIONS },
+    title: 'White Plains Metro-North station',
+    place: { address: '16 Ferris Ave, White Plains, NY 10601' },
     // Walking is safer, so it is preferred, but a bike ride within its goal will do.
     trips: [
       { trip: WALK, goal: { strictness: 'should', idealMinutes: 15, maxMinutes: 25 } },

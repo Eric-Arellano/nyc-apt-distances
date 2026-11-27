@@ -118,7 +118,7 @@ phone without scrolling sideways.
 - **At a glance.** Status, rent, next step and the listing's site name, one row each.
 - **Travel times.** A heading per destination, then a row per trip: the mode's icon (and label)
   once at the left with its goal in muted text, then each apartment's minutes. Every trip shows, drives
-  included. A destination picked from several places names the one picked ("to Hartsdale"), since
+  included. A destination picked from several places names the one picked (the closest park), since
   that can differ between the two, and a transit trip lists its lines. Each cell is tinted by
   `goalStatus` for that trip, or left plain when the trip has no goal.
 - **The better side** is bold and outlined, with how much better beneath (`6 min faster`,

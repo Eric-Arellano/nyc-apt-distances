@@ -14,39 +14,6 @@ interface Candidate extends Coordinates {
 
 export type Candidates = readonly [Candidate, ...Candidate[]];
 
-export const STATIONS: Candidates = [
-  {
-    name: 'White Plains',
-    latitude: 41.033309,
-    longitude: -73.775206,
-    address: '16 Ferris Ave, White Plains, NY 10601',
-  },
-  {
-    name: 'North White Plains',
-    latitude: 41.051272,
-    longitude: -73.772478,
-    address: '1 Harlem Ave, White Plains, NY 10603',
-  },
-  {
-    name: 'Hartsdale',
-    latitude: 41.011048,
-    longitude: -73.795569,
-    address: '1 E Hartsdale Ave, Hartsdale, NY 10530',
-  },
-  {
-    name: 'Scarsdale',
-    latitude: 40.989847,
-    longitude: -73.808414,
-    address: '1 Depot Pl, Scarsdale, NY 10583',
-  },
-  {
-    name: 'Harrison',
-    latitude: 40.969598,
-    longitude: -73.711817,
-    address: '452 Halstead Ave, Harrison, NY 10528',
-  },
-];
-
 /** The parks to choose the closest of. Large parks use their entrance, not their middle. */
 export const PARKS: Candidates = [
   {

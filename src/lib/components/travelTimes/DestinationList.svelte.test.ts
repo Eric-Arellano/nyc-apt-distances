@@ -7,15 +7,15 @@ import DestinationList from './DestinationList.svelte';
 const BET_AM_SHALOM_GOAL: Goal = { strictness: 'should', idealMinutes: 30, maxMinutes: 45 };
 
 /**
- * The station's bike meets its goal while its walk is only partial. Bet Am Shalom's walk misses,
+ * The station's bike meets its goal while its walk is only partial. The park names its closest. Bet Am Shalom's walk misses,
  * its Friday bus meets, it has no Saturday route, and its drive is past its only limit. CBST's
  * trip has no goal, so it is never judged.
  */
 const DESTINATIONS: DestinationResult[] = [
   {
     id: 'metro-north',
-    title: 'Metro-North station',
-    closest: { name: 'White Plains' },
+    title: 'White Plains Metro-North station',
+    closest: null,
     trips: [
       {
         goal: { strictness: 'should', idealMinutes: 15, maxMinutes: 25 },
@@ -24,6 +24,17 @@ const DESTINATIONS: DestinationResult[] = [
       {
         goal: { strictness: 'must', idealMinutes: 10, maxMinutes: 15 },
         route: { mode: 'bike', timeMinutes: 6, distanceMiles: 1.5 },
+      },
+    ],
+  },
+  {
+    id: 'park',
+    title: 'Park or trail',
+    closest: { name: 'Turnure Park' },
+    trips: [
+      {
+        goal: { strictness: 'should', idealMinutes: 10, maxMinutes: 20 },
+        route: { mode: 'walk', timeMinutes: 8, distanceMiles: 0.4 },
       },
     ],
   },
@@ -59,8 +70,8 @@ const DESTINATIONS: DestinationResult[] = [
 
 const EXPECTED_CARDS = [
   {
-    title: 'Metro-North station',
-    closest: 'Closest: White Plains',
+    title: 'White Plains Metro-North station',
+    closest: undefined,
     trips: [
       {
         text: '🚶 19 minutes (0.9 miles)',
@@ -70,6 +81,17 @@ const EXPECTED_CARDS = [
       {
         text: '🚴 6 minutes (1.5 miles)',
         goal: 'Must be within 15 minutes; ideally within 10 minutes',
+        status: 'met',
+      },
+    ],
+  },
+  {
+    title: 'Park or trail',
+    closest: 'Closest: Turnure Park',
+    trips: [
+      {
+        text: '🚶 8 minutes (0.4 miles)',
+        goal: 'Should be within 20 minutes; ideally within 10 minutes',
         status: 'met',
       },
     ],
