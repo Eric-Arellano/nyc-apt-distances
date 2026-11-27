@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { submitOrSignIn } from './submitOrSignIn';
+import { signInOnExpiredSession } from './signInOnExpiredSession';
 
 const navigation = vi.hoisted(() => ({ goto: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => navigation);
@@ -14,11 +14,11 @@ function failingWith(status: number, message: string) {
   return async (): Promise<boolean> => error(status, message);
 }
 
-describe('submitOrSignIn', () => {
+describe('signInOnExpiredSession', () => {
   test('submits', async () => {
     const submit = vi.fn(async () => true);
 
-    await submitOrSignIn({ submit });
+    await signInOnExpiredSession({ submit });
 
     expect(submit).toHaveBeenCalledOnce();
     expect(navigation.goto).not.toHaveBeenCalled();
@@ -28,7 +28,7 @@ describe('submitOrSignIn', () => {
     test('sends the user to the login page, to return here', async () => {
       vi.stubGlobal('location', new URL('https://example.com/apartments/1'));
 
-      await submitOrSignIn({ submit: failingWith(401, 'Unauthorized') });
+      await signInOnExpiredSession({ submit: failingWith(401, 'Unauthorized') });
 
       expect(navigation.goto).toHaveBeenCalledExactlyOnceWith(
         '/login?redirectTo=%2Fapartments%2F1',
@@ -38,7 +38,9 @@ describe('submitOrSignIn', () => {
 
   describe('when the server fails', () => {
     test('rethrows, for the error page', async () => {
-      await expect(submitOrSignIn({ submit: failingWith(500, 'Internal Error') })).rejects.toEqual({
+      await expect(
+        signInOnExpiredSession({ submit: failingWith(500, 'Internal Error') }),
+      ).rejects.toEqual({
         status: 500,
         body: { message: 'Internal Error', status: 500 },
       });

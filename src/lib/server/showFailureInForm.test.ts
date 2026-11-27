@@ -1,6 +1,6 @@
 import { error, isValidationError } from '@sveltejs/kit';
 import { describe, expect, test } from 'vitest';
-import { orLookupIssue } from './lookupFailure';
+import { showFailureInForm } from './showFailureInForm';
 
 async function failingWith(status: number, message: string): Promise<never> {
   error(status, message);
@@ -9,16 +9,16 @@ async function failingWith(status: number, message: string): Promise<never> {
 /** The issues `work` failed with, or what else it threw. */
 async function issuesOf(work: Promise<unknown>) {
   try {
-    await orLookupIssue(work);
+    await showFailureInForm(work);
   } catch (thrown) {
     return isValidationError(thrown) ? thrown.issues : thrown;
   }
   throw new Error('Expected the work to fail');
 }
 
-describe('orLookupIssue', () => {
+describe('showFailureInForm', () => {
   test("returns the work's value", async () => {
-    expect(await orLookupIssue(Promise.resolve(1))).toBe(1);
+    expect(await showFailureInForm(Promise.resolve(1))).toBe(1);
   });
 
   describe('when Google rejects the address', () => {

@@ -8,7 +8,7 @@ import * as Alert from '#lib/components/ui/alert/index.ts';
 import { Button } from '#lib/components/ui/button/index.ts';
 import { formatDate } from '#lib/formatDate.ts';
 import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
-import { submitOrSignIn } from '#lib/submitOrSignIn.ts';
+import { signInOnExpiredSession } from '#lib/signInOnExpiredSession.ts';
 import { resolve } from '$app/paths';
 import type { PageProps } from './$types';
 
@@ -16,8 +16,7 @@ const { data }: PageProps = $props();
 
 const pending = $derived(addApartment.pending > 0);
 const issue = $derived(addApartment.fields.allIssues()?.[0]);
-// Answers only the address it was sent for, so editing the address drops it, and "Save as a
-// separate apartment" can't resubmit a different one with the check skipped.
+// Answers only the address it was sent for, so editing the address drops it.
 const duplicate = $derived.by(() => {
   const result = addApartment.result;
   return result?.address === addApartment.fields.address.value()?.trim()
@@ -39,7 +38,7 @@ function apartmentPath(id: ApartmentId) {
     <h1 class="mb-6 text-center text-3xl font-bold md:text-left">White Plains apartments</h1>
 
     <Card title="Add an apartment">
-      <form {...addApartment.enhance(submitOrSignIn)} class="flex flex-col gap-4">
+      <form {...addApartment.enhance(signInOnExpiredSession)} class="flex flex-col gap-4">
         <AddressInput field={addApartment.fields.address} busy={pending} />
         {#if pending}
           <Loading message="Calculating travel times…" />
@@ -48,16 +47,10 @@ function apartmentPath(id: ApartmentId) {
             <Alert.Title>Already saved</Alert.Title>
             <Alert.Description class="text-base">
               <p>{duplicate.address}, added {formatDate(duplicate.createdAt)}.</p>
-              <div class="mt-3 flex flex-col gap-2 sm:flex-row">
-                <!-- Alert underlines its links, which a button shouldn't be. -->
-                <Button href={apartmentPath(duplicate.id)} class="no-underline!">
-                  Open saved apartment
-                </Button>
-                <Button variant="outline" {...addApartment.fields.duplicate.as('submit', 'allow')}>
-                  Save as a separate apartment
-                </Button>
-              </div>
-              <p class="mt-2 text-sm">Such as another unit in the same building.</p>
+              <!-- Alert underlines its links, which a button shouldn't be. -->
+              <Button href={apartmentPath(duplicate.id)} class="mt-3 no-underline!">
+                Open saved apartment
+              </Button>
             </Alert.Description>
           </Alert.Root>
         {:else if issue}

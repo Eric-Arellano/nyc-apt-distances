@@ -1,11 +1,8 @@
 import { invalid, isHttpError } from '@sveltejs/kit';
 
-/**
- * Awaits work that calls Google from a remote `form`, turning its failure into an issue the form
- * shows in place, keeping what was typed, rather than the error page. Other HTTP errors, such as a
- * 404, are rethrown.
- */
-export async function orLookupIssue<T>(work: Promise<T>): Promise<T> {
+// For a remote `form`'s handler: a failed lookup shows in place, keeping what was typed, rather
+// than on the error page. Other HTTP errors, such as a 404, still go to the error page.
+export async function showFailureInForm<T>(work: Promise<T>): Promise<T> {
   try {
     return await work;
   } catch (thrown) {
