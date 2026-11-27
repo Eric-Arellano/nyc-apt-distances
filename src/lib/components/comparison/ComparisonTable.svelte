@@ -107,7 +107,8 @@ function cellTint(cell: TimeCell, dim: boolean): string | undefined {
           dim ? 'font-medium' : 'font-semibold',
         ]}
       >
-        {[streetPart(address), unit].filter(Boolean).join(' · ')}
+        <!-- No-break spaces, so a unit never wraps onto a line of its own. -->
+        {[streetPart(address), unit].filter(Boolean).join(' · ')}
       </a>
       {#if nextStep}
         <span class="mt-0.5 block truncate text-xs text-muted-foreground" title={nextStep}>
