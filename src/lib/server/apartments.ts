@@ -1,11 +1,23 @@
 import type { Kysely } from 'kysely';
 import type { DestinationResult } from '#lib/types.ts';
+import type { Coordinates } from './closest';
 import type Database from './db/schema/Database.ts';
 import type { ApartmentId } from './db/schema/public/Apartment.ts';
-import { DESTINATIONS } from './destinations';
-import { type TravelTimeEntry, toDestinationResults } from './travelTimes';
+import { DESTINATIONS, ORIGIN_COUNTY } from './destinations';
+import type { Maps } from './maps';
+import { computeTravelTimes, type TravelTimeEntry, toDestinationResults } from './travelTimes';
 
 type Db = Kysely<Database>;
+
+export interface ApartmentSummary {
+  id: ApartmentId;
+  address: string;
+  createdAt: Date;
+}
+
+export type SaveOutcome =
+  | { kind: 'saved'; id: ApartmentId }
+  | { kind: 'duplicate'; existing: ApartmentSummary };
 
 export interface ApartmentView {
   id: ApartmentId;
@@ -13,6 +25,38 @@ export interface ApartmentView {
   travelTimesComputedAt: Date;
   results: DestinationResult[];
   missing: string[]; // Titles of destinations the snapshot has no current entry for.
+}
+
+async function computeSnapshot(address: string, coordinates: Coordinates, maps: Maps) {
+  const entries = await computeTravelTimes(address, coordinates, DESTINATIONS, maps);
+  return { travelTimes: JSON.stringify(entries), travelTimesComputedAt: new Date() };
+}
+
+export async function saveApartment(
+  db: Db,
+  maps: Maps,
+  address: string,
+  { allowDuplicate }: { allowDuplicate: boolean },
+): Promise<SaveOutcome> {
+  const { placeId, coordinates } = await maps.geocode(address, ORIGIN_COUNTY);
+
+  // Checked before routing, so finding a saved apartment again costs one geocode, not every route.
+  if (!allowDuplicate) {
+    const existing = await db
+      .selectFrom('apartment')
+      .select(['id', 'address', 'createdAt'])
+      .where('placeId', '=', placeId)
+      .orderBy('id')
+      .executeTakeFirst();
+    if (existing) return { kind: 'duplicate', existing };
+  }
+
+  const { id } = await db
+    .insertInto('apartment')
+    .values({ address, placeId, ...(await computeSnapshot(address, coordinates, maps)) })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+  return { kind: 'saved', id };
 }
 
 export async function getApartment(db: Db, id: ApartmentId): Promise<ApartmentView | undefined> {
@@ -26,4 +70,12 @@ export async function getApartment(db: Db, id: ApartmentId): Promise<ApartmentVi
   const { travelTimes, ...rest } = row;
   // Kanel types `jsonb` reads as `unknown`. The column holds what `computeTravelTimes` returned.
   return { ...rest, ...toDestinationResults(travelTimes as TravelTimeEntry[], DESTINATIONS) };
+}
+
+export async function listApartments(db: Db): Promise<ApartmentSummary[]> {
+  return await db
+    .selectFrom('apartment')
+    .select(['id', 'address', 'createdAt'])
+    .orderBy('id', 'desc')
+    .execute();
 }

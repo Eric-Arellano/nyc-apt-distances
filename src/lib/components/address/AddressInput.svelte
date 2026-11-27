@@ -1,32 +1,27 @@
 <script lang="ts">
+import type { RemoteFormField } from '$app/server';
 import { Button } from '#lib/components/ui/button/index.ts';
 import { Input } from '#lib/components/ui/input/index.ts';
 import { isValidAddress } from './addressUtils';
 
 interface Props {
-  // The address in the page's URL.
-  address: string;
+  field: RemoteFormField<string>;
   busy: boolean;
 }
 
-const { address, busy }: Props = $props();
-
-// The input's text. Follows the URL, as on back and forward, until someone types.
-let value = $derived(address);
+const { field, busy }: Props = $props();
 </script>
 
-<!-- A GET form, so submitting navigates to `?address=` and the page runs the lookup from the URL. -->
-<form class="flex flex-col gap-4 sm:flex-row">
+<div class="flex flex-col gap-4 sm:flex-row">
   <Input
+    {...field.as('text')}
     class="h-10 grow"
-    type="text"
-    name="address"
-    bind:value
     placeholder="100 Martine Ave, White Plains"
     aria-label="Street address and town"
+    autocomplete="street-address"
     required
   />
-  <Button size="lg" disabled={!isValidAddress(value) || busy} type="submit">
-    Calculate travel times
+  <Button size="lg" disabled={!isValidAddress(field.value() ?? '') || busy} type="submit">
+    {busy ? 'Calculating…' : 'Add apartment'}
   </Button>
-</form>
+</div>

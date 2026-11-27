@@ -1,11 +1,18 @@
 import type { Kysely } from 'kysely';
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { createTestDatabase } from '#tests/db.ts';
-import { getApartment } from './apartments';
+import bike from '#tests/fixtures/google/bike.json';
+import drive from '#tests/fixtures/google/drive.json';
+import geocode from '#tests/fixtures/google/geocode.json';
+import geocodeZeroResults from '#tests/fixtures/google/geocode-zero-results.json';
+import transit from '#tests/fixtures/google/transit-transfer.json';
+import walk from '#tests/fixtures/google/walk.json';
+import { getApartment, listApartments, type SaveOutcome, saveApartment } from './apartments';
 import type Database from './db/schema/Database.ts';
 import type { ApartmentId } from './db/schema/public/Apartment.ts';
 import { DESTINATIONS, ORIGIN_COUNTY } from './destinations';
 import { fakeMaps } from './fakeMaps';
+import { googleMaps } from './maps';
 import { computeTravelTimes, type TravelTimeEntry, toDestinationResults } from './travelTimes';
 
 let db: Kysely<Database>;
@@ -21,6 +28,29 @@ afterAll(async () => {
 beforeEach(async () => {
   await db.deleteFrom('apartment').execute();
 });
+
+const ROUTE_FIXTURES: Record<string, unknown> = {
+  WALK: walk,
+  BICYCLE: bike,
+  TRANSIT: transit,
+  DRIVE: drive,
+};
+
+async function fakeGoogle(url: URL | string, init?: RequestInit) {
+  if (String(url).includes('geocode')) return Response.json(geocode);
+  const { travelMode } = JSON.parse(String(init?.body));
+  return Response.json(ROUTE_FIXTURES[travelMode]);
+}
+
+function spyMaps() {
+  return { geocode: vi.fn(fakeMaps.geocode), computeRoute: vi.fn(fakeMaps.computeRoute) };
+}
+
+async function save(address: string, allowDuplicate = false): Promise<ApartmentId> {
+  const outcome = await saveApartment(db, fakeMaps, address, { allowDuplicate });
+  if (outcome.kind !== 'saved') throw new Error(`Expected a save, got ${outcome.kind}`);
+  return outcome.id;
+}
 
 async function freshEntries(address: string): Promise<TravelTimeEntry[]> {
   const { coordinates } = await fakeMaps.geocode(address, ORIGIN_COUNTY);
@@ -71,5 +101,85 @@ describe('getApartment', () => {
       expect(apartment?.missing).toEqual([DESTINATIONS[0]?.title, DESTINATIONS[1]?.title]);
       expect(apartment?.results.map((result) => result.id)).toEqual(rest.map(({ id }) => id));
     });
+  });
+});
+
+describe('saveApartment', () => {
+  test('stores the address and an entry per destination', async () => {
+    const id = await save('1 Main St');
+
+    expect(await getApartment(db, id)).toEqual({
+      id,
+      address: '1 Main St',
+      travelTimesComputedAt: expect.any(Date),
+      results: toDestinationResults(await freshEntries('1 Main St'), DESTINATIONS).results,
+      missing: [],
+    });
+  });
+
+  describe('with Google', () => {
+    const GOOGLE = googleMaps('test-key');
+
+    test('stores what Google answers', async () => {
+      const fetchMock = vi.fn(fakeGoogle);
+      vi.stubGlobal('fetch', fetchMock);
+
+      const outcome = await saveApartment(db, GOOGLE, '1 Main St', { allowDuplicate: false });
+
+      expect(outcome).toEqual({ kind: 'saved', id: expect.any(Number) });
+      expect(fetchMock).toHaveBeenCalled();
+    });
+
+    test('refuses an address Google cannot find, saving nothing', async () => {
+      vi.stubGlobal('fetch', async () => Response.json(geocodeZeroResults));
+
+      await expect(saveApartment(db, GOOGLE, 'nowhere', { allowDuplicate: false })).rejects.toEqual(
+        {
+          status: 400,
+          body: { message: 'Google could not find that address.', status: 400 },
+        },
+      );
+      expect(await listApartments(db)).toEqual([]);
+    });
+  });
+
+  describe('for a place already saved', () => {
+    test('returns the saved apartment after one geocode and no routes', async () => {
+      const id = await save('1 Main St');
+      const maps = spyMaps();
+
+      const outcome = await saveApartment(db, maps, '1 main st ', { allowDuplicate: false });
+
+      expect(outcome).toEqual({
+        kind: 'duplicate',
+        existing: { id, address: '1 Main St', createdAt: expect.any(Date) },
+      } satisfies SaveOutcome);
+      expect(maps.geocode).toHaveBeenCalledExactlyOnceWith('1 main st ', ORIGIN_COUNTY);
+      expect(maps.computeRoute).not.toHaveBeenCalled();
+    });
+
+    test('saves a second apartment when asked to', async () => {
+      const first = await save('1 Main St');
+
+      const second = await save('1 Main St', true);
+
+      expect((await listApartments(db)).map(({ id }) => id)).toEqual([second, first]);
+    });
+  });
+});
+
+describe('listApartments', () => {
+  test('lists the newest first', async () => {
+    const first = await save('1 Main St');
+    const second = await save('2 Main St');
+
+    expect(await listApartments(db)).toEqual([
+      { id: second, address: '2 Main St', createdAt: expect.any(Date) },
+      { id: first, address: '1 Main St', createdAt: expect.any(Date) },
+    ]);
+  });
+
+  test('is empty with nothing saved', async () => {
+    expect(await listApartments(db)).toEqual([]);
   });
 });

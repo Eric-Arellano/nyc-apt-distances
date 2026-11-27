@@ -30,15 +30,29 @@ each person, destinations stored in the database, maps.
   (`src/lib/server/auth.ts`).
 - **The browser reaches the server through remote functions** (`*.remote.ts`), experimental in
   SvelteKit 3.1 and accepted as such. Writes are `form` or `command` functions, not form actions.
-  Signing in stays a form action, because no remote call may be open. The browser awaits each call
-  through `src/lib/awaitRemote.ts`, which sends an expired session to the login page. *Rejected:
-  form actions with `use:enhance`, and `+server.ts` with `fetch`.*
+  Signing in stays a form action, because no remote call may be open. Every remote form enhances
+  with `signInOnExpiredSession` (`src/lib/signInOnExpiredSession.ts`), which sends an expired
+  session to the login page and never resets the form. An address geocoding rejects comes back
+  through `showBadRequestInForm` (`src/lib/server/showBadRequestInForm.ts`) as an issue the form
+  shows in place; any other failure goes to the error page, after `fetchGoogle`'s retries.
+  *Rejected: form actions with `use:enhance`, and `+server.ts` with `fetch`.*
 - **Pages read through `load` functions**, as `/apartments/[id=apartmentId]` does, so the page
   renders on the server and an unknown id is a real 404. Remote `query` functions are for reads the
   browser starts after the page has loaded.
-- **One-off lookups stay in the URL** (`/?address=…`), run in the browser after each navigation by
-  `src/routes/+page.svelte`, which owns the lookup's promise. Every open of such a link spends the
-  Google key again; a saved apartment is what avoids that.
+- **Every lookup saves.** The home page's `addApartment` form (`src/lib/apartments.remote.ts`)
+  geocodes the address, computes its travel times, stores the apartment and redirects to its page.
+  So opening a link never spends the Google key again. The cost is that a mistaken save stays until
+  deleting lands. *Rejected: a lookup that saves only when asked, because an unsaved lookup's link
+  re-bills Google on every open, and the saved one is what we share anyway.*
+- **Apartment URLs carry the integer id**, checked by the `apartmentId` matcher in `src/params.ts`,
+  which hands routes an `ApartmentId`. Links are built with `resolve` from `$app/paths`, never
+  spelled out, so a renamed route fails the type check.
+- **Duplicates are matched on Google's `place_id`**, stored in `apartment.place_id`. Saving a place
+  already saved costs one geocode and no routes, and the form offers to open the saved apartment
+  or save a separate one. Under `MOCK=1`, `fakeMaps` derives the id from the text, ignoring case
+  and spacing. *Rejected: overwriting the saved one, because the same place yields the same travel
+  times. A separate apartment is for another unit in the same building, which the tracking
+  fields' label tells apart.*
 - **Neon Postgres, through Vercel's Neon integration.** Production uses Neon's main branch, and
   each PR preview gets its own Neon branch, created by the integration and deleted by
   `.github/workflows/delete-neon-preview.yml` when the PR closes.
@@ -135,9 +149,7 @@ Lands as three stacked PRs, each reviewable on its own:
   from code. A destination with no entry, or whose fingerprint no longer matches, is listed as
   missing. Nothing creates an apartment yet, so it ships dark.
 - **1b. Save:** adding an address on the home page stores it with its travel-times snapshot and
-  opens its page.
-  **Open:** whether to warn when saving an address that's already saved. Google's geocoding
-  normalizes addresses, which could make duplicates detectable.
+  opens its page, replacing the URL lookup. The home page lists what's saved.
 - **1c. Recompute:** a "Recompute" button beside the missing list replaces the whole snapshot, so
   `travel_times_computed_at` stays true of every entry. *Rejected: computing only the missing
   destinations automatically, because it needs a compute time per entry and saves little.*
@@ -158,9 +170,9 @@ Ship it soon after PR 1: until then, a mistaken save comes out only through Neon
 
 ## PR 4: Pipeline list
 
-The home page lists every saved apartment, with status, rent, next step, goals met and the best
-time per destination. It's sortable and filterable by status, and links to each apartment page.
-The address lookup stays on the same page. This is the first "compare" view. Ship it and watch how
+Grows the home page's bare "Saved apartments" list into a pipeline: status, rent, next step, goals
+met and the best time per destination, sortable and filterable by status, each row linking to its
+apartment page. The add form stays on the same page. This is the first "compare" view. Ship it and watch how
 your partner uses it before designing PR 5.
 
 ## PR 5: Side-by-side compare

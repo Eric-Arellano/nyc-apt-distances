@@ -1,8 +1,10 @@
 <script lang="ts">
+import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 import Card from '#lib/components/Card.svelte';
 import DestinationList from '#lib/components/travelTimes/DestinationList.svelte';
 import * as Alert from '#lib/components/ui/alert/index.ts';
 import { formatDate } from '#lib/formatDate.ts';
+import { resolve } from '$app/paths';
 import type { PageProps } from './$types';
 
 const LIST_FORMAT = new Intl.ListFormat('en-US');
@@ -16,6 +18,13 @@ const { data }: PageProps = $props();
 
 <div class="min-h-screen py-8">
   <div class="container mx-auto max-w-6xl px-4">
+    <a
+      href={resolve('/')}
+      class="mb-4 inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+    >
+      <ArrowLeftIcon aria-hidden="true" class="size-4" />
+      All apartments
+    </a>
     <h1 class="text-3xl font-bold">{data.address}</h1>
     <p class="mb-6 text-muted-foreground">
       Travel times calculated {formatDate(data.travelTimesComputedAt)}
