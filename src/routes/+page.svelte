@@ -8,7 +8,7 @@ import * as Alert from '#lib/components/ui/alert/index.ts';
 import { Button } from '#lib/components/ui/button/index.ts';
 import { formatDate } from '#lib/formatDate.ts';
 import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
-import { signInOnExpiredSession } from '#lib/signInOnExpiredSession.ts';
+import { submitOrSignIn } from '#lib/signInOnExpiredSession.ts';
 import { resolve } from '$app/paths';
 import type { PageProps } from './$types';
 
@@ -25,6 +25,12 @@ const duplicate = $derived.by(() => {
     : undefined;
 });
 
+// A save redirects to its page and leaves no result. The form's state outlives the page, so the
+// saved address would otherwise be back in the input on returning here.
+const enhanceAdd = addApartment.enhance(async (form) => {
+  if ((await submitOrSignIn(form)) && !form.result) form.fields.address.set('');
+});
+
 function apartmentPath(id: ApartmentId) {
   return resolve('/apartments/[id=apartmentId]', { id });
 }
@@ -39,7 +45,7 @@ function apartmentPath(id: ApartmentId) {
     <h1 class="mb-6 text-center text-3xl font-bold md:text-left">White Plains apartments</h1>
 
     <Card title="Add an apartment">
-      <form {...addApartment.enhance(signInOnExpiredSession)} class="flex flex-col gap-4">
+      <form {...enhanceAdd} class="flex flex-col gap-4">
         <AddressInput field={addApartment.fields.address} busy={pending} />
         {#if pending}
           <Loading message="Calculating travel times…" />

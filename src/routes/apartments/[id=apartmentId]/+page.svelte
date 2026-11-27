@@ -2,6 +2,7 @@
 import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 import { recomputeTravelTimes } from '#lib/apartments.remote.ts';
 import Card from '#lib/components/Card.svelte';
+import DeleteApartment from '#lib/components/DeleteApartment.svelte';
 import ErrorMessage from '#lib/components/ErrorMessage.svelte';
 import DestinationList from '#lib/components/travelTimes/DestinationList.svelte';
 import * as Alert from '#lib/components/ui/alert/index.ts';
@@ -32,7 +33,10 @@ const firstFormError = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
       <ArrowLeftIcon aria-hidden="true" class="size-4" />
       All apartments
     </a>
-    <h1 class="text-3xl font-bold">{data.address}</h1>
+    <div class="flex items-start justify-between gap-2">
+      <h1 class="text-3xl font-bold">{data.address}</h1>
+      <DeleteApartment id={data.id} address={data.address} />
+    </div>
     <p class="mb-6 text-muted-foreground">
       Travel times calculated {formatDate(data.travelTimesComputedAt)}
     </p>
