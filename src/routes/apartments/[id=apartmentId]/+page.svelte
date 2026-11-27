@@ -7,7 +7,7 @@ import DestinationList from '#lib/components/travelTimes/DestinationList.svelte'
 import * as Alert from '#lib/components/ui/alert/index.ts';
 import { Button } from '#lib/components/ui/button/index.ts';
 import { formatDate } from '#lib/formatDate.ts';
-import { submitOrSignIn } from '#lib/submitOrSignIn.ts';
+import { signInOnExpiredSession } from '#lib/signInOnExpiredSession.ts';
 import { resolve } from '$app/paths';
 import type { PageProps } from './$types';
 
@@ -46,7 +46,7 @@ const issue = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
             {data.missing.length === 1 ? 'is' : 'are'}
             new or changed since these were calculated.
           </p>
-          <form {...recomputeTravelTimes.enhance(submitOrSignIn)} class="mt-3">
+          <form {...recomputeTravelTimes.enhance(signInOnExpiredSession)} class="mt-3">
             <input {...recomputeTravelTimes.fields.id.as('hidden', String(data.id))}>
             <Button type="submit" disabled={pending}>
               {pending ? 'Recalculating…' : 'Recalculate all travel times'}
