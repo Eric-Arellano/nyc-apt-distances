@@ -10,7 +10,7 @@ export type Route =
 
 export interface Goal {
   strictness: 'must' | 'should';
-  idealMinutes: number;
+  idealMinutes?: number; // Absent: any time within the max is as good as any other.
   maxMinutes: number;
 }
 
@@ -18,12 +18,17 @@ export interface Place {
   name: string;
 }
 
+export interface TripResult {
+  label?: string;
+  goal?: Goal; // Absent: the trip is shown for reference and never judged.
+  route: Route;
+}
+
 export interface DestinationResult {
   id: string;
   title: string;
-  goal: Goal;
   closest: Place | null; // null: the destination is one fixed address, so the card needn't name it.
-  routes: Route[];
+  trips: TripResult[];
 }
 
 export type GoalStatus = 'met' | 'partial' | 'unmet';

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-import type { DestinationResult, Place, Route } from '#lib/types.ts';
+import type { DestinationResult, Place, Route, TripResult } from '#lib/types.ts';
 import { type Coordinates, closest } from './closest';
-import type { Destination } from './destinations';
+import type { Destination, DestinationTrip } from './destinations';
 import type { Maps } from './maps';
 
 function resolvePlace(
@@ -29,10 +29,12 @@ export interface TravelTimeEntry {
 
 /**
  * Hashes what the entry's routes depend on. `routes` matches `trips` by position, so a reordered
- * trip list changes it too. Title and goal are left out on purpose.
+ * trip list changes it too. Titles, goals and labels are left out on purpose.
  */
 export function fingerprint({ place, trips }: Destination): string {
-  return createHash('sha256').update(JSON.stringify({ place, trips })).digest('hex');
+  return createHash('sha256')
+    .update(JSON.stringify({ place, trips: trips.map(({ trip }) => trip) }))
+    .digest('hex');
 }
 
 // Routes start from `origin` as typed; `originPoint`, its geocode, only picks the closest places.
@@ -46,11 +48,19 @@ export async function computeTravelTimes(
     destinations.map(async (destination) => {
       const { address, closest } = resolvePlace(destination.place, originPoint);
       const routes = await Promise.all(
-        destination.trips.map((trip) => maps.computeRoute({ origin, dest: address, trip })),
+        destination.trips.map(({ trip }) => maps.computeRoute({ origin, dest: address, trip })),
       );
       return { id: destination.id, fingerprint: fingerprint(destination), closest, routes };
     }),
   );
+}
+
+// The fingerprint matched, so `routes` lines up with `trips` by position.
+function toTripResults(trips: readonly DestinationTrip[], routes: readonly Route[]): TripResult[] {
+  return trips.flatMap(({ goal, label }, index) => {
+    const route = routes[index];
+    return route ? [{ label, goal, route }] : [];
+  });
 }
 
 /**
@@ -70,8 +80,10 @@ export function toDestinationResults(
     ),
   }));
   return {
-    results: current.flatMap(({ destination: { id, title, goal }, entry }) =>
-      entry ? [{ id, title, goal, closest: entry.closest, routes: entry.routes }] : [],
+    results: current.flatMap(({ destination: { id, title, trips }, entry }) =>
+      entry
+        ? [{ id, title, closest: entry.closest, trips: toTripResults(trips, entry.routes) }]
+        : [],
     ),
     missing: current.filter(({ entry }) => !entry).map(({ destination }) => destination.title),
   };

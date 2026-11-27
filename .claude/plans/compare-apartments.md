@@ -10,14 +10,15 @@ most lookups are never followed up.
 
 The question we most want answered is "which apartment is closest to X?", such as the walk to
 the Hebrew Institute, across every apartment at once. Then, for two finalists, "how do these
-differ on everything?" That makes two views: a sortable table of everything (PR 2), and a
-side-by-side view of two apartments (PR 3).
+differ on everything?" That makes two views: a sortable table of everything (PR 1), and a
+side-by-side view of two apartments (PR 2).
 
 **How we get there matters as much as how long it takes.** Walking is what we'd do on Shabbat,
 transit is the fallback, and driving anywhere in town is always reasonable, so a fast drive must
-never make a destination look good. The same goes for the station: biking is nearly always
-faster, but we also need to know the walk for rainy days. So every trip is judged on its own
-(PR 1), and the table gives a column to each trip that tells apartments apart.
+never make a destination look good. The same goes for the station: walking is safer, but a bike
+ride within its own goal will do. So each trip in `DESTINATIONS` carries its own goal, or none
+when it is only for reference, and `goalStatus` (`src/lib/goalStatus.ts`) judges one route
+against it. The table gives a column to each trip that tells apartments apart.
 
 Both designs are drawn in a clickable mockup with made-up apartments
 (https://claude.ai/artifact/6E9oUL4EdasFP8Kg7cDFGY, private), which we approved after two rounds. The
@@ -33,12 +34,12 @@ each person, destinations stored in the database, maps.
 - **Pages read through `load` functions**, and links are built with `resolve` from `$app/paths`.
 - **A snapshot can lack a destination.** `toDestinationResults` drops it from `results` and
   names it in `missing`, so a view that lines trips up in columns or rows must show a gap ("—")
-  rather than shift everything over.
-- **A destination has at most one trip per mode**, so a trip is named by destination id and mode.
+  rather than shift everything over. Each result's `trips` pairs a route with its goal and label.
+- **A trip is named by destination id and its position in `trips`.** Mode is not enough: Bet Am
+  Shalom has a bus on Friday and another on Saturday, told apart by their labels.
 - **Changing a destination's place or trips marks every saved apartment stale** (its fingerprint
-  in `src/lib/server/travelTimes.ts`), and each is recalculated by hand, billed. Titles and goals
-  are free to change. *Rejected: merging the two Bet Am Shalom destinations so their shared walk
-  is listed once, or dropping their drives, for that reason.*
+  in `src/lib/server/travelTimes.ts`), and each is recalculated by hand, billed. Titles, goals and
+  labels are free to change.
 - **`STATUSES`** in `src/lib/status.ts` is in process order, the order a status sort uses.
 - **UI comes from shadcn-svelte**, added with `npx shadcn-svelte add`, which copies source in
   rather than adding a dependency. Selects are NativeSelect, so a phone shows its own picker.
@@ -52,19 +53,7 @@ each person, destinations stored in the database, maps.
 - A deleted apartment survives in any preview branched before the delete, until that branch is
   deleted, and in Neon's restore window.
 
-## PR 1: Judge each trip on its own
-
-`goalStatus` judges a destination by its fastest route, so a five-minute drive turns Bet Am
-Shalom's card green however long the walk is. Instead, each trip is judged against its
-destination's goal by itself: `goalStatus` takes one route, and `DestinationCard` tints each
-route line rather than the whole card, whose border goes neutral. A goal is in minutes whatever
-the mode, so the goals themselves don't change. **Open:** a goal per mode (a bike to the station
-within 10, say), only if a shared goal turns out to judge some mode badly.
-
-`goalStatus` moves out of `src/lib/components/travelTimes/` to somewhere neutral, since PRs 2 and
-3 use it too.
-
-## PR 2: Comparison table
+## PR 1: Comparison table
 
 The home page's "Saved apartments" list becomes a table, one row per apartment. The add form
 stays above it, since looking up addresses is still the most common thing we do.
@@ -79,12 +68,11 @@ stays above it, since looking up addresses is still the most common thing we do.
 3. **Rent**, as `$2,850`; the header says "/mo".
 4. **One column per trip worth comparing**, its minutes tinted green, yellow or red by
    `goalStatus`. They are, grouped under their destination: Station 🚶 🚴, HI 🚶, Park 🚶,
-   Grocery 🚶, Bet Am Shalom 🚶 · 🚌 Fri · 🚌 Sat, CBST 🚆, Florham 🚗. Walking to Bet Am
-   Shalom is the same route on either day, so it gets one column (Friday's), and its drives get
-   none; both are on the apartment page and in PR 3. The list lives in code beside
-   `DESTINATIONS`, as destination id, mode and short label. A trip the snapshot lacks is "—",
-   untinted; one Google found no route for is "None", red. A legend under the table says what the
-   colors mean.
+   Grocery 🚶, Bet Am Shalom 🚶 · 🚌 Fri · 🚌 Sat, CBST 🚆, Florham 🚗. Bet Am Shalom's drive
+   gets no column, since driving there is always reasonable; it is on the apartment page and in
+   PR 2. The list lives in code beside `DESTINATIONS`, as destination id, trip position and short
+   label. A trip the snapshot lacks is "—", untinted; one Google found no route for is "None",
+   red unless the trip has no goal. A legend under the table says what the colors mean.
 
 **Headers** are two rows. A destination with several columns names itself once across them, with
 each column's mode icon (and day) below; a destination with one column puts its name above its
@@ -116,7 +104,7 @@ street part of an address, and the sort (direction, blanks, "Not for us", ties).
 
 A prefactor PR can go first: the column list, with no visible change.
 
-## PR 3: Side-by-side compare
+## PR 2: Side-by-side compare
 
 Two apartments, side by side, at `/compare?a=<id>&b=<id>`. Two is enough, and two columns fit a
 phone without scrolling sideways.
@@ -128,16 +116,16 @@ phone without scrolling sideways.
   A side not chosen yet shows its select alone. An unknown id is a 404, as on the apartment page.
   *Rejected: checkboxes in the table, because they cost the frozen column width on a phone.*
 - **At a glance.** Status, rent, next step and the listing's site name, one row each.
-- **Travel times.** A heading per destination with its goal in muted text, then a row per trip:
-  the mode's icon once at the left, then each apartment's minutes. Every trip shows, drives
-  included. A destination picked from several places names the one picked ("to Hartsdale"), since
+- **Travel times.** A heading per destination, then a row per trip: the mode's icon (and label)
+  once at the left with its goal in muted text, then each apartment's minutes. Every trip shows, drives
+  included. A destination picked from several places names the one picked (the closest park), since
   that can differ between the two, and a transit trip lists its lines. Each cell is tinted by
-  `goalStatus` for that trip.
+  `goalStatus` for that trip, or left plain when the trip has no goal.
 - **The better side** is bold and outlined, with how much better beneath (`6 min faster`,
   `$150 less`); a tie is plain. *Rejected: a label beside the number, and bars, both tried in
   the mockup.*
 - **Data.** The load returns both apartments as `getApartment` does. Pure functions worth
-  testing: pairing the two apartments' trips by destination and mode (a trip one of them lacks
+  testing: pairing the two apartments' trips by destination and trip position (a trip one of them lacks
   shows "—" on that side), and the difference marking.
 
 ## Later, only if needed

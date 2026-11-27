@@ -1,155 +1,150 @@
 // @vitest-environment jsdom
 import { render, within } from '@testing-library/svelte';
 import { describe, expect, test } from 'vitest';
-import type { DestinationResult, Goal, Route } from '#lib/types.ts';
+import type { DestinationResult, Goal } from '#lib/types.ts';
 import DestinationList from './DestinationList.svelte';
 
-const BET_AM_SHALOM_GOAL: Goal = { strictness: 'should', idealMinutes: 15, maxMinutes: 25 };
-const BET_AM_SHALOM_WALK: Route = { mode: 'walk', timeMinutes: 32, distanceMiles: 1.6 };
-
-function walkCard(
-  title: string,
-  strictness: Goal['strictness'],
-  [idealMinutes, maxMinutes]: [number, number],
-  closest: DestinationResult['closest'],
-  [timeMinutes, distanceMiles]: [number, number],
-): DestinationResult {
-  return {
-    id: title,
-    title,
-    goal: { strictness, idealMinutes, maxMinutes },
-    closest,
-    routes: [{ mode: 'walk', timeMinutes, distanceMiles }],
-  };
-}
+const BET_AM_SHALOM_GOAL: Goal = { strictness: 'should', idealMinutes: 30, maxMinutes: 45 };
 
 /**
- * Destinations whose times land on each goal status. The institute and park are slower than ideal
- * but within the max; the grocery is beyond the max. Bet Am Shalom has a bus on Friday, only
- * walking and no drive on Saturday, and no transit route to CBST. Florham Park is beyond the max.
+ * The station's bike meets its goal while its walk is only partial. The park names its closest. Bet Am Shalom's walk misses,
+ * its Friday bus meets, it has no Saturday route, and its drive is past its only limit. CBST's
+ * trip has no goal, so it is never judged.
  */
 const DESTINATIONS: DestinationResult[] = [
   {
     id: 'metro-north',
-    title: 'Metro-North station 🚆',
-    goal: { strictness: 'must', idealMinutes: 10, maxMinutes: 20 },
-    closest: { name: 'White Plains' },
-    routes: [
-      { mode: 'walk', timeMinutes: 9, distanceMiles: 0.4 },
-      { mode: 'bike', timeMinutes: 4, distanceMiles: 1.5 },
-    ],
-  },
-  walkCard('Hebrew Institute of White Plains', 'must', [15, 25], null, [18, 1.1]),
-  walkCard('Park or trail 🌳', 'should', [10, 20], { name: 'Turnure Park' }, [13, 0.7]),
-  walkCard('Grocery store 🛒', 'should', [10, 20], { name: 'ShopRite' }, [24, 1.2]),
-  {
-    id: 'bet-am-shalom-friday',
-    title: 'Bet Am Shalom, Friday 6:15 pm',
-    goal: BET_AM_SHALOM_GOAL,
+    title: 'White Plains Metro-North station',
     closest: null,
-    routes: [
-      BET_AM_SHALOM_WALK,
-      { mode: 'transit', timeMinutes: 14, rides: [{ line: '60', vehicle: 'bus' }] },
-      { mode: 'drive', timeMinutes: 11, distanceMiles: 2.3 },
+    trips: [
+      {
+        goal: { strictness: 'should', idealMinutes: 15, maxMinutes: 25 },
+        route: { mode: 'walk', timeMinutes: 19, distanceMiles: 0.9 },
+      },
+      {
+        goal: { strictness: 'must', idealMinutes: 10, maxMinutes: 15 },
+        route: { mode: 'bike', timeMinutes: 6, distanceMiles: 1.5 },
+      },
     ],
   },
   {
-    id: 'bet-am-shalom-saturday',
-    title: 'Bet Am Shalom, Saturday 9:30 am',
-    goal: BET_AM_SHALOM_GOAL,
+    id: 'park',
+    title: 'Park or trail',
+    closest: { name: 'Turnure Park' },
+    trips: [
+      {
+        goal: { strictness: 'should', idealMinutes: 10, maxMinutes: 20 },
+        route: { mode: 'walk', timeMinutes: 8, distanceMiles: 0.4 },
+      },
+    ],
+  },
+  {
+    id: 'bet-am-shalom',
+    title: 'Bet Am Shalom',
     closest: null,
-    routes: [
-      BET_AM_SHALOM_WALK,
-      { mode: 'transit', timeMinutes: 30, rides: [] },
-      { mode: 'unavailable', tripMode: 'drive' },
+    trips: [
+      { goal: BET_AM_SHALOM_GOAL, route: { mode: 'walk', timeMinutes: 52, distanceMiles: 2.6 } },
+      {
+        label: 'Friday 6:15 pm',
+        goal: BET_AM_SHALOM_GOAL,
+        route: { mode: 'transit', timeMinutes: 24, rides: [{ line: '60', vehicle: 'bus' }] },
+      },
+      {
+        label: 'Saturday 9:30 am',
+        goal: BET_AM_SHALOM_GOAL,
+        route: { mode: 'unavailable', tripMode: 'transit' },
+      },
+      {
+        goal: { strictness: 'should', maxMinutes: 15 },
+        route: { mode: 'drive', timeMinutes: 16, distanceMiles: 2.6 },
+      },
     ],
   },
   {
     id: 'cbst',
-    title: 'Congregation Beit Simchat Torah, Saturday 10 am',
-    goal: { strictness: 'should', idealMinutes: 75, maxMinutes: 95 },
+    title: 'Congregation Beit Simchat Torah',
     closest: null,
-    routes: [{ mode: 'unavailable', tripMode: 'transit' }],
-  },
-  {
-    id: 'florham-park',
-    title: 'Florham Park, NJ',
-    goal: { strictness: 'should', idealMinutes: 45, maxMinutes: 60 },
-    closest: null,
-    routes: [{ mode: 'drive', timeMinutes: 68, distanceMiles: 58.2 }],
+    trips: [{ route: { mode: 'transit', timeMinutes: 80, rides: [] } }],
   },
 ];
 
-/** Every card the page shows, in order. PRs that restructure destinations must leave this alone. */
 const EXPECTED_CARDS = [
   {
-    title: 'Metro-North station 🚆',
-    goal: 'Must be within 20 minutes; ideally within 10 minutes',
-    routes: ['🚶 9 minutes to White Plains (0.4 miles)', '🚴 4 minutes (1.5 miles)'],
-    status: 'met',
-  },
-  {
-    title: 'Hebrew Institute of White Plains',
-    goal: 'Must be within a 25-minute walk; ideally within 15 minutes',
-    routes: ['🚶 18 minutes (1.1 miles)'],
-    status: 'partial',
-  },
-  {
-    title: 'Park or trail 🌳',
-    goal: 'Should be within a 20-minute walk; ideally within 10 minutes',
-    routes: ['🚶 13 minutes to Turnure Park (0.7 miles)'],
-    status: 'partial',
-  },
-  {
-    title: 'Grocery store 🛒',
-    goal: 'Should be within a 20-minute walk; ideally within 10 minutes',
-    routes: ['🚶 24 minutes to ShopRite (1.2 miles)'],
-    status: 'unmet',
-  },
-  {
-    title: 'Bet Am Shalom, Friday 6:15 pm',
-    goal: 'Should be within 25 minutes; ideally within 15 minutes',
-    routes: [
-      '🚶 32 minutes (1.6 miles)',
-      '🚌 14 minutes on the 60 bus',
-      '🚗 11 minutes (2.3 miles)',
+    title: 'White Plains Metro-North station',
+    closest: undefined,
+    trips: [
+      {
+        text: '🚶 19 minutes (0.9 miles)',
+        goal: 'Should be within 25 minutes; ideally within 15 minutes',
+        status: 'partial',
+      },
+      {
+        text: '🚴 6 minutes (1.5 miles)',
+        goal: 'Must be within 15 minutes; ideally within 10 minutes',
+        status: 'met',
+      },
     ],
-    status: 'met',
   },
   {
-    title: 'Bet Am Shalom, Saturday 9:30 am',
-    goal: 'Should be within 25 minutes; ideally within 15 minutes',
-    routes: ['🚶 32 minutes (1.6 miles)', '🚆 30 minutes by walking', '🚗 No driving route'],
-    status: 'unmet',
+    title: 'Park or trail',
+    closest: 'Closest: Turnure Park',
+    trips: [
+      {
+        text: '🚶 8 minutes (0.4 miles)',
+        goal: 'Should be within 20 minutes; ideally within 10 minutes',
+        status: 'met',
+      },
+    ],
   },
   {
-    title: 'Congregation Beit Simchat Torah, Saturday 10 am',
-    goal: 'Should be within 95 minutes; ideally within 75 minutes',
-    routes: ['🚆 No transit route'],
-    status: 'unmet',
+    title: 'Bet Am Shalom',
+    closest: undefined,
+    trips: [
+      {
+        text: '🚶 52 minutes (2.6 miles)',
+        goal: 'Should be within 45 minutes; ideally within 30 minutes',
+        status: 'unmet',
+      },
+      {
+        text: '🚌 Friday 6:15 pm: 24 minutes on the 60 bus',
+        goal: 'Should be within 45 minutes; ideally within 30 minutes',
+        status: 'met',
+      },
+      {
+        text: '🚆 Saturday 9:30 am: No transit route',
+        goal: 'Should be within 45 minutes; ideally within 30 minutes',
+        status: 'unmet',
+      },
+      { text: '🚗 16 minutes (2.6 miles)', goal: 'Should be within 15 minutes', status: 'unmet' },
+    ],
   },
   {
-    title: 'Florham Park, NJ',
-    goal: 'Should be within 60 minutes; ideally within 45 minutes',
-    routes: ['🚗 68 minutes (58.2 miles)'],
-    status: 'unmet',
+    title: 'Congregation Beit Simchat Torah',
+    closest: undefined,
+    trips: [{ text: '🚆 80 minutes by walking', goal: undefined, status: undefined }],
   },
 ];
 
 function renderedCards(destinations: DestinationResult[]) {
   const { container } = render(DestinationList, { destinations });
-  return [...container.querySelectorAll<HTMLElement>('[data-status]')].map((card) => ({
+  return [...container.querySelectorAll<HTMLElement>(':scope > ul > li')].map((card) => ({
     title: card.querySelector('h3')?.textContent,
-    goal: card.querySelector('p')?.textContent,
-    routes: within(card)
+    closest: card.querySelector(':scope > p')?.textContent,
+    trips: within(card)
       .getAllByRole('listitem')
-      .map((route) => route.textContent?.trim()),
-    status: card.dataset.status,
+      .map((trip) => {
+        const goal = trip.querySelector('p');
+        return {
+          text: trip.firstChild?.textContent?.trim(),
+          goal: goal?.textContent,
+          status: trip.dataset.status,
+        };
+      }),
   }));
 }
 
 describe('DestinationList', () => {
-  test('renders every destination card', () => {
+  test('judges each trip against its own goal', () => {
     expect(renderedCards(DESTINATIONS)).toEqual(EXPECTED_CARDS);
   });
 });
