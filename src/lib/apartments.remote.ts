@@ -42,6 +42,6 @@ export const recomputeTravelTimes = form(
   }),
   async ({ id }) => {
     const db = await getDatabase();
-    await showFailureInForm(recomputeApartment(db, getMaps(), id));
+    await showBadRequestInForm(recomputeApartment(db, getMaps(), id));
   },
 );
