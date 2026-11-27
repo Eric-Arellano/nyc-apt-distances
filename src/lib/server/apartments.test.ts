@@ -7,7 +7,13 @@ import geocode from '#tests/fixtures/google/geocode.json';
 import geocodeZeroResults from '#tests/fixtures/google/geocode-zero-results.json';
 import transit from '#tests/fixtures/google/transit-transfer.json';
 import walk from '#tests/fixtures/google/walk.json';
-import { getApartment, listApartments, type SaveOutcome, saveApartment } from './apartments';
+import {
+  getApartment,
+  listApartments,
+  recomputeApartment,
+  type SaveOutcome,
+  saveApartment,
+} from './apartments';
 import type Database from './db/schema/Database.ts';
 import type { ApartmentId } from './db/schema/public/Apartment.ts';
 import { DESTINATIONS, ORIGIN_COUNTY } from './destinations';
@@ -164,6 +170,29 @@ describe('saveApartment', () => {
       const second = await save('1 Main St', true);
 
       expect((await listApartments(db)).map(({ id }) => id)).toEqual([second, first]);
+    });
+  });
+});
+
+describe('recomputeApartment', () => {
+  test('replaces the whole snapshot and its compute time', async () => {
+    const longAgo = new Date('2025-01-01T00:00:00Z');
+    const id = await insert('1 Main St', [], longAgo);
+
+    await recomputeApartment(db, fakeMaps, id);
+
+    const apartment = await getApartment(db, id);
+    expect(apartment?.missing).toEqual([]);
+    expect(apartment?.results).toEqual(
+      toDestinationResults(await freshEntries('1 Main St'), DESTINATIONS).results,
+    );
+    expect(apartment?.travelTimesComputedAt.getTime()).toBeGreaterThan(longAgo.getTime());
+  });
+
+  test('refuses an unknown id with a 404', async () => {
+    await expect(recomputeApartment(db, fakeMaps, 404 as ApartmentId)).rejects.toEqual({
+      status: 404,
+      body: { message: 'No saved apartment has that link.', status: 404 },
     });
   });
 });

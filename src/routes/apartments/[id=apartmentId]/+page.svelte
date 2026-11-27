@@ -1,15 +1,22 @@
 <script lang="ts">
 import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
+import { recomputeTravelTimes } from '#lib/apartments.remote.ts';
 import Card from '#lib/components/Card.svelte';
+import ErrorMessage from '#lib/components/ErrorMessage.svelte';
 import DestinationList from '#lib/components/travelTimes/DestinationList.svelte';
 import * as Alert from '#lib/components/ui/alert/index.ts';
+import { Button } from '#lib/components/ui/button/index.ts';
 import { formatDate } from '#lib/formatDate.ts';
+import { signInOnExpiredSession } from '#lib/signInOnExpiredSession.ts';
 import { resolve } from '$app/paths';
 import type { PageProps } from './$types';
 
 const LIST_FORMAT = new Intl.ListFormat('en-US');
 
 const { data }: PageProps = $props();
+
+const isRecalculating = $derived(recomputeTravelTimes.pending > 0);
+const firstFormError = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
 </script>
 
 <svelte:head>
@@ -39,6 +46,15 @@ const { data }: PageProps = $props();
             {data.missing.length === 1 ? 'is' : 'are'}
             new or changed since these were calculated.
           </p>
+          <form {...recomputeTravelTimes.enhance(signInOnExpiredSession)} class="mt-3">
+            <input {...recomputeTravelTimes.fields.id.as('hidden', String(data.id))}>
+            <Button type="submit" disabled={isRecalculating}>
+              {isRecalculating ? 'Recalculating…' : 'Recalculate all travel times'}
+            </Button>
+          </form>
+          {#if firstFormError && !isRecalculating}
+            <ErrorMessage message={firstFormError.message} />
+          {/if}
         </Alert.Description>
       </Alert.Root>
     {/if}

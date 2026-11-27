@@ -100,6 +100,12 @@ each person, destinations stored in the database, maps.
   apartment page both go through it. Kanel types the column's reads as `unknown`, so reads need a
   typed boundary. **Open:** whether to also store the coordinates the lookup geocodes
   but doesn't yet return. Without them, maps and every recompute geocode the address again, billed.
+- **A stale snapshot is recomputed whole.** The apartment page lists the missing destinations and
+  offers "Recalculate all travel times" (`recomputeTravelTimes` in `src/lib/apartments.remote.ts`),
+  which replaces the whole snapshot, so `travel_times_computed_at` stays true of every entry. The
+  button appears only when something is missing, so nobody re-bills Google by accident.
+  *Rejected: computing only the missing destinations automatically, because it needs a compute
+  time per entry and saves little.*
 - **Deleting is a hard delete.** Any table that references `apartment` declares
   `on delete cascade`, so one statement removes an apartment and everything about it.
 - **Tracking fields are free-form, except status.** Status is a fixed list, so it can be sorted
@@ -150,9 +156,7 @@ Lands as three stacked PRs, each reviewable on its own:
   missing. Nothing creates an apartment yet, so it ships dark.
 - **1b. Save:** adding an address on the home page stores it with its travel-times snapshot and
   opens its page, replacing the URL lookup. The home page lists what's saved.
-- **1c. Recompute:** a "Recompute" button beside the missing list replaces the whole snapshot, so
-  `travel_times_computed_at` stays true of every entry. *Rejected: computing only the missing
-  destinations automatically, because it needs a compute time per entry and saves little.*
+- **1c. Recompute:** a button beside the missing list recomputes the snapshot.
 
 ## PR 2: Delete an apartment
 
