@@ -8,8 +8,8 @@ import {
   streetPart,
   type TimeCell,
 } from '#lib/comparison.ts';
+import { GOAL_TINTS, UNJUDGED_TINT } from '#lib/components/goalTints.ts';
 import { STATUS_LABELS } from '#lib/status.ts';
-import type { GoalStatus } from '#lib/types.ts';
 import { withUnit } from '#lib/unit.ts';
 import { resolve } from '$app/paths';
 
@@ -22,11 +22,6 @@ interface Props {
 
 const { groups, rows, sort, onsort }: Props = $props();
 
-const TINTS: Record<GoalStatus, string> = {
-  met: 'bg-green-600/30',
-  partial: 'bg-yellow-600/30',
-  unmet: 'bg-red-600/30',
-};
 const ALIGN = { start: 'items-start', center: 'items-center', end: 'items-end' } as const;
 const MISSING: TimeCell = { kind: 'missing' };
 // Separates rent from status, and each destination's columns from the one before.
@@ -61,8 +56,8 @@ function cellTitle(cell: TimeCell): string | undefined {
 // "Not for us" is out of the running, so its times are left untinted rather than compete.
 function cellTint(cell: TimeCell, dim: boolean): string | undefined {
   if (cell.kind === 'missing') return 'text-muted-foreground';
-  if (dim) return 'bg-white/4';
-  return cell.status && TINTS[cell.status];
+  if (dim) return UNJUDGED_TINT;
+  return cell.status && GOAL_TINTS[cell.status];
 }
 </script>
 

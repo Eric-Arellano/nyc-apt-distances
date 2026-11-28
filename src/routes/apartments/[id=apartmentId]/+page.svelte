@@ -1,5 +1,6 @@
 <script lang="ts">
 import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
+import Columns2Icon from '@lucide/svelte/icons/columns-2';
 import { recomputeTravelTimes } from '#lib/apartments.remote.ts';
 import DetailsCard from '#lib/components/apartment/DetailsCard.svelte';
 import StatusSelect from '#lib/components/apartment/StatusSelect.svelte';
@@ -10,6 +11,7 @@ import DestinationList from '#lib/components/travelTimes/DestinationList.svelte'
 import * as Alert from '#lib/components/ui/alert/index.ts';
 import { Button } from '#lib/components/ui/button/index.ts';
 import { formatDate } from '#lib/formatDate.ts';
+import { compareSearch } from '#lib/sideBySide.ts';
 import { signInOnExpiredSession } from '#lib/signInOnExpiredSession.ts';
 import { formatUnit, withUnit } from '#lib/unit.ts';
 import { resolve } from '$app/paths';
@@ -46,6 +48,10 @@ const firstFormError = $derived(recomputeTravelTimes.fields.allIssues()?.[0]);
         <p class="text-lg">{unit}</p>
       {/if}
       <StatusSelect id={data.id} status={data.status} />
+      <Button variant="outline" href="{resolve('/compare')}{compareSearch([data.id, undefined])}">
+        <Columns2Icon aria-hidden="true" />
+        Compare with…
+      </Button>
     </div>
 
     <DetailsCard id={data.id} details={data.details} />

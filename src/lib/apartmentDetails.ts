@@ -47,6 +47,11 @@ export function parseListingUrl(text: string): string | null | undefined {
   return url.hostname.includes('.') ? url.href : undefined;
 }
 
+/** `streeteasy.com`, which says enough about a listing to stand for its link. */
+export function siteName(listingUrl: string): string {
+  return new URL(listingUrl).hostname.replace(/^www\./, '');
+}
+
 // Browsers send a textarea's line breaks as CRLF, which would never equal what was loaded.
 const Text = v.pipe(
   v.string(),

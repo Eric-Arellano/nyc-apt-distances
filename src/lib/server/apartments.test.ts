@@ -12,6 +12,7 @@ import walk from '#tests/fixtures/google/walk.json';
 import {
   deleteApartment,
   getApartment,
+  listApartmentChoices,
   listApartments,
   recomputeApartment,
   type SaveOutcome,
@@ -396,6 +397,19 @@ describe('deleteApartment', () => {
     await deleteApartment(db, id);
 
     await expect(deleteApartment(db, id)).resolves.toBeUndefined();
+  });
+});
+
+describe('listApartmentChoices', () => {
+  test('lists the newest first, with what tells them apart', async () => {
+    const first = await save('1 Main St', { unit: '4B' });
+    await setApartmentStatus(db, first, 'not_for_us');
+    const second = await save('2 Main St');
+
+    expect(await listApartmentChoices(db)).toEqual([
+      { id: second, address: '2 Main St', unit: null, status: 'interested' },
+      { id: first, address: '1 Main St', unit: '4B', status: 'not_for_us' },
+    ]);
   });
 });
 

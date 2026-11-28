@@ -3,10 +3,12 @@ export interface Ride {
   vehicle: 'bus' | 'train';
 }
 
+export type TripMode = 'walk' | 'bike' | 'transit' | 'drive';
+
 export type Route =
   | { mode: 'walk' | 'bike' | 'drive'; timeMinutes: number; distanceMiles: number }
   | { mode: 'transit'; timeMinutes: number; rides: readonly Ride[] } // Empty: all walking
-  | { mode: 'unavailable'; tripMode: 'walk' | 'bike' | 'transit' | 'drive' }; // Google found no route.
+  | { mode: 'unavailable'; tripMode: TripMode }; // Google found no route.
 
 export interface Goal {
   strictness: 'must' | 'should';

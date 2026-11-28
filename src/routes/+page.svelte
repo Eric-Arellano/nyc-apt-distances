@@ -1,9 +1,11 @@
 <script lang="ts">
+import Columns2Icon from '@lucide/svelte/icons/columns-2';
 import { addApartment } from '#lib/apartments.remote.ts';
 import AddressInput from '#lib/components/address/AddressInput.svelte';
 import DuplicateWarning from '#lib/components/apartment/DuplicateWarning.svelte';
 import Card from '#lib/components/Card.svelte';
 import ComparisonTable from '#lib/components/comparison/ComparisonTable.svelte';
+import { Button } from '#lib/components/ui/button/index.ts';
 import ErrorMessage from '#lib/components/ErrorMessage.svelte';
 import Loading from '#lib/components/Loading.svelte';
 import { FIXED_SORT_KEYS, nextSort, parseSort, sortSearch } from '#lib/comparison.ts';
@@ -79,6 +81,14 @@ async function changeSort(key: string) {
 
     {#if data.apartments.length > 0}
       <Card title="Saved apartments">
+        {#snippet action()}
+          {#if data.apartments.length > 1}
+            <Button variant="outline" href={resolve('/compare')}>
+              <Columns2Icon aria-hidden="true" />
+              Side by side
+            </Button>
+          {/if}
+        {/snippet}
         <ComparisonTable groups={data.groups} rows={data.apartments} {sort} onsort={changeSort} />
       </Card>
     {/if}

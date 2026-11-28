@@ -9,11 +9,14 @@ export function goalText({ strictness, idealMinutes, maxMinutes }: Goal): string
  * Describes a transit route's time and rides. Bee-Line lines are numbers, so a bus is named as one
  * rather than passing for a subway line.
  */
+export function transitLines(rides: readonly Ride[]): string {
+  return rides.map(({ line, vehicle }) => (vehicle === 'bus' ? `${line} bus` : line)).join(' -> ');
+}
+
 function describeTransit(timeMinutes: number, rides: readonly Ride[]): [string, string] {
   if (rides.length === 0) return ['🚆', `${timeMinutes} minutes by walking`];
   const icon = rides.every(({ vehicle }) => vehicle === 'bus') ? '🚌' : '🚆';
-  const lines = rides.map(({ line, vehicle }) => (vehicle === 'bus' ? `${line} bus` : line));
-  return [icon, `${timeMinutes} minutes on the ${lines.join(' -> ')}`];
+  return [icon, `${timeMinutes} minutes on the ${transitLines(rides)}`];
 }
 
 const NO_ROUTE: Record<Extract<Route, { mode: 'unavailable' }>['tripMode'], [string, string]> = {
@@ -36,6 +39,10 @@ function describeRoute(route: Route): [string, string] {
     case 'unavailable':
       return NO_ROUTE[route.tripMode];
   }
+}
+
+export function routeIcon(route: Route): string {
+  return describeRoute(route)[0];
 }
 
 export function formatRoute(route: Route, label?: string): string {
