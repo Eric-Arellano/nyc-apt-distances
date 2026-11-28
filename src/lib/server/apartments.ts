@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { Kysely } from 'kysely';
 import { type ApartmentDetails, changedDetails } from '#lib/apartmentDetails.ts';
 import type { ApartmentRow } from '#lib/comparison.ts';
+import type { ApartmentChoice } from '#lib/sideBySide.ts';
 import type { DestinationResult } from '#lib/types.ts';
 import type { Coordinates } from './closest';
 import { TABLE_GROUPS, timeCell } from './comparison';
@@ -161,6 +162,15 @@ export async function getApartment(db: Db, id: ApartmentId): Promise<ApartmentVi
     // Kanel types `jsonb` reads as `unknown`. The column holds what `computeTravelTimes` returned.
     ...toDestinationResults(row.travelTimes as TravelTimeEntry[], DESTINATIONS),
   };
+}
+
+// Newest first, as the table breaks ties.
+export async function listApartmentChoices(db: Db): Promise<ApartmentChoice[]> {
+  return await db
+    .selectFrom('apartment')
+    .select(['id', 'address', 'unit', 'status'])
+    .orderBy('id', 'desc')
+    .execute();
 }
 
 const TABLE_COLUMNS = TABLE_GROUPS.flatMap(({ columns }) => columns);

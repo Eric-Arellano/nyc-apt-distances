@@ -7,6 +7,7 @@ import {
   formatRent,
   parseListingUrl,
   parseRent,
+  siteName,
   toDetailsInput,
 } from '#lib/apartmentDetails.ts';
 
@@ -64,6 +65,15 @@ describe('parseListingUrl', () => {
     ['text with spaces', 'see the listing'],
   ])('rejects %s', (_, text) => {
     expect(parseListingUrl(text)).toBeUndefined();
+  });
+});
+
+describe('siteName', () => {
+  test.each([
+    ['https://www.zillow.com/homedetails/123', 'zillow.com'],
+    ['https://streeteasy.com/rental/456', 'streeteasy.com'],
+  ])('names %j', (url, expected) => {
+    expect(siteName(url)).toBe(expected);
   });
 });
 

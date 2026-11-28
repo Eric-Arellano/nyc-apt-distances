@@ -1,6 +1,6 @@
 <script lang="ts">
 import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
-import { type ApartmentDetails, formatRent } from '#lib/apartmentDetails.ts';
+import { type ApartmentDetails, formatRent, siteName } from '#lib/apartmentDetails.ts';
 import LinkedText from './LinkedText.svelte';
 
 interface Props {
@@ -35,7 +35,7 @@ const { details }: Props = $props();
           rel="noopener noreferrer"
           class="inline-flex items-center gap-1 text-ring underline underline-offset-4 hover:text-foreground"
         >
-          {new URL(details.listingUrl).hostname.replace(/^www\./, '')}
+          {siteName(details.listingUrl)}
           <ExternalLinkIcon aria-hidden="true" class="size-4" />
         </a>
       </dd>
