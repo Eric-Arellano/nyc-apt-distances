@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { DestinationResult, Place, Route, TripResult } from '#lib/types.ts';
 import { type Coordinates, closest } from './closest.ts';
 import type { Destination, DestinationTrip } from './destinations.ts';
-import type { Maps } from './maps.ts';
+import type { Maps } from './maps/maps.ts';
 
 function resolvePlace(
   place: Destination['place'],

@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { Coordinates } from '#lib/server/closest.ts';
-import { fetchGoogle } from '#lib/server/gmapsFetch.ts';
+import { fetchGoogle } from '#lib/server/maps/googleFetch.ts';
 
 const GEOCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
 

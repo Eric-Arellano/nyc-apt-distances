@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, test, vi } from 'vitest';
 import type { Destination } from './destinations.ts';
-import { fakeMaps } from './fakeMaps.ts';
-import type { Maps } from './maps.ts';
+import { fakeMaps } from './maps/fakeMaps.ts';
+import type { Maps } from './maps/maps.ts';
 import { computeTravelTimes, fingerprint, toDestinationResults } from './travelTimes.ts';
 
 const GOAL = { strictness: 'must', idealMinutes: 15, maxMinutes: 25 } as const;

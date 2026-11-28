@@ -23,8 +23,8 @@ import {
 import type Database from './db/schema/Database.ts';
 import type { ApartmentId } from './db/schema/public/Apartment.ts';
 import { DESTINATIONS, ORIGIN_COUNTY } from './destinations.ts';
-import { fakeMaps } from './fakeMaps.ts';
-import { googleMaps } from './maps.ts';
+import { fakeMaps } from './maps/fakeMaps.ts';
+import { googleMaps } from './maps/maps.ts';
 import { computeTravelTimes, type TravelTimeEntry, toDestinationResults } from './travelTimes.ts';
 
 let db: Kysely<Database>;

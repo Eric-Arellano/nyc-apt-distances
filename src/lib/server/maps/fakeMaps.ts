@@ -1,6 +1,6 @@
 import type { Route } from '#lib/types.ts';
-import type { Trip } from './gmapsRouting.ts';
 import type { Maps } from './maps.ts';
+import type { Trip } from './routing.ts';
 
 const ROUTES: Record<Trip['mode'], Route> = {
   walk: { mode: 'walk', timeMinutes: 12, distanceMiles: 0.8 },

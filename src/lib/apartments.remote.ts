@@ -11,7 +11,7 @@ import {
 } from '#lib/server/apartments.ts';
 import { getDatabase } from '#lib/server/database.ts';
 import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
-import { getMaps } from '#lib/server/getMaps.ts';
+import { getMaps } from '#lib/server/maps/getMaps.ts';
 import { showBadRequestInForm } from '#lib/server/showBadRequestInForm.ts';
 import { STATUSES } from '#lib/status.ts';
 import { UnitSchema } from '#lib/unit.ts';

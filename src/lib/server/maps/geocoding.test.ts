@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 import geocodeResponse from '#tests/fixtures/google/geocode.json';
 import partialMatch from '#tests/fixtures/google/geocode-partial-match.json';
 import zeroResults from '#tests/fixtures/google/geocode-zero-results.json';
-import { geocode, parseGeocodeResponse } from './gmapsGeocoding.ts';
+import { geocode, parseGeocodeResponse } from './geocoding.ts';
 
 describe('geocode', () => {
   test('encodes the address and key into the query string', async () => {

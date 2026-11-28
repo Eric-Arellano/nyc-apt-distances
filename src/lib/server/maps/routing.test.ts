@@ -7,7 +7,7 @@ import transitMetroNorth from '#tests/fixtures/google/transit-metro-north.json';
 import transitNoRoute from '#tests/fixtures/google/transit-no-route.json';
 import transitTransfer from '#tests/fixtures/google/transit-transfer.json';
 import walk from '#tests/fixtures/google/walk.json';
-import { computeRoute, parseDistanceRoute, parseTransitRoute } from './gmapsRouting.ts';
+import { computeRoute, parseDistanceRoute, parseTransitRoute } from './routing.ts';
 import { DayOfWeek } from './weeklyTime.ts';
 
 /** The target the transit fixtures were captured with. */

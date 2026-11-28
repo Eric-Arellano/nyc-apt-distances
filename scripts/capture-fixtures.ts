@@ -10,14 +10,14 @@
 //
 // Every address here is a public place, because the repo is public. Never add an apartment.
 import { writeFileSync } from 'node:fs';
-import { fetchGeocode } from '#lib/server/gmapsGeocoding.ts';
+import { fetchGeocode } from '#lib/server/maps/geocoding.ts';
 import {
   computeRoutes,
   type RouteOptions,
   routeRequest,
   type Trip,
-} from '#lib/server/gmapsRouting.ts';
-import { DayOfWeek } from '#lib/server/weeklyTime.ts';
+} from '#lib/server/maps/routing.ts';
+import { DayOfWeek } from '#lib/server/maps/weeklyTime.ts';
 
 const KEY = process.env.GOOGLE_MAPS_TOKEN;
 if (!KEY) throw new Error('GOOGLE_MAPS_TOKEN must be set as an env var.');
