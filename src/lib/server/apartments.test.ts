@@ -400,14 +400,66 @@ describe('deleteApartment', () => {
 });
 
 describe('listApartments', () => {
-  test('lists the newest first', async () => {
+  // `fakeMaps` walks in 12 minutes, bikes in 4, drives in 9 and takes transit in 18.
+  const FAKE_TIMES = {
+    'metro-north-walk': { kind: 'trip', minutes: 12, status: 'met' },
+    'metro-north-bike': { kind: 'trip', minutes: 4, status: 'met' },
+    'hebrew-institute-walk': { kind: 'trip', minutes: 12, status: 'met' },
+    'park-walk': { kind: 'trip', minutes: 12, status: 'partial' },
+    'grocery-walk': { kind: 'trip', minutes: 12, status: 'partial' },
+    'bet-am-shalom-walk': { kind: 'trip', minutes: 12, status: 'met' },
+    'bet-am-shalom-transit-fri': { kind: 'trip', minutes: 18, status: 'met' },
+    'bet-am-shalom-transit-sat': { kind: 'trip', minutes: 18, status: 'met' },
+    'cbst-transit': { kind: 'trip', minutes: 18, status: 'met' },
+    'florham-park-drive': { kind: 'trip', minutes: 9, status: 'met' },
+  } as const;
+
+  test('lists the newest first, with a time for each column', async () => {
     const first = await save('1 Main St', { unit: '4B' });
+    await updateApartmentDetails(db, first, {
+      edited: { ...NO_DETAILS, unit: '4B', rent: 2850, nextStep: 'Call the agent' },
+      original: { ...NO_DETAILS, unit: '4B' },
+    });
+    await setApartmentStatus(db, first, 'visited');
     const second = await save('2 Main St');
 
     expect(await listApartments(db)).toEqual([
-      { id: second, address: '2 Main St', unit: null, createdAt: expect.any(Date) },
-      { id: first, address: '1 Main St', unit: '4B', createdAt: expect.any(Date) },
+      {
+        id: second,
+        address: '2 Main St',
+        unit: null,
+        status: 'interested',
+        rent: null,
+        nextStep: null,
+        times: FAKE_TIMES,
+      },
+      {
+        id: first,
+        address: '1 Main St',
+        unit: '4B',
+        status: 'visited',
+        rent: 2850,
+        nextStep: 'Call the agent',
+        times: FAKE_TIMES,
+      },
     ]);
+  });
+
+  test('marks a destination the snapshot lacks as missing', async () => {
+    const entries = await freshEntries('1 Main St');
+    await insert(
+      '1 Main St',
+      entries.filter(({ id }) => id !== 'bet-am-shalom'),
+      new Date(),
+    );
+
+    const [apartment] = await listApartments(db);
+    expect(apartment?.times).toEqual({
+      ...FAKE_TIMES,
+      'bet-am-shalom-walk': { kind: 'missing' },
+      'bet-am-shalom-transit-fri': { kind: 'missing' },
+      'bet-am-shalom-transit-sat': { kind: 'missing' },
+    });
   });
 
   test('is empty with nothing saved', async () => {

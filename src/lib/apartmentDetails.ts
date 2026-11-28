@@ -27,8 +27,13 @@ export function parseRent(text: string): number | null | undefined {
   return /^[1-9]\d{0,6}$/.test(digits) ? Number(digits) : undefined;
 }
 
+/** `$2,850`, for where the column header says it is monthly. */
+export function formatDollars(rent: number): string {
+  return RENT_FORMAT.format(rent);
+}
+
 export function formatRent(rent: number): string {
-  return `${RENT_FORMAT.format(rent)}/month`;
+  return `${formatDollars(rent)}/month`;
 }
 
 /** `undefined` means the text isn't a web link. */
