@@ -17,7 +17,7 @@ import { STATUSES } from '#lib/status.ts';
 import { UnitSchema } from '#lib/unit.ts';
 import { resolve } from '$app/paths';
 import { form } from '$app/server';
-import { parseApartmentId } from '../params';
+import { parseApartmentId } from '../params.ts';
 
 const NewApartment = v.object({
   address: v.pipe(

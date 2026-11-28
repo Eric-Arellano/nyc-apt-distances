@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { linkify } from './linkify';
+import { linkify } from './linkify.ts';
 
 describe('linkify', () => {
   test('links a phone number, an email and a web link among text', () => {

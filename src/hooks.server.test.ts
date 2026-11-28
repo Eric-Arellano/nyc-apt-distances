@@ -1,7 +1,7 @@
 import { type Cookies, isRedirect, type RequestEvent } from '@sveltejs/kit';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { deriveSessionKey, signSession } from '#lib/server/auth.ts';
-import { handle } from './hooks.server';
+import { handle } from './hooks.server.ts';
 
 const KEY = deriveSessionKey('correct-horse-battery');
 

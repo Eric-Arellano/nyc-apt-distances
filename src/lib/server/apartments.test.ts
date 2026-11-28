@@ -19,13 +19,13 @@ import {
   saveApartment,
   setApartmentStatus,
   updateApartmentDetails,
-} from './apartments';
+} from './apartments.ts';
 import type Database from './db/schema/Database.ts';
 import type { ApartmentId } from './db/schema/public/Apartment.ts';
-import { DESTINATIONS, ORIGIN_COUNTY } from './destinations';
-import { fakeMaps } from './fakeMaps';
-import { googleMaps } from './maps';
-import { computeTravelTimes, type TravelTimeEntry, toDestinationResults } from './travelTimes';
+import { DESTINATIONS, ORIGIN_COUNTY } from './destinations.ts';
+import { fakeMaps } from './fakeMaps.ts';
+import { googleMaps } from './maps.ts';
+import { computeTravelTimes, type TravelTimeEntry, toDestinationResults } from './travelTimes.ts';
 
 let db: Kysely<Database>;
 

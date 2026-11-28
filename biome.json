@@ -39,6 +39,9 @@
     "enabled": true,
     "rules": {
       "preset": "recommended",
+      "correctness": {
+        "useImportExtensions": "error"
+      },
       "style": {
         "useTemplate": "error"
       },

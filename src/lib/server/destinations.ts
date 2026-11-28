@@ -1,7 +1,7 @@
 import type { Goal } from '#lib/types.ts';
-import { type Candidates, PARKS, SUPERMARKETS } from './candidateLocations';
-import type { Trip } from './gmapsRouting';
-import { DayOfWeek } from './weeklyTime';
+import { type Candidates, PARKS, SUPERMARKETS } from './candidateLocations.ts';
+import type { Trip } from './gmapsRouting.ts';
+import { DayOfWeek } from './weeklyTime.ts';
 
 /**
  * The county an origin address must be in. Without a fixed suffix, an address missing its town

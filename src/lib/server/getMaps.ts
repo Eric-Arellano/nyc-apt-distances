@@ -1,8 +1,8 @@
 // Apart from `maps.ts` because importing `$app/env/private` validates every env var, so a test
 // that imports this file fails without `SITE_PASSWORD` set.
 import { GOOGLE_MAPS_TOKEN, MOCK } from '$app/env/private';
-import { fakeMaps } from './fakeMaps';
-import { googleMaps, type Maps } from './maps';
+import { fakeMaps } from './fakeMaps.ts';
+import { googleMaps, type Maps } from './maps.ts';
 
 // `MOCK=1` fakes only Google; saves still reach the database.
 export function getMaps(): Maps {

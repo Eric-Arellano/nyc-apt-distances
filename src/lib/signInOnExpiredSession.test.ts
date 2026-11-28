@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { submitOrSignIn } from './signInOnExpiredSession';
+import { submitOrSignIn } from './signInOnExpiredSession.ts';
 
 const navigation = vi.hoisted(() => ({ goto: vi.fn(async () => {}) }));
 vi.mock('$app/navigation', () => navigation);

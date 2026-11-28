@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import type { DestinationResult, Goal } from '#lib/types.ts';
-import { TABLE_GROUPS, timeCell, toColumnGroups } from './comparison';
-import { DESTINATIONS, type Destination } from './destinations';
+import { TABLE_GROUPS, timeCell, toColumnGroups } from './comparison.ts';
+import { DESTINATIONS, type Destination } from './destinations.ts';
 
 describe('TABLE_GROUPS', () => {
   // Keys are in shared links, so renaming one breaks them.

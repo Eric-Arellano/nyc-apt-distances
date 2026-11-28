@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { loginPath, returnPath } from './loginRedirect';
+import { loginPath, returnPath } from './loginRedirect.ts';
 
 const ORIGIN = 'https://example.com';
 

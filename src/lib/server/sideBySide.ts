@@ -1,7 +1,7 @@
 import { goalStatus } from '#lib/goalStatus.ts';
 import { type Pair, type PairedDestination, pairMap, type SideTrip } from '#lib/sideBySide.ts';
 import type { DestinationResult, TripResult } from '#lib/types.ts';
-import type { Destination } from './destinations';
+import type { Destination } from './destinations.ts';
 
 function sideTrip(trip: TripResult | undefined): SideTrip {
   if (!trip) return { kind: 'missing' };

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { closest, haversineDistance } from './closest';
+import { closest, haversineDistance } from './closest.ts';
 
 const COUNTY_OFFICE = { latitude: 41.03036, longitude: -73.769965 };
 const WHITE_PLAINS_STATION = { latitude: 41.033309, longitude: -73.775206 };

@@ -1,6 +1,6 @@
 import { error, isValidationError } from '@sveltejs/kit';
 import { describe, expect, test } from 'vitest';
-import { showBadRequestInForm } from './showBadRequestInForm';
+import { showBadRequestInForm } from './showBadRequestInForm.ts';
 
 async function failingWith(status: number, message: string): Promise<never> {
   error(status, message);

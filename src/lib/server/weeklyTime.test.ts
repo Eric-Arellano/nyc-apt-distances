@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { DayOfWeek, nextOccurrence } from './weeklyTime';
+import { DayOfWeek, nextOccurrence } from './weeklyTime.ts';
 
 describe('nextOccurrence', () => {
   beforeEach(() => {

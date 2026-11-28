@@ -1,5 +1,5 @@
 // `scripts/capture-fixtures.ts` loads this module under plain Node, to capture fixtures with the
-// same requests production sends. So its imports, and theirs, carry `.ts` extensions.
+// same requests production sends.
 import { DateTime } from 'luxon';
 import { fetchGoogle } from '#lib/server/gmapsFetch.ts';
 import { nextOccurrence, type WeeklyTime } from '#lib/server/weeklyTime.ts';

@@ -1,7 +1,7 @@
 <script lang="ts">
 import { goalStatus } from '#lib/goalStatus.ts';
 import type { DestinationResult, GoalStatus } from '#lib/types.ts';
-import { formatRoute, goalText } from './format';
+import { formatRoute, goalText } from './format.ts';
 
 const STATUS_CLASSES: Record<GoalStatus, string> = {
   met: 'border-green-600 bg-green-950/50',
