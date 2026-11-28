@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { formatUnit, parseUnit, withUnit } from '#lib/unit.ts';
+import { formatUnit, isValidAddress, parseUnit, streetPart, withUnit } from '#lib/address.ts';
 
 describe('parseUnit', () => {
   test.each([
@@ -31,5 +31,25 @@ describe('withUnit', () => {
 describe('formatUnit', () => {
   test('names it a unit', () => {
     expect(formatUnit('4B')).toBe('Unit 4B');
+  });
+});
+
+describe('isValidAddress', () => {
+  test.each([
+    ['', false],
+    ['123', false],
+    ['West 123', false],
+    ['123 W', true],
+  ])('judges %j valid: %s', (address, valid) => {
+    expect(isValidAddress(address)).toBe(valid);
+  });
+});
+
+describe('streetPart', () => {
+  test.each([
+    ['12 Juniper Row, White Plains, NY 10601', '12 Juniper Row'],
+    ['12 Juniper Row', '12 Juniper Row'],
+  ])('takes %j up to the first comma', (address, expected) => {
+    expect(streetPart(address)).toBe(expected);
   });
 });

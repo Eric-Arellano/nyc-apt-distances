@@ -1,4 +1,4 @@
-import type { Goal, Ride, Route } from '#lib/types.ts';
+import type { Goal, Ride, Route } from '#lib/travelTimes.ts';
 
 export function goalText({ strictness, idealMinutes, maxMinutes }: Goal): string {
   const limit = `${strictness === 'must' ? 'Must' : 'Should'} be within ${maxMinutes} minutes`;

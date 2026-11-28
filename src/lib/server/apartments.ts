@@ -1,11 +1,11 @@
 import { error } from '@sveltejs/kit';
 import type { Kysely } from 'kysely';
 import { type ApartmentDetails, changedDetails } from '#lib/apartmentDetails.ts';
-import type { ApartmentRow } from '#lib/comparison.ts';
+import type { ApartmentRow } from '#lib/comparisonTable.ts';
 import type { ApartmentChoice } from '#lib/sideBySide.ts';
-import type { DestinationResult } from '#lib/types.ts';
+import type { DestinationResult } from '#lib/travelTimes.ts';
 import type { Coordinates } from './closest.ts';
-import { TABLE_GROUPS, timeCell } from './comparison.ts';
+import { TABLE_GROUPS, timeCell } from './comparisonTable.ts';
 import type Database from './db/schema/Database.ts';
 import type { ApartmentId } from './db/schema/public/Apartment.ts';
 import type ApartmentStatus from './db/schema/public/ApartmentStatus.ts';

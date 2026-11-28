@@ -1,4 +1,4 @@
-import type { Goal } from '#lib/types.ts';
+import type { Goal } from '#lib/travelTimes.ts';
 import { type Candidates, PARKS, SUPERMARKETS } from './candidateLocations.ts';
 import type { Trip } from './maps/routing.ts';
 import { DayOfWeek } from './maps/weeklyTime.ts';

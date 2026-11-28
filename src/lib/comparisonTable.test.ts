@@ -6,9 +6,8 @@ import {
   parseSort,
   sortRows,
   sortSearch,
-  streetPart,
   type TimeCell,
-} from './comparison.ts';
+} from './comparisonTable.ts';
 import type { ApartmentId } from './server/db/schema/public/Apartment.ts';
 
 const KEYS = ['apartment', 'status', 'rent', 'hebrew-institute-walk'];
@@ -47,15 +46,6 @@ describe('nextSort', () => {
   test('reverses the current column', () => {
     expect(nextSort({ key: 'rent', desc: false }, 'rent')).toEqual({ key: 'rent', desc: true });
     expect(nextSort({ key: 'rent', desc: true }, 'rent')).toEqual({ key: 'rent', desc: false });
-  });
-});
-
-describe('streetPart', () => {
-  test.each([
-    ['12 Juniper Row, White Plains, NY 10601', '12 Juniper Row'],
-    ['12 Juniper Row', '12 Juniper Row'],
-  ])('takes %j up to the first comma', (address, expected) => {
-    expect(streetPart(address)).toBe(expected);
   });
 });
 

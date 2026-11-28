@@ -34,3 +34,10 @@ export interface DestinationResult {
 }
 
 export type GoalStatus = 'met' | 'partial' | 'unmet';
+
+export function goalStatus(route: Route, goal: Goal): GoalStatus {
+  if (route.mode === 'unavailable' || route.timeMinutes > goal.maxMinutes) {
+    return 'unmet';
+  }
+  return route.timeMinutes <= (goal.idealMinutes ?? goal.maxMinutes) ? 'met' : 'partial';
+}

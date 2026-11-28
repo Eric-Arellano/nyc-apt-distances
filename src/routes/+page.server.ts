@@ -1,5 +1,5 @@
 import { listApartments } from '#lib/server/apartments.ts';
-import { TABLE_GROUPS } from '#lib/server/comparison.ts';
+import { TABLE_GROUPS } from '#lib/server/comparisonTable.ts';
 import { getDatabase } from '#lib/server/database.ts';
 import type { PageServerLoad } from './$types';
 

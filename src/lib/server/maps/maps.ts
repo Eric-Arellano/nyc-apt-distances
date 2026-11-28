@@ -1,4 +1,4 @@
-import type { Route } from '#lib/types.ts';
+import type { Route } from '#lib/travelTimes.ts';
 import { type GeocodedAddress, geocode } from './geocoding.ts';
 import { computeRoute, type RouteOptions } from './routing.ts';
 

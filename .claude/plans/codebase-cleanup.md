@@ -5,7 +5,7 @@
 The app has every feature it was meant to have, so the work left is maintainability: the next
 person (most likely an agent, since nobody reviews closely any more) should be able to find
 things, trust the names, and change a rule in one place. UI, UX and correctness are out of
-scope. Every PR below preserves behavior. The one visible change is in PR 5, where the
+scope. Every PR below preserves behavior. The one visible change is in PR 4, where the
 side-by-side picker joins street and unit with no-break spaces, as the table already does.
 
 What a full read of the code found:
@@ -14,33 +14,28 @@ What a full read of the code found:
   what someone editing `destinations.ts` most needs to know: which edits are free and which mark
   every saved apartment's travel times missing until they are recalculated, which is billed.
 - **One rule lives in three places.** `goal && goalStatus(route, goal)` is computed in
-  `DestinationCard.svelte`, `timeCell` (`server/comparison.ts`) and `sideTrip`
+  `DestinationCard.svelte`, `timeCell` (`server/comparisonTable.ts`) and `sideTrip`
   (`server/sideBySide.ts`). Two parallel types, `TimeCell` and `SideTrip`, both mean "a trip
   this apartment's snapshot may lack".
 - **Table columns point at trips by index.** `COMPARISON_GROUPS` names each column by
   `tripIndex`. Reordering a destination's `trips` silently repoints a column at another trip;
   only an out-of-range index throws. Each mode's emoji is defined in three places.
-- **Names that mislead.** There are two "status" concepts, an apartment's
-  (`status.ts`) and a goal's (`GoalStatus`). `comparison.ts` holds only the table's logic,
-  while the `/compare` route is the side-by-side. `types.ts` is a grab-bag name.
-  `addressUtils.ts` sits under `components/` though a remote function's schema uses it.
-- **Layout.** Two `../params` imports reach outside `#lib`.
 
 ## Decisions
 
-- **Mechanical PRs first** (the renames in PR 1), so the logic PRs are reviewed against final
-  names and rebases stay trivial. **Docs last** (6), so they describe the final layout.
+- **The moves and renames have landed**, so the names below are final. **Docs last** (PR 5),
+  so they describe the final layout.
 - **Every relative import names its file extension.** Biome's `useImportExtensions` enforces
   it in `.ts` files, but Biome doesn't check `.svelte` script blocks, so a move that touches a
   Svelte import writes `.ts` by hand.
 - **The shared/server pairing becomes the stated convention.** A feature's shared types and
   pure logic live in `src/lib/x.ts`. The half that reads `DESTINATIONS` or the database lives in
-  `src/lib/server/x.ts`, as `sideBySide.ts` already does. PR 1 applies it to `travelTimes` and
-  `comparisonTable`, and PR 6 writes it into `AGENTS.md`.
+  `src/lib/server/x.ts`, as `sideBySide`, `travelTimes` and `comparisonTable` already do. PR 5
+  writes it into `AGENTS.md`.
 - **Goals are judged where they meet stored routes**, in `toTripResults`. That is still read
   time, so editing a goal re-judges every apartment without recalculating.
 - **Column keys never change.** `?sort=` links carry them, and the `TABLE_GROUPS` key test pins
-  them. PR 3 must leave that test untouched and passing.
+  them. PR 2 must leave that test untouched and passing.
 - **Kept WET on purpose:**
   - `DetailsForm`'s six fields, since each differs.
   - The hidden-id `<input>` in each form.
@@ -50,7 +45,7 @@ What a full read of the code found:
   - The back link that the apartment and compare pages share.
 - *Rejected: renaming `GoalStatus` to tell it from apartment status, because renaming `status.ts` to
   `apartmentStatus.ts` separates them at a fraction of the churn.*
-- *Rejected: a lint rule banning `../` imports. Only two exist, both removed in PR 1, and
+- *Rejected: a lint rule banning `../` imports. None reach outside `#lib` any more, and
   `+layout.svelte`'s `../app.css` is legitimate.*
 - *Rejected: injecting destinations into `apartments.ts` so its tests use their own. That would
   thread them through every caller for one test, and asserting less in that test does the job.*
@@ -58,26 +53,7 @@ What a full read of the code found:
   → `saveApartment`, …). Each body is one line that shows the pairing, and a rename changes
   the endpoint names.*
 
-## PR 1: Name shared modules for what they hold
-
-Moves and merges only, with no logic change. Each moved function keeps its comments.
-
-- `src/lib/types.ts` and `src/lib/goalStatus.ts` → `src/lib/travelTimes.ts`, the shared half of
-  `server/travelTimes.ts`. `goalStatus.test.ts` → `travelTimes.test.ts`.
-- `src/lib/status.ts` → `src/lib/apartmentStatus.ts`, with its test.
-- `src/lib/comparison.ts` and `src/lib/server/comparison.ts` → `comparisonTable.ts` in both
-  places, with their tests, matching `ComparisonTable.svelte`.
-- `src/lib/address.ts` collects how we read and write an apartment's address: `unit.ts`
-  (`formatUnit`, `withUnit`, `parseUnit`, `UnitSchema`), `isValidAddress` from
-  `components/address/addressUtils.ts`, and `streetPart` from `comparison.ts`. Their tests merge
-  into `address.test.ts`.
-- `parseApartmentId` and its comment → `src/lib/apartmentId.ts`. `params.test.ts` becomes
-  `apartmentId.test.ts`, and `src/params.ts` keeps only `defineParams`. This removes both
-  `../params` imports.
-- `components/address/AddressInput.svelte` (with its test) and `components/DeleteApartment.svelte`
-  → `components/apartment/`. `components/address/` goes away.
-
-## PR 2: Judge each trip once
+## PR 1: Judge each trip once
 
 - `TripResult` (in `lib/travelTimes.ts`) gains `status?: GoalStatus`, absent when the trip has no
   goal. `toTripResults` in `server/travelTimes.ts` sets it.
@@ -96,7 +72,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
   - Drop the goal verdicts from that test. Today it fails whenever a goal in `destinations.ts`
     is tuned, and the `goalStatus` and `toDestinationResults` tests already cover judging.
 
-## PR 3: Declare table columns on their trips
+## PR 2: Declare table columns on their trips
 
 - `Destination` gains `shortTitle`. `DestinationTrip` gains `column?: false | { icon?: string;
   label?: string }`. Absent means a column with the mode's icon. `false` means no column, as for
@@ -114,7 +90,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
 - *Rejected: keeping a separate column list that is "free to change" apart from `trips`. The only
   freedom it has ever used is leaving a trip out, which `column: false` covers.*
 
-## PR 4: Tidy the apartment store, remote functions and routing
+## PR 3: Tidy the apartment store, remote functions and routing
 
 - `server/apartments.ts`:
   - `getApartment` throws a 404 like its three siblings, rather than returning `undefined`. The
@@ -142,7 +118,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
   - `routing.test.ts` hoists the fake-timer setup it repeats in two `describe`s.
   - `server/sideBySide.test.ts` spells `day: 5` as `DayOfWeek.Friday`.
 
-## PR 5: Tidy the Svelte components
+## PR 4: Tidy the Svelte components
 
 - Add one `shortAddress(address, unit)` to `lib/address.ts`: the street part, then the unit,
   joined by ` · ` with explicit ` ` escapes. It replaces `ComparisonTable`'s inline copy,
@@ -161,7 +137,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
   - `DetailsForm`'s per-instance `ORIGINAL_KEYS` → `detailKeys`.
   - Rewrap the over-long doc comment in `DestinationList.svelte.test.ts`.
 
-## PR 6: Revamp the docs
+## PR 5: Revamp the docs
 
 - **README:**
   - Open with what the app is now: it looks up an apartment's travel times to the places we
@@ -186,17 +162,16 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
 
 ## Verification
 
-- PR 1, which is mechanical, must end with the 330 tests `main` had before this cleanup, because
-  renamed test files keep their tests.
 - For every PR, run `npm run lint && npm run check && npm test`. Then read `git status` and the
   diff for secrets, absolute home paths and private addresses.
-- For PRs that touch Svelte (1, 2, 3, 5), run `svelte-autofixer` on each touched component until
+- For PRs that touch Svelte (1, 2, 4), run `svelte-autofixer` on each touched component until
   it is clean. Then run the app with `SITE_PASSWORD=<throwaway> MOCK=1 npm run dev`, which bills
-  nothing, needs no Google key and doesn't read `.envrc`.
+  nothing, needs no Google key and doesn't read `.envrc`. A `.pglite/` that another branch has
+  migrated refuses to start, so run it from a fresh worktree rather than touching that one.
   - Sign in, then screenshot `/` (sorted at least once), an apartment page, and
     `/compare?a=…&b=…` with Playwright. Compare them against `main`; they should be identical
-    apart from PR 5's no-break spaces.
+    apart from PR 4's no-break spaces.
   - Add test apartments only at public addresses, such as the fixtures' 100 Martine Ave.
   - Screenshots stay local, since `.pglite/` may hold real apartments.
-- After PR 3, check that the `TABLE_GROUPS` key test passes unchanged, so shared `?sort=` links
+- After PR 2, check that the `TABLE_GROUPS` key test passes unchanged, so shared `?sort=` links
   still resolve.

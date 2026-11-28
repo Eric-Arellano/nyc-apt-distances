@@ -1,7 +1,7 @@
 <script lang="ts">
 import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
+import { streetPart } from '#lib/address.ts';
 import SideBySide from '#lib/components/comparison/SideBySide.svelte';
-import { streetPart } from '#lib/comparison.ts';
 import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
 import { compareSearch, type Pair, pairMap } from '#lib/sideBySide.ts';
 import { goto } from '$app/navigation';

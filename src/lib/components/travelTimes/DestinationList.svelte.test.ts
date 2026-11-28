@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, within } from '@testing-library/svelte';
 import { describe, expect, test } from 'vitest';
-import type { DestinationResult, Goal } from '#lib/types.ts';
+import type { DestinationResult, Goal } from '#lib/travelTimes.ts';
 import DestinationList from './DestinationList.svelte';
 
 const BET_AM_SHALOM_GOAL: Goal = { strictness: 'should', idealMinutes: 30, maxMinutes: 45 };

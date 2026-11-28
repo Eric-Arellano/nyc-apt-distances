@@ -1,7 +1,9 @@
 import { redirect } from '@sveltejs/kit';
 import * as v from 'valibot';
+import { isValidAddress, UnitSchema } from '#lib/address.ts';
 import { ApartmentDetailsSchema } from '#lib/apartmentDetails.ts';
-import { isValidAddress } from '#lib/components/address/addressUtils.ts';
+import { parseApartmentId } from '#lib/apartmentId.ts';
+import { STATUSES } from '#lib/apartmentStatus.ts';
 import {
   deleteApartment,
   recomputeApartment,
@@ -13,11 +15,8 @@ import { getDatabase } from '#lib/server/database.ts';
 import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
 import { getMaps } from '#lib/server/maps/getMaps.ts';
 import { showBadRequestInForm } from '#lib/server/showBadRequestInForm.ts';
-import { STATUSES } from '#lib/status.ts';
-import { UnitSchema } from '#lib/unit.ts';
 import { resolve } from '$app/paths';
 import { form } from '$app/server';
-import { parseApartmentId } from '../params.ts';
 
 const NewApartment = v.object({
   address: v.pipe(

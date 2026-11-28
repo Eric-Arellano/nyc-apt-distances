@@ -3,7 +3,7 @@
 import { DateTime } from 'luxon';
 import { fetchGoogle } from '#lib/server/maps/googleFetch.ts';
 import { nextOccurrence, type WeeklyTime } from '#lib/server/maps/weeklyTime.ts';
-import type { Ride, Route } from '#lib/types.ts';
+import type { Ride, Route } from '#lib/travelTimes.ts';
 
 const COMPUTE_ROUTES_URL = 'https://routes.googleapis.com/directions/v2:computeRoutes';
 

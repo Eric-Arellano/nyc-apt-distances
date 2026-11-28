@@ -16,3 +16,12 @@ export function parseUnit(text: string): string | null {
 }
 
 export const UnitSchema = v.pipe(v.string(), v.transform(parseUnit));
+
+export function isValidAddress(address: string): boolean {
+  return /^\d+\s+\S+.*$/.test(address.trim());
+}
+
+/** `12 Juniper Row` from `12 Juniper Row, White Plains, NY 10601`. */
+export function streetPart(address: string): string {
+  return address.split(',')[0]?.trim() ?? address;
+}

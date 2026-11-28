@@ -1,4 +1,4 @@
-import type { Route } from '#lib/types.ts';
+import type { Route } from '#lib/travelTimes.ts';
 import type { Maps } from './maps.ts';
 import type { Trip } from './routing.ts';
 

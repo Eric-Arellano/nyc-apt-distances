@@ -1,9 +1,9 @@
 <script lang="ts">
+import { withUnit } from '#lib/address.ts';
 import * as Alert from '#lib/components/ui/alert/index.ts';
 import { Button } from '#lib/components/ui/button/index.ts';
 import { formatDate } from '#lib/formatDate.ts';
 import type { ApartmentSummary } from '#lib/server/apartments.ts';
-import { withUnit } from '#lib/unit.ts';
 import type { RemoteFormField } from '$app/server';
 import { resolve } from '$app/paths';
 

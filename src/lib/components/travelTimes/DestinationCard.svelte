@@ -1,6 +1,5 @@
 <script lang="ts">
-import { goalStatus } from '#lib/goalStatus.ts';
-import type { DestinationResult, GoalStatus } from '#lib/types.ts';
+import { type DestinationResult, type GoalStatus, goalStatus } from '#lib/travelTimes.ts';
 import { formatRoute, goalText } from './format.ts';
 
 const STATUS_CLASSES: Record<GoalStatus, string> = {

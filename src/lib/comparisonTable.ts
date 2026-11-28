@@ -1,7 +1,8 @@
+import { streetPart } from '#lib/address.ts';
+import { STATUSES } from '#lib/apartmentStatus.ts';
 import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
 import type ApartmentStatus from '#lib/server/db/schema/public/ApartmentStatus.ts';
-import { STATUSES } from '#lib/status.ts';
-import type { GoalStatus } from '#lib/types.ts';
+import type { GoalStatus } from '#lib/travelTimes.ts';
 
 export interface TimeColumn {
   key: string; // Names the column in `?sort=`, so a shared link keeps working.
@@ -58,11 +59,6 @@ export function sortSearch({ key, desc }: Sort): string {
 
 export function nextSort(current: Sort, key: string): Sort {
   return { key, desc: current.key === key && !current.desc };
-}
-
-/** `12 Juniper Row` from `12 Juniper Row, White Plains, NY 10601`. */
-export function streetPart(address: string): string {
-  return address.split(',')[0]?.trim() ?? address;
 }
 
 const COLLATOR = new Intl.Collator('en-US', { numeric: true, sensitivity: 'base' });

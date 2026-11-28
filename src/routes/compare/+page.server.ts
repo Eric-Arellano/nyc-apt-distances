@@ -1,10 +1,10 @@
 import { error } from '@sveltejs/kit';
+import { parseApartmentId } from '#lib/apartmentId.ts';
 import { type ApartmentView, getApartment, listApartmentChoices } from '#lib/server/apartments.ts';
 import { getDatabase } from '#lib/server/database.ts';
 import { DESTINATIONS } from '#lib/server/destinations.ts';
 import { pairDestinations } from '#lib/server/sideBySide.ts';
 import { type ComparedApartment, type Pair, pairMap } from '#lib/sideBySide.ts';
-import { parseApartmentId } from '../../params.ts';
 import type { PageServerLoad } from './$types';
 
 type Db = Awaited<ReturnType<typeof getDatabase>>;
