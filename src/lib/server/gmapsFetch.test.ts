@@ -1,6 +1,6 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { describe, expect, test, vi } from 'vitest';
-import { fetchGoogle } from './gmapsFetch';
+import { fetchGoogle } from './gmapsFetch.ts';
 
 vi.mock('node:timers/promises', () => ({ setTimeout: vi.fn(async () => undefined) }));
 

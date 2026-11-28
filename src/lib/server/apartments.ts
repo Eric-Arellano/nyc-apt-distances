@@ -4,14 +4,14 @@ import { type ApartmentDetails, changedDetails } from '#lib/apartmentDetails.ts'
 import type { ApartmentRow } from '#lib/comparison.ts';
 import type { ApartmentChoice } from '#lib/sideBySide.ts';
 import type { DestinationResult } from '#lib/types.ts';
-import type { Coordinates } from './closest';
-import { TABLE_GROUPS, timeCell } from './comparison';
+import type { Coordinates } from './closest.ts';
+import { TABLE_GROUPS, timeCell } from './comparison.ts';
 import type Database from './db/schema/Database.ts';
 import type { ApartmentId } from './db/schema/public/Apartment.ts';
 import type ApartmentStatus from './db/schema/public/ApartmentStatus.ts';
-import { DESTINATIONS, ORIGIN_COUNTY } from './destinations';
-import type { Maps } from './maps';
-import { computeTravelTimes, type TravelTimeEntry, toDestinationResults } from './travelTimes';
+import { DESTINATIONS, ORIGIN_COUNTY } from './destinations.ts';
+import type { Maps } from './maps.ts';
+import { computeTravelTimes, type TravelTimeEntry, toDestinationResults } from './travelTimes.ts';
 
 type Db = Kysely<Database>;
 

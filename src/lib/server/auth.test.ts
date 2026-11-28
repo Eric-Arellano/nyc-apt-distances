@@ -9,7 +9,7 @@ import {
   SESSION_LIFETIME_SECONDS,
   signSession,
   startSession,
-} from './auth';
+} from './auth.ts';
 
 const PASSWORD = 'correct-horse-battery';
 const KEY = deriveSessionKey(PASSWORD);

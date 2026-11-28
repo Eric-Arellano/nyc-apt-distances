@@ -5,7 +5,7 @@
 // within walking distance of the Hebrew Institute, inside White Plains, where streets follow the
 // straight line closely enough. *Rejected: routing to every candidate, because each is billed.*
 
-import type { Coordinates } from './closest';
+import type { Coordinates } from './closest.ts';
 
 interface Candidate extends Coordinates {
   name: string;

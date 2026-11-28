@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { formatRoute, goalText } from './format.js';
+import { formatRoute, goalText } from './format.ts';
 
 describe('goalText', () => {
   test('gives the max and the ideal', () => {

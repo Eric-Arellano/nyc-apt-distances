@@ -8,7 +8,7 @@ import {
   sortSearch,
   streetPart,
   type TimeCell,
-} from './comparison';
+} from './comparison.ts';
 import type { ApartmentId } from './server/db/schema/public/Apartment.ts';
 
 const KEYS = ['apartment', 'status', 'rent', 'hebrew-institute-walk'];

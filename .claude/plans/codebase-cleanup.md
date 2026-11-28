@@ -5,7 +5,7 @@
 The app has every feature it was meant to have, so the work left is maintainability: the next
 person (most likely an agent, since nobody reviews closely any more) should be able to find
 things, trust the names, and change a rule in one place. UI, UX and correctness are out of
-scope. Every PR below preserves behavior. The one visible change is in PR 7, where the
+scope. Every PR below preserves behavior. The one visible change is in PR 6, where the
 side-by-side picker joins street and unit with no-break spaces, as the table already does.
 
 What a full read of the code found:
@@ -26,22 +26,22 @@ What a full read of the code found:
   `addressUtils.ts` sits under `components/` though a remote function's schema uses it.
 - **Layout.** `src/lib/server/` has 17 flat files, six of them the Google client, told apart
   only by a `gmaps` prefix. Two `../params` imports reach outside `#lib`.
-- **Imports.** Of the relative imports, 68 have no extension, two use `.js`, and the rest use
-  `.ts`. A comment in `gmapsRouting.ts` asks for `.ts` extensions by hand because the fixture
-  script loads that module under plain Node.
 
 ## Decisions
 
-- **Mechanical PRs first** (1–3: lint, moves, renames), so the logic PRs are reviewed against
-  final names and rebases stay trivial. **Docs last** (8), so they describe the final layout.
+- **Mechanical PRs first** (1–2: moves, renames), so the logic PRs are reviewed against
+  final names and rebases stay trivial. **Docs last** (7), so they describe the final layout.
+- **Every relative import names its file extension.** Biome's `useImportExtensions` enforces
+  it in `.ts` files, but Biome doesn't check `.svelte` script blocks, so a move that touches a
+  Svelte import writes `.ts` by hand.
 - **The shared/server pairing becomes the stated convention.** A feature's shared types and
   pure logic live in `src/lib/x.ts`. The half that reads `DESTINATIONS` or the database lives in
-  `src/lib/server/x.ts`, as `sideBySide.ts` already does. PR 3 applies it to `travelTimes` and
-  `comparisonTable`, and PR 8 writes it into `AGENTS.md`.
+  `src/lib/server/x.ts`, as `sideBySide.ts` already does. PR 2 applies it to `travelTimes` and
+  `comparisonTable`, and PR 7 writes it into `AGENTS.md`.
 - **Goals are judged where they meet stored routes**, in `toTripResults`. That is still read
   time, so editing a goal re-judges every apartment without recalculating.
 - **Column keys never change.** `?sort=` links carry them, and the `TABLE_GROUPS` key test pins
-  them. PR 5 must leave that test untouched and passing.
+  them. PR 4 must leave that test untouched and passing.
 - **Kept WET on purpose:**
   - `DetailsForm`'s six fields, since each differs.
   - The hidden-id `<input>` in each form.
@@ -51,7 +51,7 @@ What a full read of the code found:
   - The back link that the apartment and compare pages share.
 - *Rejected: renaming `GoalStatus` to tell it from apartment status, because renaming `status.ts` to
   `apartmentStatus.ts` separates them at a fraction of the churn.*
-- *Rejected: a lint rule banning `../` imports. Only two exist, both removed in PR 3, and
+- *Rejected: a lint rule banning `../` imports. Only two exist, both removed in PR 2, and
   `+layout.svelte`'s `../app.css` is legitimate.*
 - *Rejected: injecting destinations into `apartments.ts` so its tests use their own. That would
   thread them through every caller for one test, and asserting less in that test does the job.*
@@ -59,19 +59,7 @@ What a full read of the code found:
   → `saveApartment`, …). Each body is one line that shows the pairing, and a rename changes
   the endpoint names.*
 
-## PR 1: Give every relative import its file extension
-
-- `biome.json`: enable `correctness/useImportExtensions` at `error`. A dry run flags 57 imports,
-  all in `.ts` files and all safe-fixable, including the two `.js` imports in
-  `goalStatus.test.ts` and `format.test.ts`. `npm run format` applies the fixes. The rule
-  leaves SvelteKit's generated `./$types` alone.
-- Biome doesn't check `.svelte` script blocks, so fix `AddressInput.svelte`'s `./addressUtils`
-  and `DestinationCard.svelte`'s `./format` by hand.
-- `gmapsRouting.ts` header: drop "So its imports, and theirs, carry `.ts` extensions", which the
-  lint now enforces. Keep the sentence saying `scripts/capture-fixtures.ts` loads the module
-  under plain Node, since that still rules out `$app/*` imports.
-
-## PR 2: Group the Google client under `src/lib/server/maps/`
+## PR 1: Group the Google client under `src/lib/server/maps/`
 
 Pure moves with `git mv`, each test file moving with its module. Update importers, including
 `scripts/capture-fixtures.ts`.
@@ -84,7 +72,7 @@ Pure moves with `git mv`, each test file moving with its module. Update importer
 | `maps.ts`, `getMaps.ts`, `fakeMaps.ts` | same names |
 | `weeklyTime.ts` | `weeklyTime.ts`. `Trip` embeds `WeeklyTime`, and routing is its only logic consumer. |
 
-## PR 3: Name shared modules for what they hold
+## PR 2: Name shared modules for what they hold
 
 Moves and merges only, with no logic change. Each moved function keeps its comments.
 
@@ -103,7 +91,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
 - `components/address/AddressInput.svelte` (with its test) and `components/DeleteApartment.svelte`
   → `components/apartment/`. `components/address/` goes away.
 
-## PR 4: Judge each trip once
+## PR 3: Judge each trip once
 
 - `TripResult` (in `lib/travelTimes.ts`) gains `status?: GoalStatus`, absent when the trip has no
   goal. `toTripResults` in `server/travelTimes.ts` sets it.
@@ -122,7 +110,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
   - Drop the goal verdicts from that test. Today it fails whenever a goal in `destinations.ts`
     is tuned, and the `goalStatus` and `toDestinationResults` tests already cover judging.
 
-## PR 5: Declare table columns on their trips
+## PR 4: Declare table columns on their trips
 
 - `Destination` gains `shortTitle`. `DestinationTrip` gains `column?: false | { icon?: string;
   label?: string }`. Absent means a column with the mode's icon. `false` means no column, as for
@@ -140,7 +128,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
 - *Rejected: keeping a separate column list that is "free to change" apart from `trips`. The only
   freedom it has ever used is leaving a trip out, which `column: false` covers.*
 
-## PR 6: Tidy the apartment store, remote functions and routing
+## PR 5: Tidy the apartment store, remote functions and routing
 
 - `server/apartments.ts`:
   - `getApartment` throws a 404 like its three siblings, rather than returning `undefined`. The
@@ -168,7 +156,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
   - `routing.test.ts` hoists the fake-timer setup it repeats in two `describe`s.
   - `server/sideBySide.test.ts` spells `day: 5` as `DayOfWeek.Friday`.
 
-## PR 7: Tidy the Svelte components
+## PR 6: Tidy the Svelte components
 
 - Add one `shortAddress(address, unit)` to `lib/address.ts`: the street part, then the unit,
   joined by ` · ` with explicit ` ` escapes. It replaces `ComparisonTable`'s inline copy,
@@ -187,7 +175,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
   - `DetailsForm`'s per-instance `ORIGINAL_KEYS` → `detailKeys`.
   - Rewrap the over-long doc comment in `DestinationList.svelte.test.ts`.
 
-## PR 8: Revamp the docs
+## PR 7: Revamp the docs
 
 - **README:**
   - Open with what the app is now: it looks up an apartment's travel times to the places we
@@ -212,17 +200,17 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
 
 ## Verification
 
-- Before PR 1, run the suite once on `main` and record the test count. The mechanical PRs (1–3)
-  must end with the same count, because renamed test files keep their tests.
+- The mechanical PRs (1–2) must end with the 330 tests `main` had before this cleanup, because
+  renamed test files keep their tests.
 - For every PR, run `npm run lint && npm run check && npm test`. Then read `git status` and the
   diff for secrets, absolute home paths and private addresses.
-- For PRs that touch Svelte (3, 4, 5, 7), run `svelte-autofixer` on each touched component until
+- For PRs that touch Svelte (2, 3, 4, 6), run `svelte-autofixer` on each touched component until
   it is clean. Then run the app with `SITE_PASSWORD=<throwaway> MOCK=1 npm run dev`, which bills
   nothing, needs no Google key and doesn't read `.envrc`.
   - Sign in, then screenshot `/` (sorted at least once), an apartment page, and
     `/compare?a=…&b=…` with Playwright. Compare them against `main`; they should be identical
-    apart from PR 7's no-break spaces.
+    apart from PR 6's no-break spaces.
   - Add test apartments only at public addresses, such as the fixtures' 100 Martine Ave.
   - Screenshots stay local, since `.pglite/` may hold real apartments.
-- After PR 5, check that the `TABLE_GROUPS` key test passes unchanged, so shared `?sort=` links
+- After PR 4, check that the `TABLE_GROUPS` key test passes unchanged, so shared `?sort=` links
   still resolve.

@@ -7,8 +7,8 @@ import transitMetroNorth from '#tests/fixtures/google/transit-metro-north.json';
 import transitNoRoute from '#tests/fixtures/google/transit-no-route.json';
 import transitTransfer from '#tests/fixtures/google/transit-transfer.json';
 import walk from '#tests/fixtures/google/walk.json';
-import { computeRoute, parseDistanceRoute, parseTransitRoute } from './gmapsRouting';
-import { DayOfWeek } from './weeklyTime';
+import { computeRoute, parseDistanceRoute, parseTransitRoute } from './gmapsRouting.ts';
+import { DayOfWeek } from './weeklyTime.ts';
 
 /** The target the transit fixtures were captured with. */
 const MONDAY_9_30 = DateTime.fromISO('2026-11-09T09:30', { zone: 'America/New_York' });

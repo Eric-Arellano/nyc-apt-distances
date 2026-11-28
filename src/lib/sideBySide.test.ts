@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import type { ApartmentId } from './server/db/schema/public/Apartment.ts';
-import { amountLower, compareSearch, routeMinutes } from './sideBySide';
+import { amountLower, compareSearch, routeMinutes } from './sideBySide.ts';
 
 describe('amountLower', () => {
   test.each([

@@ -6,7 +6,7 @@ import {
   type ComparisonGroup,
   DESTINATIONS,
   type Destination,
-} from './destinations';
+} from './destinations.ts';
 
 const MODE_NAMES = { walk: 'walk', bike: 'bike', transit: 'transit', drive: 'drive' } as const;
 

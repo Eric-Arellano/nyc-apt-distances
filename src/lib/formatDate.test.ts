@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { formatDate } from './formatDate';
+import { formatDate } from './formatDate.ts';
 
 describe('formatDate', () => {
   test("uses New York's day, not UTC's", () => {
