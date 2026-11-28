@@ -1,6 +1,6 @@
 import type { Route } from '#lib/types.ts';
-import { type GeocodedAddress, geocode } from './gmapsGeocoding.ts';
-import { computeRoute, type RouteOptions } from './gmapsRouting.ts';
+import { type GeocodedAddress, geocode } from './geocoding.ts';
+import { computeRoute, type RouteOptions } from './routing.ts';
 
 export interface Maps {
   geocode(address: string, expectedCounty: string): Promise<GeocodedAddress>;

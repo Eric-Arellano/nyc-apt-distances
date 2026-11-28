@@ -10,7 +10,7 @@ import type Database from './db/schema/Database.ts';
 import type { ApartmentId } from './db/schema/public/Apartment.ts';
 import type ApartmentStatus from './db/schema/public/ApartmentStatus.ts';
 import { DESTINATIONS, ORIGIN_COUNTY } from './destinations.ts';
-import type { Maps } from './maps.ts';
+import type { Maps } from './maps/maps.ts';
 import { computeTravelTimes, type TravelTimeEntry, toDestinationResults } from './travelTimes.ts';
 
 type Db = Kysely<Database>;

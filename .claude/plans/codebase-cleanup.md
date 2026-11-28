@@ -5,7 +5,7 @@
 The app has every feature it was meant to have, so the work left is maintainability: the next
 person (most likely an agent, since nobody reviews closely any more) should be able to find
 things, trust the names, and change a rule in one place. UI, UX and correctness are out of
-scope. Every PR below preserves behavior. The one visible change is in PR 6, where the
+scope. Every PR below preserves behavior. The one visible change is in PR 5, where the
 side-by-side picker joins street and unit with no-break spaces, as the table already does.
 
 What a full read of the code found:
@@ -24,24 +24,23 @@ What a full read of the code found:
   (`status.ts`) and a goal's (`GoalStatus`). `comparison.ts` holds only the table's logic,
   while the `/compare` route is the side-by-side. `types.ts` is a grab-bag name.
   `addressUtils.ts` sits under `components/` though a remote function's schema uses it.
-- **Layout.** `src/lib/server/` has 17 flat files, six of them the Google client, told apart
-  only by a `gmaps` prefix. Two `../params` imports reach outside `#lib`.
+- **Layout.** Two `../params` imports reach outside `#lib`.
 
 ## Decisions
 
-- **Mechanical PRs first** (1–2: moves, renames), so the logic PRs are reviewed against
-  final names and rebases stay trivial. **Docs last** (7), so they describe the final layout.
+- **Mechanical PRs first** (the renames in PR 1), so the logic PRs are reviewed against final
+  names and rebases stay trivial. **Docs last** (6), so they describe the final layout.
 - **Every relative import names its file extension.** Biome's `useImportExtensions` enforces
   it in `.ts` files, but Biome doesn't check `.svelte` script blocks, so a move that touches a
   Svelte import writes `.ts` by hand.
 - **The shared/server pairing becomes the stated convention.** A feature's shared types and
   pure logic live in `src/lib/x.ts`. The half that reads `DESTINATIONS` or the database lives in
-  `src/lib/server/x.ts`, as `sideBySide.ts` already does. PR 2 applies it to `travelTimes` and
-  `comparisonTable`, and PR 7 writes it into `AGENTS.md`.
+  `src/lib/server/x.ts`, as `sideBySide.ts` already does. PR 1 applies it to `travelTimes` and
+  `comparisonTable`, and PR 6 writes it into `AGENTS.md`.
 - **Goals are judged where they meet stored routes**, in `toTripResults`. That is still read
   time, so editing a goal re-judges every apartment without recalculating.
 - **Column keys never change.** `?sort=` links carry them, and the `TABLE_GROUPS` key test pins
-  them. PR 4 must leave that test untouched and passing.
+  them. PR 3 must leave that test untouched and passing.
 - **Kept WET on purpose:**
   - `DetailsForm`'s six fields, since each differs.
   - The hidden-id `<input>` in each form.
@@ -51,7 +50,7 @@ What a full read of the code found:
   - The back link that the apartment and compare pages share.
 - *Rejected: renaming `GoalStatus` to tell it from apartment status, because renaming `status.ts` to
   `apartmentStatus.ts` separates them at a fraction of the churn.*
-- *Rejected: a lint rule banning `../` imports. Only two exist, both removed in PR 2, and
+- *Rejected: a lint rule banning `../` imports. Only two exist, both removed in PR 1, and
   `+layout.svelte`'s `../app.css` is legitimate.*
 - *Rejected: injecting destinations into `apartments.ts` so its tests use their own. That would
   thread them through every caller for one test, and asserting less in that test does the job.*
@@ -59,20 +58,7 @@ What a full read of the code found:
   → `saveApartment`, …). Each body is one line that shows the pairing, and a rename changes
   the endpoint names.*
 
-## PR 1: Group the Google client under `src/lib/server/maps/`
-
-Pure moves with `git mv`, each test file moving with its module. Update importers, including
-`scripts/capture-fixtures.ts`.
-
-| From `src/lib/server/` | To `src/lib/server/maps/` |
-| --- | --- |
-| `gmapsFetch.ts` | `googleFetch.ts` |
-| `gmapsGeocoding.ts` | `geocoding.ts` |
-| `gmapsRouting.ts` | `routing.ts` |
-| `maps.ts`, `getMaps.ts`, `fakeMaps.ts` | same names |
-| `weeklyTime.ts` | `weeklyTime.ts`. `Trip` embeds `WeeklyTime`, and routing is its only logic consumer. |
-
-## PR 2: Name shared modules for what they hold
+## PR 1: Name shared modules for what they hold
 
 Moves and merges only, with no logic change. Each moved function keeps its comments.
 
@@ -91,7 +77,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
 - `components/address/AddressInput.svelte` (with its test) and `components/DeleteApartment.svelte`
   → `components/apartment/`. `components/address/` goes away.
 
-## PR 3: Judge each trip once
+## PR 2: Judge each trip once
 
 - `TripResult` (in `lib/travelTimes.ts`) gains `status?: GoalStatus`, absent when the trip has no
   goal. `toTripResults` in `server/travelTimes.ts` sets it.
@@ -110,7 +96,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
   - Drop the goal verdicts from that test. Today it fails whenever a goal in `destinations.ts`
     is tuned, and the `goalStatus` and `toDestinationResults` tests already cover judging.
 
-## PR 4: Declare table columns on their trips
+## PR 3: Declare table columns on their trips
 
 - `Destination` gains `shortTitle`. `DestinationTrip` gains `column?: false | { icon?: string;
   label?: string }`. Absent means a column with the mode's icon. `false` means no column, as for
@@ -128,7 +114,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
 - *Rejected: keeping a separate column list that is "free to change" apart from `trips`. The only
   freedom it has ever used is leaving a trip out, which `column: false` covers.*
 
-## PR 5: Tidy the apartment store, remote functions and routing
+## PR 4: Tidy the apartment store, remote functions and routing
 
 - `server/apartments.ts`:
   - `getApartment` throws a 404 like its three siblings, rather than returning `undefined`. The
@@ -156,7 +142,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
   - `routing.test.ts` hoists the fake-timer setup it repeats in two `describe`s.
   - `server/sideBySide.test.ts` spells `day: 5` as `DayOfWeek.Friday`.
 
-## PR 6: Tidy the Svelte components
+## PR 5: Tidy the Svelte components
 
 - Add one `shortAddress(address, unit)` to `lib/address.ts`: the street part, then the unit,
   joined by ` · ` with explicit ` ` escapes. It replaces `ComparisonTable`'s inline copy,
@@ -175,7 +161,7 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
   - `DetailsForm`'s per-instance `ORIGINAL_KEYS` → `detailKeys`.
   - Rewrap the over-long doc comment in `DestinationList.svelte.test.ts`.
 
-## PR 7: Revamp the docs
+## PR 6: Revamp the docs
 
 - **README:**
   - Open with what the app is now: it looks up an apartment's travel times to the places we
@@ -200,17 +186,17 @@ Moves and merges only, with no logic change. Each moved function keeps its comme
 
 ## Verification
 
-- The mechanical PRs (1–2) must end with the 330 tests `main` had before this cleanup, because
+- PR 1, which is mechanical, must end with the 330 tests `main` had before this cleanup, because
   renamed test files keep their tests.
 - For every PR, run `npm run lint && npm run check && npm test`. Then read `git status` and the
   diff for secrets, absolute home paths and private addresses.
-- For PRs that touch Svelte (2, 3, 4, 6), run `svelte-autofixer` on each touched component until
+- For PRs that touch Svelte (1, 2, 3, 5), run `svelte-autofixer` on each touched component until
   it is clean. Then run the app with `SITE_PASSWORD=<throwaway> MOCK=1 npm run dev`, which bills
   nothing, needs no Google key and doesn't read `.envrc`.
   - Sign in, then screenshot `/` (sorted at least once), an apartment page, and
     `/compare?a=…&b=…` with Playwright. Compare them against `main`; they should be identical
-    apart from PR 6's no-break spaces.
+    apart from PR 5's no-break spaces.
   - Add test apartments only at public addresses, such as the fixtures' 100 Martine Ave.
   - Screenshots stay local, since `.pglite/` may hold real apartments.
-- After PR 4, check that the `TABLE_GROUPS` key test passes unchanged, so shared `?sort=` links
+- After PR 3, check that the `TABLE_GROUPS` key test passes unchanged, so shared `?sort=` links
   still resolve.

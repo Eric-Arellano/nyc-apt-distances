@@ -1,8 +1,8 @@
 // `scripts/capture-fixtures.ts` loads this module under plain Node, to capture fixtures with the
 // same requests production sends.
 import { DateTime } from 'luxon';
-import { fetchGoogle } from '#lib/server/gmapsFetch.ts';
-import { nextOccurrence, type WeeklyTime } from '#lib/server/weeklyTime.ts';
+import { fetchGoogle } from '#lib/server/maps/googleFetch.ts';
+import { nextOccurrence, type WeeklyTime } from '#lib/server/maps/weeklyTime.ts';
 import type { Ride, Route } from '#lib/types.ts';
 
 const COMPUTE_ROUTES_URL = 'https://routes.googleapis.com/directions/v2:computeRoutes';
