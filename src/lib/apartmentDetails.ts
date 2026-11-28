@@ -1,6 +1,6 @@
 import * as v from 'valibot';
+import { UnitSchema } from '#lib/address.ts';
 import type { Apartment } from '#lib/server/db/schema/public/Apartment.ts';
-import { UnitSchema } from '#lib/unit.ts';
 
 /** What we track about an apartment besides its status, every field of which may be empty. */
 export type ApartmentDetails = Pick<

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import type { DestinationResult, Goal } from '#lib/types.ts';
+import type { DestinationResult, Goal } from '#lib/travelTimes.ts';
 import { PARKS } from './candidateLocations.ts';
 import type { Destination } from './destinations.ts';
 import { pairDestinations } from './sideBySide.ts';

@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { DestinationResult } from '#lib/types.ts';
+import type { DestinationResult } from '#lib/travelTimes.ts';
 import DestinationCard from './DestinationCard.svelte';
 
 interface Props {

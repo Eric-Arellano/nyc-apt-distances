@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { parseApartmentId } from './params.ts';
+import { parseApartmentId } from './apartmentId.ts';
 
 describe('parseApartmentId', () => {
   test.each([

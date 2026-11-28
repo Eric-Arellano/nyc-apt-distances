@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import type { DestinationResult, Goal } from '#lib/types.ts';
-import { TABLE_GROUPS, timeCell, toColumnGroups } from './comparison.ts';
+import type { DestinationResult, Goal } from '#lib/travelTimes.ts';
+import { TABLE_GROUPS, timeCell, toColumnGroups } from './comparisonTable.ts';
 import { DESTINATIONS, type Destination } from './destinations.ts';
 
 describe('TABLE_GROUPS', () => {

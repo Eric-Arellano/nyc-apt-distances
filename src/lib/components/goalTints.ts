@@ -1,4 +1,4 @@
-import type { GoalStatus } from '#lib/types.ts';
+import type { GoalStatus } from '#lib/travelTimes.ts';
 
 // No legend explains these, so they must read on their own: green good, yellow okay, red bad.
 export const GOAL_TINTS: Record<GoalStatus, string> = {

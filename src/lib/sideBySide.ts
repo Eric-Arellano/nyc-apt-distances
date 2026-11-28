@@ -1,7 +1,7 @@
 import type { ApartmentDetails } from '#lib/apartmentDetails.ts';
 import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
 import type ApartmentStatus from '#lib/server/db/schema/public/ApartmentStatus.ts';
-import type { Goal, GoalStatus, Route, TripMode } from '#lib/types.ts';
+import type { Goal, GoalStatus, Route, TripMode } from '#lib/travelTimes.ts';
 
 export type Pair<T> = [T, T];
 

@@ -1,6 +1,5 @@
-import { goalStatus } from '#lib/goalStatus.ts';
 import { type Pair, type PairedDestination, pairMap, type SideTrip } from '#lib/sideBySide.ts';
-import type { DestinationResult, TripResult } from '#lib/types.ts';
+import { type DestinationResult, goalStatus, type TripResult } from '#lib/travelTimes.ts';
 import type { Destination } from './destinations.ts';
 
 function sideTrip(trip: TripResult | undefined): SideTrip {

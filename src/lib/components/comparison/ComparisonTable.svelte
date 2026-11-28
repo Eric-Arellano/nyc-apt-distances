@@ -1,16 +1,15 @@
 <script lang="ts">
+import { streetPart, withUnit } from '#lib/address.ts';
 import { formatDollars } from '#lib/apartmentDetails.ts';
+import { STATUS_LABELS } from '#lib/apartmentStatus.ts';
 import {
   type ApartmentRow,
   type ColumnGroup,
   type Sort,
   sortRows,
-  streetPart,
   type TimeCell,
-} from '#lib/comparison.ts';
+} from '#lib/comparisonTable.ts';
 import { GOAL_TINTS, UNJUDGED_TINT } from '#lib/components/goalTints.ts';
-import { STATUS_LABELS } from '#lib/status.ts';
-import { withUnit } from '#lib/unit.ts';
 import { resolve } from '$app/paths';
 
 interface Props {

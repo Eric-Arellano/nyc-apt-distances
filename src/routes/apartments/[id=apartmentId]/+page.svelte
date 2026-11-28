@@ -1,11 +1,12 @@
 <script lang="ts">
 import ArrowLeftIcon from '@lucide/svelte/icons/arrow-left';
 import Columns2Icon from '@lucide/svelte/icons/columns-2';
+import { formatUnit, withUnit } from '#lib/address.ts';
 import { recomputeTravelTimes } from '#lib/apartments.remote.ts';
+import DeleteApartment from '#lib/components/apartment/DeleteApartment.svelte';
 import DetailsCard from '#lib/components/apartment/DetailsCard.svelte';
 import StatusSelect from '#lib/components/apartment/StatusSelect.svelte';
 import Card from '#lib/components/Card.svelte';
-import DeleteApartment from '#lib/components/DeleteApartment.svelte';
 import ErrorMessage from '#lib/components/ErrorMessage.svelte';
 import DestinationList from '#lib/components/travelTimes/DestinationList.svelte';
 import * as Alert from '#lib/components/ui/alert/index.ts';
@@ -13,7 +14,6 @@ import { Button } from '#lib/components/ui/button/index.ts';
 import { formatDate } from '#lib/formatDate.ts';
 import { compareSearch } from '#lib/sideBySide.ts';
 import { signInOnExpiredSession } from '#lib/signInOnExpiredSession.ts';
-import { formatUnit, withUnit } from '#lib/unit.ts';
 import { resolve } from '$app/paths';
 import type { PageProps } from './$types';
 

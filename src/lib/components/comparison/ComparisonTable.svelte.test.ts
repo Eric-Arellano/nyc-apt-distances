@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, within } from '@testing-library/svelte';
 import { describe, expect, test, vi } from 'vitest';
-import type { ApartmentRow, ColumnGroup, Sort } from '#lib/comparison.ts';
+import type { ApartmentRow, ColumnGroup, Sort } from '#lib/comparisonTable.ts';
 import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
 import ComparisonTable from './ComparisonTable.svelte';
 

@@ -1,16 +1,16 @@
 <script lang="ts">
 import Columns2Icon from '@lucide/svelte/icons/columns-2';
+import { parseUnit } from '#lib/address.ts';
 import { addApartment } from '#lib/apartments.remote.ts';
-import AddressInput from '#lib/components/address/AddressInput.svelte';
+import AddressInput from '#lib/components/apartment/AddressInput.svelte';
 import DuplicateWarning from '#lib/components/apartment/DuplicateWarning.svelte';
 import Card from '#lib/components/Card.svelte';
 import ComparisonTable from '#lib/components/comparison/ComparisonTable.svelte';
 import { Button } from '#lib/components/ui/button/index.ts';
 import ErrorMessage from '#lib/components/ErrorMessage.svelte';
 import Loading from '#lib/components/Loading.svelte';
-import { FIXED_SORT_KEYS, nextSort, parseSort, sortSearch } from '#lib/comparison.ts';
+import { FIXED_SORT_KEYS, nextSort, parseSort, sortSearch } from '#lib/comparisonTable.ts';
 import { submitOrSignIn } from '#lib/signInOnExpiredSession.ts';
-import { parseUnit } from '#lib/unit.ts';
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { page } from '$app/state';

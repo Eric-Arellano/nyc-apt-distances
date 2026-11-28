@@ -1,6 +1,5 @@
-import type { ColumnGroup, TimeCell, TimeColumn } from '#lib/comparison.ts';
-import { goalStatus } from '#lib/goalStatus.ts';
-import type { DestinationResult } from '#lib/types.ts';
+import type { ColumnGroup, TimeCell, TimeColumn } from '#lib/comparisonTable.ts';
+import { type DestinationResult, goalStatus } from '#lib/travelTimes.ts';
 import {
   COMPARISON_GROUPS,
   type ComparisonGroup,

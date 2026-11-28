@@ -1,7 +1,7 @@
 import { sql } from 'kysely';
 import { describe, expect, test } from 'vitest';
 import { createTestDatabase } from '#tests/db.ts';
-import { STATUSES } from './status.ts';
+import { STATUSES } from './apartmentStatus.ts';
 
 describe('STATUSES', () => {
   // The picker lists them in this order, and the database sorts them in its own.

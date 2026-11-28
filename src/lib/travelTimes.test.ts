@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { goalStatus } from './goalStatus.ts';
+import { goalStatus } from './travelTimes.ts';
 
 describe('goalStatus', () => {
   function walk(timeMinutes: number) {

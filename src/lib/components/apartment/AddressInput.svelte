@@ -1,9 +1,9 @@
 <script lang="ts">
 import type { RemoteFormField } from '$app/server';
+import { isValidAddress } from '#lib/address.ts';
 import { Button } from '#lib/components/ui/button/index.ts';
 import * as Field from '#lib/components/ui/field/index.ts';
 import { Input } from '#lib/components/ui/input/index.ts';
-import { isValidAddress } from './addressUtils.ts';
 
 interface Props {
   field: RemoteFormField<string>;

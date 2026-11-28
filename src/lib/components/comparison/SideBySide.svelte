@@ -3,8 +3,9 @@ import ArrowLeftRightIcon from '@lucide/svelte/icons/arrow-left-right';
 import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
 import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
+import { streetPart } from '#lib/address.ts';
 import { formatDollars, siteName } from '#lib/apartmentDetails.ts';
-import { streetPart } from '#lib/comparison.ts';
+import { STATUS_LABELS } from '#lib/apartmentStatus.ts';
 import LinkedText from '#lib/components/apartment/LinkedText.svelte';
 import { GOAL_TINTS, UNJUDGED_TINT } from '#lib/components/goalTints.ts';
 import { goalText, routeIcon, transitLines } from '#lib/components/travelTimes/format.ts';
@@ -20,8 +21,7 @@ import {
   routeMinutes,
   type SideTrip,
 } from '#lib/sideBySide.ts';
-import { STATUS_LABELS } from '#lib/status.ts';
-import type { TripMode } from '#lib/types.ts';
+import type { TripMode } from '#lib/travelTimes.ts';
 import { resolve } from '$app/paths';
 import type { Snippet } from 'svelte';
 

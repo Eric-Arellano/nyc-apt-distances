@@ -1,10 +1,10 @@
 <script lang="ts">
+import { STATUS_LABELS, STATUSES } from '#lib/apartmentStatus.ts';
 import { changeStatus } from '#lib/apartments.remote.ts';
 import * as NativeSelect from '#lib/components/ui/native-select/index.ts';
 import type { ApartmentId } from '#lib/server/db/schema/public/Apartment.ts';
 import type ApartmentStatus from '#lib/server/db/schema/public/ApartmentStatus.ts';
 import { signInOnExpiredSession } from '#lib/signInOnExpiredSession.ts';
-import { STATUS_LABELS, STATUSES } from '#lib/status.ts';
 
 interface Props {
   id: ApartmentId;
